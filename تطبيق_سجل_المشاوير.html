@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل مشاوير العملاء</title>
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogItiz2KzZhCDZhdi02KfZiNmK2LEg2KfZhNi52YXZhNin2KEgLSDZhdmD2KrYqCDYp9mE2LrYsdmK2KgiLCAic2hvcnRfbmFtZSI6ICLYs9is2YQg2KfZhNmF2LTYp9mI2YrYsSIsICJkZXNjcmlwdGlvbiI6ICLZhdiq2KfYqNi52Kkg2YXYtdin2LHZitmBINin2YTZhdi02KfZiNmK2LEg2YjYp9mE2LnZhdmE2KfYoSAtINmF2YPYqtioINin2YTYutix2YrYqCDZhNmE2YXYrdin2LPYqNipINmI2KfZhNmF2LHYp9is2LnYqSIsICJzdGFydF91cmwiOiAiLi9pbmRleC5odG1sIiwgInNjb3BlIjogIi4vIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjNkM2UiLCAidGhlbWVfY29sb3IiOiAiIzBmM2QzZSIsICJkaXIiOiAicnRsIiwgImxhbmciOiAiYXIiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FZQUFBQlMzR3dIQUFBRjFVbEVRVlI0bk8zZHoyM2JTaFRGNFpHUnZRcElLWUc5ZHdQT05rQTZTQ0hwSUVDMmNRUGUyMGdwS1VBVk9JdUFBUzJMRkRuLzdyMXpmdC9xdllkWW1oZWN3enVrS1BxUW5EbmUzcjFhcndIdG5GNmVEOVpybUROZERHRkhTcmFsNlA3R2hCNXJlcGVoMjVzUmZPelJxd2pOMzRUZ28wVHJJalI3Y1lLUG1sb1ZvZnFMRW55MFZMc0lOelZmalBDanRkb1pxOUltZ2c4TE5hWkI4UVFnL0xCU0kzdEZCU0Q4c0ZhYXdld0NFSDU0VVpMRnJBSVFmbmlUbThuZEJTRDg4Q29ubTdzS1FQamgzZDZNYmk0QTRVY1VlN0s2cVFDRUg5RnN6ZXpWQWhCK1JMVWx1MVZ2aFFDaVdTMEFSMzlFZHkzRGl3VWcvQmpGV3BiWkFrSGF4UUp3OU1kb2xqTE5CSUMwZHdYZzZJOVJYY28yRXdEUzNoU0FvejlHZDU1eEpnQ2svUzhBUjMrb21HZWRDUUJwRkFEU2JsSmkrd005VSthWkFKQkdBU0NOQWtBYUJZQzBBeWZBVU1ZRWdEUUtBR2tVQU5Jb0FLUlJBRWo3WUwyQTN2NzgrbTY5QlBjK2Z2NW12WVJ1WkM2REV2ejlGSW9nc1FVaS9Ia1UvdDRrQ2dBc0diNEFDa2V4bGtiLyt4dStBTUFhQ2dCcEZBRFNLQUNrVVFCSW93Q1FSZ0VnalFKQUdnV0FOQW9BYVJRQTBpZ0FwRkVBU0tNQWtFWUJJSTBDUUJvRmdEUUtBR2tVQU5Jb0FLVEpQUmhycTlHZWlUUDZsOXR6TVFFZ2pRSkFHbHVnQld3Wk5EQUJJSTBDUUJvRmdEUUtBR2tVQU5Jb0FLUlJBRWlqQUpCR0FTQ05Ba0FhQllBMENnQnBGQURTdUJ0MEFWK0kwY0FFZ0RRS0FHbHNnUmF3WmREQUJJQTBDZ0JwRkFEU0tBQ2tVUUJJb3dDUVJnRWdqUUpBR2dXQU5Bb0FhUlFBMGlnQXBGRUFTT051MEFWOElVWURFd0RTbUFDRGVidy9YZnp2djM5K2ZmUHZuNzc4NkxFYzl5akFnaWhiaHZOZzUvNmNhaUVvUUVDNW9kLzZta3Bsb0FDQnRBaisydnNvRklFQ0JOQXIrTXZ2ZXpSNS94NjRDdVNjVmZqbmxrNnNSOEFFY01wRDhPZW1Fanc4alRVTm1BQU9lUXYvM0dqVGdBSTQ0em44azVGS1FBRWNpUkQreVNnbG9BQk9SQXIvWklRU1VBQUhJb1ovRXIwRUZNQlk1UEJQSXBlQUFrQWFud01ZYW5YMHYzYXR2c1VSKy9IK0ZQSXpBZ3F3b1BVWFltcUhjRS80NW4rMjVqb2lsb0FDQkhjcGNOZENQZitaNlo4ajcrTkxVQUFEdGNLV2V5U2YvOW5wTlI2ZWpsWFdGVzBLSEk2M2Q2L1dpMmpKNHhkYmF1ejlhMjVqYW0rSkloV0FxMENkMVF6LzQvMnAybEc3NXMxdWtiWlRGQ0NZbG52MlVlLzRYRU1CQXVseHdxcFdBZ3JRMFFpZittNFZaUnRFQVlMb2VibFNhUXBRZ0FBc2d6aDZDU2hBSUQyM0ZWRzJNS1VvUUNkSysvOUpoQkpSQU9jOGJFRThyS0VWQ2hDRXhkRTB3aEc4RkFXQU5Bb0FhUlFBMGlnQXBGRUFTS01Ba0VZQmdyQzRGai95OWY4SkJYRE93N1Y0RDJ0b2hRSjBvdkRiVnM1Rm1DQVVJSkNlZ1lvUTNob29RQUNXVzVDUnR6OHBVWUF3ZW41SlJlbFpRUlNnSTZYemdDaGJLQW9RU0k4cG9IVDBUNGtDaE5PeUJHcmhUMG5neVhBcCtYczZIRStHODRNSkVOU2w1M3ZtYVBXazZDZ2tKa0JLWTA2QmxNcWZEcjMxWjByVzQ1bE1BU1plaWxEN1MvSzV3YlA4UFFVZXlCWEFrMVpiRG92ZkVMUGxmVDJpQU1aRzJYZEhESDlLbkFSREhBVXdGdlhJT1JmNS80RUNPQkE1UUpIWG5sSktONmVYNTRQMUloQXpTQkhYUEhkNmVUNHdBUnlKRktoSWExMURBWnlKRUt3SWE5eUtBamprT1dDZTE1YUQzeFBzbExjN00wY0wvdVFtcFg4bkE5WUx3V1VlZ3VkaERiVk5tV2NDQkdBMURVWU0vamtLRUVpdklpZ0VmL0ptNjhOOVFmR28zc1pjWXI3bFp3SUVkeDdjcllWUUN2eWFkeWUvVEFHTTdQeUNENThEUU5xN0FuQkpGS082bEcwbUFLUmRMQUJUQUtOWnlqUVRBTklXQzhBVXdDaldzcnc2QVNnQm9ydVdZYlpBa0hhMUFFd0JSTFVsdTVzbUFDVkFORnN6dTNrTFJBa1F4WjZzN2pvSG9BVHdibTlHZDU4RVV3SjRsWlBOckt0QWxBRGU1R1l5K3pJb0pZQVhKVmtzK2h5QUVzQmFhUWFMUHdpakJMQlNJM3RWdzh1M3lkQkR6WU51MVZzaG1BWm9yWGJHbWdXV2FZQ2FXaDFjbXgreEtRSkt0TjVWZE51eVVBVHMwV3M3M1gzUFRoR3dwdmQ1cE9sSksyVkFTcllYVDl4ZHRhRVVZL04ycGZBdndYRC9MUEZlOHNZQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9LCB7InNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQWdBQUFBSUFDQVlBQUFEMGVOVDZBQUFSOFVsRVFWUjRuTzNkejVFVDZRSEc0V2FMK3dSQUtDNjRid0xMMVZYT2dFREl3Rlcrc2dsdzN5MkhRZ0JFZ0E5WUlFRFNkRXZmLy9kNXJ2YnV0bHJBKzlQWHc4eUxqU0U5dlg3enBmYzFBSlR3K2UrL1h2UytCbjdsVGVuRXdBTjhKUkQ2Y05NYk1QWUF4NGlDK3R6Z0NndytRRm1Db0R3M3RBQ0REOUNXSUhpY0czZ25vdzh3QmpGd0h6ZnRBS01QTURZeHNKOGI5UXlqRHpBbk1YQ2JtM09GNFFkWWd4QzR6RTA1WS9RQjFpWUd2bk1qTnNNUGtFWUloQWVBNFFmSWxod0NrUy9jOEFOd0xqRUVvbDZ3NFFmZ2xxUVFpSGloaGgrQUl4SkM0TGZlRjFDYjhRZmdxSVR0V0xad0V0NDhBT3BiOVRSZ3VSZGwrQUdvWWJVUVdPb1JnUEVIb0piVk5tYUptbG50VFFGZ2JDdWNCa3gvQW1EOEFXaHRoZTJaT2dCV2VBTUFtTlBzR3pUbEVjYnNOeDJBdGN6NFNHQzZFd0RqRDhCb1p0eW1xUUpneGhzTVFJYlpObXFLSTR2WmJpb0EyV1o0SkREOENZRHhCMkEyTTJ6WDBBRXd3dzBFZ0V0RzM3QmhBMkQwR3djQXp4bDV5NFlNZ0pGdkdBQWNNZXFtRFJjQW85NG9BTGpYaU5zMlZBQ01lSU1Bb0lUUk5tNllBQmp0eGdCQWFTTnQzUkFCTU5JTkFZQ2FSdG04N2dFd3lvMEFnRlpHMkw2dUFURENEUUNBSG5wdllMY0E2UDNDQWFDM25sdllKUUNNUHdCODFXc1Rtd2VBOFFlQUgvWFl4cVlCWVB3QjRMTFdHOWtzQUl3L0FOeldjaXViQklEeEI0QjlXbTFtOSs4REFBQzBWejBBZlBvSGdHTmFiR2ZWQUREK0FIQ2YyaHRhTFFDTVB3QThwdWFXK2hvQUFBaFVKUUI4K2dlQU1tcHRhdkVBTVA0QVVGYU5iUzBhQU1ZZkFPb292YkcrQmdBQUFoVUxBSi8rQWFDdWtsdGJKQUNNUHdDMFVXcHpQUUlBZ0VBUEI0QlAvd0RRVm9udGRRSUFBSUVlQ2dDZi9nR2dqMGMzK080QU1QNEEwTmNqVyt3UkFBQUV1aXNBZlBvSGdESGN1OGxPQUFBZzBPRUE4T2tmQU1aeXp6WTdBUUNBUUljQ3dLZC9BQmpUMFkxMkFnQUFnWFlIZ0UvL0FEQzJJMXZ0QkFBQUF1MEtBSi8rQVdBT2V6ZmJDUUFBQkJJQUFCRG8yUUJ3L0E4QWM5bXozVTRBQUNEUXpRRHc2UjhBNXZUY2hqc0JBSUJBQWdBQUFsME5BTWYvQURDM1cxdnVCQUFBQWdrQUFBaDBNUUFjL3dQQUdxNXR1aE1BQUFna0FBQWcwQzhCNFBnZkFOWnlhZHVkQUFCQUlBRUFBSUVFQUFBRStpRUFQUDhIZ0RYOXZQRk9BQUFna0FBQWdFQUNBQUFDZlFzQXovOEJZRzNuVys4RUFBQUNDUUFBQ0NRQUFDQ1FBQUNBUUw5dG15OEFCSUFVcDgxM0FnQUFnUVFBQUFRU0FBQVFTQUFBUUNBQkFBQ0JCQUFBQkJJQUFCRG9oZThCQUFCNW5BQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVFZ0FBRUVnQUFFQWdBUUFBZ1Y3MnZnQ3lmZnJ3dnZjbFFGZXYzcjdyZlFtRThyTUFhTTdvdzJWaWdKWUVBTTBZZnRoSENOQ0Nyd0dnQ2VNUCsvbjlRZ3NDZ09yOFlRYkgrWDFEYlFLQXF2d2hCdmZ6KzRlYUJBRFYrTU1MSHVmM0ViVUlBS3J3aHhhVTQvY1ROUWdBQUFna0FDak9weFVveis4clNoTUFBQkJJQUFCQUlBRkFVWTRwb1I2L3Z5aEpBQUJBSUFFQUFJRUVBQUFFRWdBQUVFZ0FBRUFnQVFBQWdRUUFBQVFTQUFBUVNBQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVFZ0FBRUVnQUFFQWdBUUFBZ1FRQUFBUVNBQUFRU0FBQVFDQUJBQUNCQkFBQUJCSUFBQkJJQUFCQUlBRUFBSUVFQUFBRUVnQUFFRWdBQUVBZ0FRQUFnUVFBQUFRU0FBQVFTQUFBUUNBQkFBQ0JCQUFBQkJJQUFCQklBQUJBSUFFQUFJRUVBQUFFRWdBQUVFZ0FBRUFnQVFBQWdRUUFBQVFTQUFBUVNBQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVldG43QXFDVlYyL2Y5YjRFSnZEcHcvdmVsd0JOT0FFQWdFQUNBQUFDQ1FBQUNDUUFBQ0NRQUFDQVFBSUFBQUlKQUFBSUpBQUFJSkFBQUlCQXZoTWdNWHlITjREdm5BQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVFZ0FBRUVnQUFFQWdBUUFBZ1FRQUFBUVNBQUFRU0FBQVFDQUJBQUNCQkFBQUJCSUFBQkJJQUFCQUlBRUFBSUVFQUFBRUVnQUFFRWdBQUVBZ0FRQUFnUVFBQUFRU0FBQVFTQUFBUUNBQkFBQ0JCQUFBQkJJQUFCQklBQUJBSUFFQUFJRUVBQUFFRWdBQUVFZ0FBRUFnQVFBQWdRUUFBQVI2MmZzQ29KVlhiOS8xdmdRbThPbkQrOTZYQUUwNEFRQ0FRQUlBQUFJSkFBQUlKQUFBSUpBQUFJQkFBZ0FBQWdrQUFBZ2tBQUFna0FBQWdFQytFeUF4ZkljM2dPK2NBQUJBSUFFQUFJRUVBQUFFRWdBQUVFZ0FBRUFnQVFBQWdRUUFBQVFTQUFBUVNBQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVFZ0FBRUVnQUFFQWdBUUFBZ1FRQUFBUVNBQUFRU0FBQVFDQUJBQUNCQkFBQUJCSUFBQkJJQUFCQUlBRUFBSUVFQUFBRUVnQUFFRWdBQUVBZ0FRQUFnUVFBQUFRU0FBQVFTQUFBUUNBQkFBQ0JCQUFBQkhyWit3S2dsVmR2My9XK0JDYnc2Y1A3M3BjQVRUZ0JBSUJBQWdBQUFna0FBQWdrQUFBZ2tBQUFnRUFDQUFBQytXdUF3TkwrL1Azem9mLy9mLy96cjZ2LzJ6LysrZTlITHdlR0lRQ0FKUndkK250Y2l3Tmh3SXdFQURDZEZtTi94S1V3RUFXTVRnQVF3M2Q0bTl1dG8va1JuVit2R0dCRUFnQVkxbXlqZjQwWVlFUUNBQmpLS3FOL2pSaGdGQUlBR01McXczL0o2VFVMQVhvUUFFQTNpYU4vaVZNQmVoQUFRSE9HL3pxbkFyUWlBSUJtRFA5K1FvRGFCQUJRbmVHL254Q2dGajhMQUtqSytKZmhQbExhaTZmWGI3NzB2Z2pXNFp2dGNHS3c2dm5qNDFQdlMyQUJIZ0VBUlJuKytrN2ZDbGtJOEFpUEFJQmlqSDliby8xTUJPWWlBSUFpakg4ZklvQjdlUVFBUE1UdzkrZVJBUGR3QWdEY3pmaVB4V2tBUndnQTRDN0dmMHdpZ0wwOEFnQU9NZnpqODBpQVBad0FBTHNaLzdrNERlQVdBUURzWXZ6bkpBSzRSZ0FBenpMK2N4TUJYQ0lBZ0p1TS94cEVBRDhUQU1CVnhuOHRJb0J6QWdDNHlQaXZTUVJ3SWdDQVh4ai90WWtBdGswQUFEOHgvaGxFQUFJQStNYjRaeEVCMlFRQXNHMmI4VThsQW5JSkFBQUlKQUFBbi83RE9RWElKQUFnblBGbjIwUkFJZ0VBd1l3LzUwUkFGZ0VBQUlFRUFJVHk2WjlMbkFMa0VBQVF5UGh6aXdqSThMTDNCUUJ0SlkvL0h4K2ZEdjh6cVdQNDUrK2Y3N3BmekVNQUFFc3FOVjZYL2oycFVjQmFCQUF4WHIxOTEvc1N1bHQ5dUZwOVlqMy83Nng4VDUwQ3JFMEFBRlByUFZBcE1jQjZmQkVnaEZodG5QNzQrTlI5L0g4MjRqVTlhclZmTjN3bkFDREFTbitJenpDeU0xempFU3Y5K3VFN2p3Q0FLWlFZMUh1RzdKSC83dW1mTmFDTVNBREE0bFlZbjN0SHVNUnIvL25mY2MrMS9QSHhhZnIzd1JjRXJrY0FBTU1hOGUvdG4vLzdqMXlmMHdCR0l3QmdZVE9QelpGeDdmVTY3NG1CbVU4RG5BS3N4UmNCQXNQWk96Si8vdjU1bURFOWNpMUdsQkU0QVlCRmpUS01SeHdaL2xHZHJ1MjUxekxySXdHbkFPdDQ4ZlQ2elpmZUY4RTZQbjE0My9zUytML1p2dWYvQ3VQL3N4VmYwN1k1d1ZpRlJ3QkFkM3NHWmFUai9yMzJYck5CcFFjQkFBdWE2ZFAvM3ZHZjJXb1JNUHY3d1ZjQ0FPZ21ZZnhQVm9zQTVpY0FZREV6ZmZxL1pjWWovK2VzOUpwV2VSM0pCQURReGExUHU2dVB5NjNYNXhTQVZnUUEwRnp5K0orSUFIb1RBTENRR1k3L2pkcytNOXlubEZoYmxRQUFocEUyS0dtdmw3RUlBS0FaUi8rLzhpaUFYZ1FBTEdMMDQzL2pmOTNNRVpEKzNzMU1BQUJBSUFFQVZPZlQvL05tUGdWZ1RnSUFGakQ2OGY4MXh2OUhzOTZQV2E4N25RQUFxdkxwdFF6M2tkSUVBTkNGVDQyWHVTKzBJZ0NBYW54cUxjdjlwQ1FCQURUblUrNXQ3Zzh0Q0FDWTNLeGZBTWhhUk10OEJBQlFoZVBxT3R4WFNoRUFRRk0rS2U3alBsR2JBQUNBUUFJQUtNNHhkVjN1THlVSUFLQVp4OXJIdUYvVUpBQmdZdjRHQUNNUkxITVJBQUFRU0FBQVFDQUJBQlIxN1F2VUhBL2Y1OXA5ODRXQVBFb0FBRUFnQVFBQWdRUUFBQVFTQUFBUVNBQUFRQ0FCQUFDQkJBQUFCQklBQUJCSUFBQkFJQUVBQUlFRUFBQUVFZ0FBRUVnQUFFWDU0VFZsK2VGSzFDSUFBQ0NRQUFDQVFBSUFKdmFQZi82Nzl5WEFOeDd6ekVVQUFNMFlpR1BjTDJvU0FFQnh2a0N0THZlWEVnUUFBQVFTQUVCVGpyWDNjWitvVFFBQVZUaW1yc045cFJRQkFKUHpOd0VZZ1JPTCtRZ0FvRGxqY1p2N1F3c0NBS2pHY1hWWjdpY2xDUUNnQzU5eUwzTmZhRVVBQUZYNTFGcUcrMGhwQWdBV01Pc1hBdnEwKzZOWjc4ZXMxNTFPQUFEVjNmcjBhankrdW5VZmZQcW5CZ0VBQUlFRUFDeGk5TWNBVGdHdW0vblRmL3A3TnpNQkFEUWpBbjQxOC9nek53RUFEQ010QXRKZUwyTVJBTENRMFI4RGJKdFB0WHZOY0o4RXpOd0VBTkNjUndHTy91bFBBQUJkSkVlQThXY0VBb0NpWHIxOTEvc1M0czN3R0dDUFB6NCtMUmNDSzcybVZWNUhNZ0VBZExQbjArNHFRN1BuZGZqMFQwc0NBQlkwMHlsQVFnU3NOdjZ6dng5OEpRQW96bU1BanRvYkFiTU56OTVybm1uOFdZY0FBSWF3ZHdSbmlZQzkxMm44NmVYRjArczNYM3BmQkd2NjlPRjk3MHVJOTkvLy9LdjNKZHhsNXZHYytkcjNtQ1hBZUo0VEFLcnhLSUI3SFRrTkdHV1FqbHpMck9QUFdwd0FVSjJUZ0w1bVBRWFl0dnMrYmJZYzE5R3ZyN1JSWW9zeUJBQk5pSUIrWmc2QWszdUhwOGJZam5RdHJRbUF0UWdBbWhFQi9TUkh3TGw3UnJqWGYzYzB4bjg5QW9EbWhFQjdLd1RBeVV4RHRNTHduOHgwMzlsSEFOQ1ZHR2hucFFqWXRyRUhhYVhoMzdheDd6WDNFd0FRWkxWaDJyYXh4c245WlNZdmUxOEF3Q1BPUjdmSFdLMDQrbVJ3QWdCaFVnYXJaZ3k0aDZ6QUNRQ3dwRXNqbmZiMzl1RVdKd0FReUtqeEhKLysxK2RiQVVNZ2Y3aHppMThmR1FRQWhQS0hQSmY0ZFpGREFBQkFJQUVBd1h6YTQ1eGZEMWtFQUlUemh6N2I1dGRCb3Q4Ky8vM1hpOTRYQWZUbEQvOXMzdjg4bi8vKzY0VVRBQUFJSkFDQWJkdDhDa3psZmM4bEFJQnZqRUVXNzNjMkFRRDh3Q2hrOEQ0akFJQmZHSWUxZVgvWk5nRUFYR0VrMXVSOTVVUUFBRmNaaTdWNFB6bjMyN1o5L2Z1QXZTOEVHSlBSV0lQM2taUFQ1anNCQUo1bFBPYm0vZU1TQVFEc1lrVG01SDNqR2dFQTdHWk01dUw5NHBhWHZTOEFtTXRwVlA3OC9YUG5LK0Vhdzg4ZTMwNEFmQ0VnY0lTUkdaUDNoVnZPdDk0akFPQnV4bVlzM2crTzhBZ0FlSWhIQXYwWmZ1N2hCQUFvd2dqMTRiNXpyeDhDd05jQkFJOHdSbTI1M3h6eDg4WjdCQUFVNVpGQWZZYWZFZ1FBVUlVUUtNL3dVNUt2QVFDcU1scGx1SStVZHZHWi85UHJOMTlhWHdpd1BxY0J4eGwrU3JqME5YNGVBUUROZUN5d24rR25OZ0VBTkNjRXJqUDh0SEwxci8xNURBQzBsQndEUnArYXJ2MFZmeWNBd0JBU1R3VU1QejBKQUdBbzU2TzRZZ3dZZlVaeDh6di9lUXdBakdMbUdERDY5SExyTy93NkFRQ21NTnZKZ05GbmRBSUFtTTZsY2UwWkJjYWVHVDM3dzM4OEJnQm1WaklNREQwemVlNEgvRGtCQUpabXRPR3laMzhXZ0I4UkRBQnoyYlBkZmhnUUFBUVNBQUFRYUZjQWVBd0FBSFBZdTlsT0FBQWcwTzRBY0FvQUFHTTdzdFZPQUFBZzBLRUFjQW9BQUdNNnV0Rk9BQUFnME9FQWNBb0FBR081WjV1ZEFBQkFvTHNDd0NrQUFJemgzazEyQWdBQWdlNE9BS2NBQU5EWEkxdjgwQW1BQ0FDQVBoN2RZSThBQUNEUXd3SGdGQUFBMmlxeHZVNEFBQ0JRa1FCd0NnQUFiWlRhM0dJbkFDSUFBT29xdWJVZUFRQkFvS0lCNEJRQUFPb292YkhGVHdCRUFBQ1VWV05icXp3Q0VBRUFVRWF0VGZVMUFBQVFxRm9BT0FVQWdNZlUzTktxSndBaUFBRHVVM3REcXo4Q0VBRUFjRXlMN2ZRMUFBQVFxRWtBT0FVQWdIMWFiV2F6RXdBUkFBQzN0ZHpLcG84QVJBQUFYTlo2STV0L0RZQUlBSUFmOWRqR0xsOEVLQUlBNEt0ZW05anRid0dJQUFEUzlkekNybjhOVUFRQWtLcjNCbmIvUGdDOWJ3QUF0RGJDOW5VUGdHMGI0MFlBUUF1amJONFFBYkJ0NDl3UUFLaGxwSzBiSmdDMmJhd2JBd0FsamJaeFF3WEF0bzEzZ3dEZ1VTTnUyM0FCc0cxajNpZ0F1TWVvbXpaa0FHemJ1RGNNQVBZYWVjdUdEWUJ0Ry92R0FjQXRvMi9ZMEFHd2JlUGZRQUQ0MlF6Yk5md0ZubnQ2L2VaTDcyc0FnR3RtR1A2VDRVOEF6czEwWXdISU10dEdUUlVBMnpiZkRRWmdmVE51MDNRWGZNNGpBUUI2bW5INFQ2WTdBVGczODQwSFlHNnpiOURVQWJCdDg3OEJBTXhuaGUyWi9nV2M4MGdBZ0pwV0dQNlQ2VThBenEzMHhnQXdsdFUyWnFrWGM4NXBBQUFsckRiOEowdStxSE5DQUlCN3JEcjhKMHM5QXJoazlUY1FnUElTdG1QNUYzak9hUUFBdHlRTS8wbk1DejBuQkFBNGx6VDhKM0V2K0p3UUFNaVdPUHduc1MvOG5CQUF5Skk4L0NmeE4rQ2NFQUJZbStIL3pvMjRRZ3dBck1Ib1grYW1QRU1JQU16SjhOL201aHdnQmdER1p2VDNjNlB1SkFZQXhtRDA3K09tRlNBR0FOb3krbzl6QXlzUUJBQmxHZnp5M05BR0JBSEFNUWEvUGplNEUxRUE4Sld4NzhOTkg1UkFBRlpoNE1mMFArQ2dHYk1ack1yL0FBQUFBRWxGVGtTdVFtQ0MiLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=">
+<meta name="theme-color" content="#0f3d3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="سجل المشاوير">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#16221f;
+    --paper:#eef1ee;
+    --panel:#ffffff;
+    --line:#d7ddd8;
+    --teal:#0f3d3e;
+    --teal-dim:#3c6660;
+    --gold:#b9862f;
+    --gold-soft:#f4e6cc;
+    --red:#a3402f;
+    --red-soft:#f6e3de;
+    --green:#3f6b3a;
+    --green-soft:#e3ecdf;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Tajawal',sans-serif;
+    line-height:1.55;
+  }
+  .num{font-family:'IBM Plex Mono',monospace;}
+
+  header.top{
+    background:var(--teal);
+    color:#f2efe6;
+    padding:22px 24px 0;
+  }
+  header.top .wrap{
+    max-width:1120px;
+    margin:0 auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:14px;
+    padding-bottom:18px;
+  }
+  header.top h1{
+    margin:0;
+    font-size:24px;
+    font-weight:900;
+  }
+  header.top p{
+    margin:4px 0 0;
+    font-size:13.5px;
+    color:#cfe0da;
+  }
+  .today-badge{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:8px;
+    padding:7px 13px;
+    font-size:12.5px;
+    color:#e3ece8;
+  }
+
+  nav.tabs{
+    max-width:1120px;
+    margin:0 auto;
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    padding:0 24px;
+  }
+  nav.tabs button{
+    background:none;
+    border:none;
+    color:#bcd3cc;
+    padding:12px 16px;
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button.active{
+    color:#fff;
+    border-bottom:3px solid var(--gold);
+  }
+  nav.tabs button:hover{color:#fff;}
+
+  main{
+    max-width:1120px;
+    margin:0 auto;
+    padding:22px 24px 60px;
+  }
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .card .label{
+    font-size:12.5px;
+    color:var(--teal-dim);
+    margin-bottom:6px;
+  }
+  .card .value{
+    font-size:23px;
+    font-weight:700;
+  }
+  .card.warn .value{color:var(--red);}
+  .card.good .value{color:var(--green);}
+
+  section{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+  }
+  section h2{
+    margin:0 0 16px;
+    font-size:17px;
+    font-weight:700;
+    color:var(--teal);
+    border-bottom:2px solid var(--gold-soft);
+    padding-bottom:10px;
+  }
+  section h3{
+    font-size:14.5px;
+    color:var(--teal-dim);
+    margin:0 0 10px;
+  }
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media (max-width:640px){ .grid2,.grid3{grid-template-columns:1fr;} }
+
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--teal-dim);
+    margin-bottom:5px;
+  }
+  input,select,textarea{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-family:inherit;
+    font-size:14.5px;
+    background:#fbfbfa;
+    color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{
+    outline:2px solid var(--teal-dim);
+    outline-offset:1px;
+    background:#fff;
+  }
+  .field{margin-bottom:12px;}
+
+  .row-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  button.act{
+    font-family:inherit;
+    font-size:14px;
+    border:none;
+    border-radius:7px;
+    padding:10px 18px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:#0c3132;}
+  .btn-ghost{background:transparent;color:var(--teal-dim);border:1px solid var(--line);}
+  .btn-ghost:hover{background:#f2f2f0;}
+  .btn-danger{background:var(--red-soft);color:var(--red);}
+  .btn-danger:hover{background:#f0d4cc;}
+  .btn-small{padding:6px 12px;font-size:13px;}
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .filters > div{flex:1;min-width:150px;}
+
+  .search-box{position:relative;margin-bottom:16px;}
+  .search-box input{padding-right:34px;}
+  .search-box::before{
+    content:"⌕";
+    position:absolute;
+    right:11px;top:50%;
+    transform:translateY(-50%);
+    color:var(--teal-dim);
+    font-size:16px;
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line);}
+  th{color:var(--teal-dim);font-weight:700;font-size:12.5px;white-space:nowrap;}
+  tbody tr{cursor:default;}
+  tbody tr:hover{background:#f7f8f6;}
+  .tag{
+    display:inline-block;
+    padding:2px 9px;
+    border-radius:20px;
+    font-size:12px;
+    background:var(--gold-soft);
+    color:var(--gold);
+    white-space:nowrap;
+  }
+
+  .empty{text-align:center;color:#8a938e;padding:30px 10px;font-size:14px;}
+
+  .client-row{cursor:pointer;}
+  .client-row td:first-child{color:var(--teal);font-weight:700;}
+  .client-row:hover td:first-child{text-decoration:underline;}
+
+  .client-detail{
+    border-top:2px dashed var(--line);
+    margin-top:16px;
+    padding-top:16px;
+  }
+  .client-detail .head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .client-detail .head h3{margin:0;font-size:16px;color:var(--teal);}
+  .info-line{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    font-size:13.5px;
+    color:var(--teal-dim);
+    margin-bottom:14px;
+  }
+  .info-line b{color:var(--ink);}
+  .expiry-warn{color:var(--red);font-weight:700;}
+
+  footer.note{text-align:center;color:#8a938e;font-size:12.5px;margin-top:10px;}
+
+  /* login overlay */
+  #loginOverlay{
+    position:fixed; inset:0; z-index:999;
+    background:var(--teal);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .login-box{
+    background:var(--panel);
+    border-radius:12px;
+    padding:32px 28px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+  }
+  .login-box h2{margin:0 0 6px;color:var(--teal);font-size:19px;}
+  .login-box p{margin:0 0 18px;color:var(--teal-dim);font-size:13.5px;}
+  .login-box input{text-align:center;font-size:18px;letter-spacing:3px;margin-bottom:12px;}
+  .login-err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:8px;}
+
+  .office-name{font-size:13px;color:var(--gold-soft);font-weight:700;letter-spacing:.3px;margin-bottom:2px;}
+
+  .alert-banner{
+    background:var(--red-soft);
+    border:1px solid #e4b7a8;
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:20px;
+  }
+  .alert-banner h3{margin:0 0 10px;color:var(--red);font-size:14.5px;}
+  .alert-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    background:#fff;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    font-size:13.5px;
+  }
+  .alert-item .txt b{color:var(--ink);}
+  .alert-item .btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .wa-link{
+    display:inline-block;
+    background:var(--green-soft);
+    color:var(--green);
+    padding:6px 12px;
+    border-radius:7px;
+    font-size:12.5px;
+    font-weight:700;
+    text-decoration:none;
+  }
+
+  .attach-box{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
+  .attach-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .attach-row{
+    display:flex;justify-content:space-between;align-items:center;
+    background:#f7f8f6;border-radius:8px;padding:8px 12px;font-size:13.5px;
+  }
+  .attach-row .meta{color:var(--teal-dim);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-box">
+    <h2>سجل مشاوير العملاء</h2>
+    <p>مكتب الغريب للمحاسبة والمراجعة — ادخل كلمة السر للدخول</p>
+    <input type="password" id="loginPass" maxlength="20" placeholder="كلمة السر" inputmode="numeric">
+    <div class="login-err" id="loginErr"></div>
+    <button class="act btn-primary" style="width:100%;" onclick="tryLogin()">دخول</button>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="office-name">مكتب الغريب للمحاسبة والمراجعة</div>
+      <h1>سجل مشاوير العملاء</h1>
+      <p>متابعة مصاريف المواصلات والحساب مع صاحب المكتب</p>
+    </div>
+    <div class="today-badge" id="todayBadge"></div>
+  </div>
+  <nav class="tabs" id="tabsNav">
+    <button data-tab="home" class="active">الرئيسية</button>
+    <button data-tab="trip">تسجيل مشوار</button>
+    <button data-tab="log">سجل المشاوير</button>
+    <button data-tab="clientExpenses">مصاريف كل عميل</button>
+    <button data-tab="clients">العملاء</button>
+    <button data-tab="cash">الحساب مع صاحب المكتب</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <div class="panel active" id="panel-home">
+    <div id="expiryAlertsBox"></div>
+    <div class="cards" id="summaryCards"></div>
+    <section>
+      <h2>أكثر العملاء تكلفة (الشهر الحالي)</h2>
+      <div id="clientBars"></div>
+    </section>
+    <section>
+      <h2>إعدادات التنبيهات</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>رقم الواتساب لإرسال التنبيهات (بالصيغة الدولية، مثال: 201012345678)</label>
+          <input type="text" id="waNumberInput" placeholder="201xxxxxxxxx">
+        </div>
+        <div class="field" style="display:flex;align-items:end;">
+          <div class="row-actions" style="margin-top:0;">
+            <button class="act btn-ghost btn-small" onclick="saveWaNumber()">حفظ الرقم</button>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--teal-dim);margin:0;">التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك.</p>
+    </section>
+  </div>
+
+  <!-- ADD TRIP -->
+  <div class="panel" id="panel-trip">
+    <section>
+      <h2>إضافة مشوار جديد</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>العميل (اكتب علشان تدور)</label>
+          <input list="clientNamesList" id="tripClientName" placeholder="اسم الشركة أو العميل">
+          <datalist id="clientNamesList"></datalist>
+        </div>
+        <div class="field">
+          <label>نوع المشوار</label>
+          <select id="tripType">
+            <option>مصلحة الضرائب</option>
+            <option>التأمينات الاجتماعية</option>
+            <option>السجل التجاري</option>
+            <option>الغرفة التجارية</option>
+            <option>الفوترة الإلكترونية</option>
+            <option>البنك</option>
+            <option>أخرى</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>الجهة / الفرع (اختياري)</label>
+          <input type="text" id="tripPlace" placeholder="مثال: مأمورية ضرائب المهندسين">
+        </div>
+        <div class="field">
+          <label>التاريخ</label>
+          <input type="date" id="tripDate">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>تكلفة المواصلات (جنيه)</label>
+          <input type="number" id="tripCost" placeholder="0" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label>ملاحظة (اختياري)</label>
+          <input type="text" id="tripNote" placeholder="تاكسي، أوبر، مترو...">
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="act btn-primary" id="tripSaveBtn" onclick="saveTrip()">حفظ المشوار</button>
+        <button class="act btn-ghost" id="tripCancelBtn" style="display:none;" onclick="resetTripForm()">إلغاء التعديل</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- TRIPS LOG -->
+  <div class="panel" id="panel-log">
+    <section>
+      <h2>سجل المشاوير</h2>
+      <div class="filters">
+        <div>
+          <label>فلترة بالعميل</label>
+          <select id="filterClient"><option value="">كل العملاء</option></select>
+        </div>
+        <div>
+          <label>فلترة بالشهر</label>
+          <input type="month" id="filterMonth">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="tripsTable">
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>العميل</th>
+              <th>النوع</th>
+              <th>الجهة</th>
+              <th>التكلفة</th>
+              <th colspan="2"></th>
+            </tr>
+          </thead>
+          <tbody id="tripsBody"></tbody>
+        </table>
+        <div class="empty" id="emptyMsg" style="display:none;">مفيش مشاوير مسجلة لسه، ضيفها من تاب "تسجيل مشوار"</div>
+      </div>
+      <div class="row-actions">
+        <button class="act btn-ghost btn-small" onclick="exportExcel()">تصدير فاتورة Excel</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- CLIENT EXPENSES -->
+  <div class="panel" id="panel-clientExpenses">
+    <section>
+      <h2>مصاريف كل عميل</h2>
+      <div class="search-box">
+        <input type="text" id="clientExpSearch" placeholder="دور باسم العميل...">
+      </div>
+      <table>
+        <thead>
+          <tr><th>العميل</th><th>مصاريف الشهر الحالي</th><th>إجمالي كل الوقت</th></tr>
+        </thead>
+        <tbody id="clientExpBody"></tbody>
+      </table>
+      <div class="empty" id="clientExpEmpty" style="display:none;">مفيش عملاء لسه</div>
+      <div id="clientDetailBox"></div>
+    </section>
+  </div>
+
+  <!-- CLIENTS -->
+  <div class="panel" id="panel-clients">
+    <section>
+      <h2>إضافة / تعديل عميل</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>اسم العميل / الشركة</label>
+          <input type="text" id="cName" placeholder="اسم الشركة">
+        </div>
+        <div class="field">
+          <label>المأمورية</label>
+          <input type="text" id="cTaxOffice" placeholder="مثال: مأمورية ضرائب الجيزة">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>رقم التليفون</label>
+          <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
+        </div>
+        <div class="field">
+          <label>تاريخ انتهاء السجل التجاري</label>
+          <input type="date" id="cCrExpiry">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>تاريخ انتهاء البطاقة الضريبية</label>
+          <input type="date" id="cTaxCardExpiry">
+        </div>
+        <div class="field" style="display:flex;align-items:end;">
+          <div class="row-actions" style="margin-top:0;">
+            <button class="act btn-primary" onclick="saveClient()" id="clientSaveBtn">حفظ العميل</button>
+            <button class="act btn-ghost" onclick="resetClientForm()" id="clientCancelBtn" style="display:none;">إلغاء التعديل</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>كل العملاء</h2>
+      <div class="search-box">
+        <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th></th></tr>
+          </thead>
+          <tbody id="clientsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="clientsEmpty" style="display:none;">مفيش عملاء مسجلين لسه</div>
+    </section>
+  </div>
+
+  <!-- CASH WITH OFFICE OWNER -->
+  <div class="panel" id="panel-cash">
+    <div class="cards" id="cashCards"></div>
+    <section>
+      <h2>تسجيل مبلغ مستلم من صاحب المكتب</h2>
+      <div class="grid3">
+        <div class="field">
+          <label>التاريخ</label>
+          <input type="date" id="cashDate">
+        </div>
+        <div class="field">
+          <label>المبلغ (جنيه)</label>
+          <input type="number" id="cashAmount" min="0" step="1" placeholder="0">
+        </div>
+        <div class="field">
+          <label>ملاحظة (اختياري)</label>
+          <input type="text" id="cashNote" placeholder="مثال: عهدة الأسبوع">
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="act btn-primary" onclick="addCashReceipt()">حفظ المبلغ</button>
+      </div>
+    </section>
+    <section>
+      <h2>سجل المبالغ المستلمة</h2>
+      <table>
+        <thead><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr></thead>
+        <tbody id="cashBody"></tbody>
+      </table>
+      <div class="empty" id="cashEmpty" style="display:none;">لسه مفيش مبالغ متسجلة</div>
+    </section>
+  </div>
+
+  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) — من غير سيرفر أو انترنت</footer>
+
+</main>
+
+<script>
+const CKEY = 'mishwar_clients_v2';
+const TKEY = 'mishwar_trips_v2';
+const RKEY = 'mishwar_receipts_v2';
+const WAKEY = 'mishwar_wa_number';
+
+const APP_PASSWORD = '35659702';
+const EDIT_PIN = '9697';
+
+function tryLogin(){
+  const val = document.getElementById('loginPass').value;
+  if(val === APP_PASSWORD){
+    sessionStorage.setItem('mishwar_unlocked','yes');
+    document.getElementById('loginOverlay').style.display = 'none';
+  } else {
+    document.getElementById('loginErr').textContent = 'كلمة السر غلط، حاول تاني';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryLogin(); });
+if(sessionStorage.getItem('mishwar_unlocked') === 'yes'){
+  document.getElementById('loginOverlay').style.display = 'none';
+}
+
+function requirePin(cb){
+  const p = prompt('ادخل كود التعديل:');
+  if(p === null) return;
+  if(p === EDIT_PIN){ cb(); } else { alert('الكود غير صحيح'); }
+}
+
+function loadClients(){ return JSON.parse(localStorage.getItem(CKEY) || '[]'); }
+function saveClients(c){ localStorage.setItem(CKEY, JSON.stringify(c)); }
+function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY) || '[]'); }
+function saveTrips(t){ localStorage.setItem(TKEY, JSON.stringify(t)); }
+function loadReceipts(){ return JSON.parse(localStorage.getItem(RKEY) || '[]'); }
+function saveReceipts(r){ localStorage.setItem(RKEY, JSON.stringify(r)); }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function escapeHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------- TABS ---------- */
+document.getElementById('tabsNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  if(btn.dataset.tab === 'clientExpenses') renderClientExpensesTab();
+  if(btn.dataset.tab === 'clients') renderClientsTab();
+  if(btn.dataset.tab === 'cash') renderCashTab();
+  if(btn.dataset.tab === 'log') renderLogTab();
+  if(btn.dataset.tab === 'home') renderHomeTab();
+});
+
+function renderTodayBadge(){
+  const d = new Date();
+  document.getElementById('todayBadge').textContent = d.toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+/* ---------- CLIENTS ---------- */
+function clientName(id){
+  const c = loadClients().find(x=>x.id===id);
+  return c ? c.name : '—';
+}
+
+function populateClientHelpers(){
+  const clients = loadClients();
+  document.getElementById('clientNamesList').innerHTML = clients.map(c=>`<option value="${escapeHtml(c.name)}">`).join('');
+  const filterSel = document.getElementById('filterClient');
+  const prev = filterSel.value;
+  filterSel.innerHTML = '<option value="">كل العملاء</option>' + clients.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if(clients.some(c=>c.id===prev)) filterSel.value = prev;
+}
+
+let editingClientId = null;
+
+function saveClient(){
+  const name = document.getElementById('cName').value.trim();
+  if(!name){ document.getElementById('cName').focus(); return; }
+  const data = {
+    name,
+    taxOffice: document.getElementById('cTaxOffice').value.trim(),
+    phone: document.getElementById('cPhone').value.trim(),
+    crExpiry: document.getElementById('cCrExpiry').value,
+    taxCardExpiry: document.getElementById('cTaxCardExpiry').value,
+  };
+  const clients = loadClients();
+  if(editingClientId){
+    const c = clients.find(x=>x.id===editingClientId);
+    Object.assign(c, data);
+  } else {
+    clients.push({id: uid(), ...data});
+  }
+  saveClients(clients);
+  resetClientForm();
+  populateClientHelpers();
+  renderClientsTab();
+}
+
+function resetClientForm(){
+  editingClientId = null;
+  document.getElementById('cName').value = '';
+  document.getElementById('cTaxOffice').value = '';
+  document.getElementById('cPhone').value = '';
+  document.getElementById('cCrExpiry').value = '';
+  document.getElementById('cTaxCardExpiry').value = '';
+  document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
+  document.getElementById('clientCancelBtn').style.display = 'none';
+}
+
+function editClient(id){
+  const c = loadClients().find(x=>x.id===id);
+  if(!c) return;
+  editingClientId = id;
+  document.getElementById('cName').value = c.name;
+  document.getElementById('cTaxOffice').value = c.taxOffice || '';
+  document.getElementById('cPhone').value = c.phone || '';
+  document.getElementById('cCrExpiry').value = c.crExpiry || '';
+  document.getElementById('cTaxCardExpiry').value = c.taxCardExpiry || '';
+  document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
+  document.getElementById('clientCancelBtn').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function deleteClient(id){
+  if(!confirm('تشيل العميل ده؟ (المشاوير المسجلة له هتفضل موجودة في السجل)')) return;
+  saveClients(loadClients().filter(c=>c.id!==id));
+  populateClientHelpers();
+  renderClientsTab();
+}
+
+function isExpiringSoon(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr);
+  const diffDays = (d - new Date()) / 86400000;
+  return diffDays < 30;
+}
+
+function renderClientsTab(){
+  const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const body = document.getElementById('clientsBody');
+  const empty = document.getElementById('clientsEmpty');
+  if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  body.innerHTML = clients.map(c => `
+    <tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.taxOffice)||'—'}</td>
+      <td class="num">${escapeHtml(c.phone)||'—'}</td>
+      <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
+      <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
+      <td>
+        <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
+        <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
+      </td>
+    </tr>
+  `).join('');
+}
+document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
+
+/* ---------- TRIPS ---------- */
+let editingTripId = null;
+
+function saveTrip(){
+  const typedName = document.getElementById('tripClientName').value.trim();
+  if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
+  let clients = loadClients();
+  let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
+  if(!client){
+    if(!confirm(`العميل "${typedName}" مش مسجل، تحب تضيفه دلوقتي؟`)) return;
+    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:''};
+    clients.push(client);
+    saveClients(clients);
+    populateClientHelpers();
+  }
+
+  const type = document.getElementById('tripType').value;
+  const place = document.getElementById('tripPlace').value.trim();
+  const date = document.getElementById('tripDate').value || todayStr();
+  const cost = parseFloat(document.getElementById('tripCost').value) || 0;
+  const note = document.getElementById('tripNote').value.trim();
+
+  const trips = loadTrips();
+  if(editingTripId){
+    const t = trips.find(x=>x.id===editingTripId);
+    if(t) Object.assign(t, {clientId: client.id, type, place, date, cost, note});
+  } else {
+    trips.push({id: uid(), clientId: client.id, type, place, date, cost, note});
+  }
+  saveTrips(trips);
+  resetTripForm();
+  renderHomeTab();
+  renderLogTab();
+}
+
+function startEditTrip(id){
+  const t = loadTrips().find(x=>x.id===id);
+  if(!t) return;
+  editingTripId = id;
+  document.getElementById('tripClientName').value = clientName(t.clientId);
+  document.getElementById('tripType').value = t.type;
+  document.getElementById('tripPlace').value = t.place || '';
+  document.getElementById('tripDate').value = t.date;
+  document.getElementById('tripCost').value = t.cost;
+  document.getElementById('tripNote').value = t.note || '';
+  document.getElementById('tripSaveBtn').textContent = 'حفظ التعديلات';
+  document.getElementById('tripCancelBtn').style.display = 'inline-block';
+  document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('#tabsNav button[data-tab="trip"]').classList.add('active');
+  document.getElementById('panel-trip').classList.add('active');
+}
+
+function resetTripForm(){
+  editingTripId = null;
+  document.getElementById('tripClientName').value = '';
+  document.getElementById('tripPlace').value = '';
+  document.getElementById('tripCost').value = '';
+  document.getElementById('tripNote').value = '';
+  document.getElementById('tripDate').value = '';
+  document.getElementById('tripSaveBtn').textContent = 'حفظ المشوار';
+  document.getElementById('tripCancelBtn').style.display = 'none';
+}
+
+function doDeleteTrip(id){
+  saveTrips(loadTrips().filter(t=>t.id!==id));
+  renderLogTab();
+  renderHomeTab();
+}
+function deleteTrip(id){ requirePin(()=>doDeleteTrip(id)); }
+function editTrip(id){ requirePin(()=>startEditTrip(id)); }
+
+function getFilteredTrips(){
+  const trips = loadTrips();
+  const fc = document.getElementById('filterClient').value;
+  const fm = document.getElementById('filterMonth').value;
+  return trips.filter(t => {
+    if(fc && t.clientId !== fc) return false;
+    if(fm && !t.date.startsWith(fm)) return false;
+    return true;
+  }).sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function renderLogTab(){
+  const trips = getFilteredTrips();
+  const body = document.getElementById('tripsBody');
+  const empty = document.getElementById('emptyMsg');
+  if(trips.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  body.innerHTML = trips.map(t => `
+    <tr>
+      <td class="num">${t.date}</td>
+      <td>${escapeHtml(clientName(t.clientId))}</td>
+      <td><span class="tag">${escapeHtml(t.type)}</span></td>
+      <td>${escapeHtml(t.place) || '—'}</td>
+      <td class="num">${t.cost.toFixed(2)}</td>
+      <td><button class="act btn-ghost btn-small" onclick="editTrip('${t.id}')">تعديل</button></td>
+      <td><button class="act btn-danger btn-small" onclick="deleteTrip('${t.id}')">حذف</button></td>
+    </tr>
+  `).join('');
+}
+document.getElementById('filterClient').addEventListener('change', renderLogTab);
+document.getElementById('filterMonth').addEventListener('change', renderLogTab);
+
+function exportExcel(){
+  const trips = getFilteredTrips();
+  if(trips.length===0){ alert('مفيش بيانات للتصدير في الفلتر الحالي'); return; }
+
+  const rows = trips.map(t => ({
+    'التاريخ': t.date,
+    'العميل': clientName(t.clientId),
+    'نوع المشوار': t.type,
+    'الجهة': t.place || '',
+    'التكلفة (جنيه)': t.cost,
+    'ملاحظة': t.note || ''
+  }));
+  const totalRow = { 'التاريخ':'', 'العميل':'', 'نوع المشوار':'', 'الجهة':'الإجمالي', 'التكلفة (جنيه)': trips.reduce((s,t)=>s+t.cost,0), 'ملاحظة':'' };
+  rows.push(totalRow);
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:26},{wch:20},{wch:24},{wch:14},{wch:24}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'مشاوير');
+  XLSX.writeFile(wb, 'فاتورة_مشاوير_' + todayStr() + '.xlsx');
+}
+
+/* ---------- EXPIRY ALERTS ---------- */
+function saveWaNumber(){
+  const val = document.getElementById('waNumberInput').value.trim().replace(/[^0-9]/g,'');
+  localStorage.setItem(WAKEY, val);
+  alert('اتحفظ الرقم');
+}
+
+function getExpiringDocs(){
+  const clients = loadClients();
+  const now = new Date();
+  const list = [];
+  clients.forEach(c=>{
+    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية']].forEach(([field,label])=>{
+      if(c[field]){
+        const d = new Date(c[field]);
+        const days = Math.ceil((d-now)/86400000);
+        if(days <= 15){
+          list.push({ clientName: c.name, docLabel: label, date: c[field], days });
+        }
+      }
+    });
+  });
+  return list.sort((a,b)=>a.days-b.days);
+}
+
+function renderExpiryAlerts(){
+  const box = document.getElementById('expiryAlertsBox');
+  const items = getExpiringDocs();
+  if(items.length===0){ box.innerHTML=''; return; }
+  const waNumber = localStorage.getItem(WAKEY) || '';
+
+  box.innerHTML = `
+    <div class="alert-banner">
+      <h3>⚠ مستندات قربت تنتهي (خلال 15 يوم أو منتهية)</h3>
+      ${items.map(it => {
+        const statusTxt = it.days < 0 ? `منتهي من ${Math.abs(it.days)} يوم` : `متبقي ${it.days} يوم`;
+        const msg = `تنبيه: ${it.docLabel} الخاص بـ "${it.clientName}" ${it.days<0 ? 'منتهي بتاريخ' : 'هينتهي بتاريخ'} ${it.date} (${statusTxt}).`;
+        const wa = waNumber ? `<a class="wa-link" target="_blank" href="https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}">واتساب</a>` : '';
+        return `
+          <div class="alert-item">
+            <div class="txt"><b>${escapeHtml(it.clientName)}</b> — ${it.docLabel} — ${it.date} (${statusTxt})</div>
+            <div class="btns">
+              ${wa}
+              <button class="act btn-ghost btn-small" onclick="copyAlertText('${escapeHtml(msg).replace(/'/g,"\\'")}')">نسخ للإيميل</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function copyAlertText(msg){
+  navigator.clipboard.writeText(msg).then(()=>alert('اتنسخ النص، الصقه في إيميل أو واتساب')).catch(()=>alert('حصل خطأ في النسخ'));
+}
+
+/* ---------- HOME ---------- */
+function renderHomeTab(){
+  renderExpiryAlerts();
+  const waSaved = localStorage.getItem(WAKEY);
+  if(waSaved && document.getElementById('waNumberInput')) document.getElementById('waNumberInput').value = waSaved;
+  const trips = loadTrips();
+  const receipts = loadReceipts();
+  const thisMonth = todayStr().slice(0,7);
+  const thisMonthTrips = trips.filter(t => t.date.startsWith(thisMonth));
+  const totalThisMonth = thisMonthTrips.reduce((s,t)=>s+t.cost,0);
+  const totalAllTime = trips.reduce((s,t)=>s+t.cost,0);
+  const totalReceived = receipts.reduce((s,r)=>s+r.amount,0);
+  const balance = totalReceived - totalAllTime;
+
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="card">
+      <div class="label">مصاريف الشهر الحالي</div>
+      <div class="value num">${totalThisMonth.toFixed(0)} ج.م</div>
+    </div>
+    <div class="card">
+      <div class="label">عدد مشاوير الشهر</div>
+      <div class="value num">${thisMonthTrips.length}</div>
+    </div>
+    <div class="card ${balance<0?'warn':'good'}">
+      <div class="label">المتبقي معاك من صاحب المكتب</div>
+      <div class="value num">${balance.toFixed(0)} ج.م</div>
+    </div>
+  `;
+
+  const clients = loadClients();
+  const totals = clients.map(c => ({
+    name: c.name,
+    total: thisMonthTrips.filter(t=>t.clientId===c.id).reduce((s,t)=>s+t.cost,0)
+  })).filter(t=>t.total>0).sort((a,b)=>b.total-a.total).slice(0,10);
+
+  const box = document.getElementById('clientBars');
+  if(totals.length===0){
+    box.innerHTML = '<div class="empty">مفيش مصاريف مسجلة للشهر ده لسه</div>';
+    return;
+  }
+  const max = Math.max(...totals.map(t=>t.total), 1);
+  box.innerHTML = totals.map(t => `
+    <div style="display:grid;grid-template-columns:140px 1fr 90px;align-items:center;gap:10px;margin-bottom:10px;font-size:13.5px;">
+      <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.name)}</div>
+      <div style="background:#eceeec;border-radius:6px;height:10px;overflow:hidden;">
+        <div style="background:var(--gold);height:100%;border-radius:6px;width:${(t.total/max*100).toFixed(0)}%"></div>
+      </div>
+      <div class="num" style="text-align:left;color:var(--teal-dim);">${t.total.toFixed(0)} ج.م</div>
+    </div>
+  `).join('');
+}
+
+/* ---------- CLIENT EXPENSES TAB ---------- */
+let openClientDetailId = null;
+
+function renderClientExpensesTab(){
+  const q = (document.getElementById('clientExpSearch').value || '').trim().toLowerCase();
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const trips = loadTrips();
+  const thisMonth = todayStr().slice(0,7);
+
+  const body = document.getElementById('clientExpBody');
+  const empty = document.getElementById('clientExpEmpty');
+  if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; document.getElementById('clientDetailBox').innerHTML=''; return; }
+  empty.style.display='none';
+
+  body.innerHTML = clients.map(c => {
+    const cTrips = trips.filter(t=>t.clientId===c.id);
+    const monthTotal = cTrips.filter(t=>t.date.startsWith(thisMonth)).reduce((s,t)=>s+t.cost,0);
+    const allTotal = cTrips.reduce((s,t)=>s+t.cost,0);
+    return `
+      <tr class="client-row" onclick="toggleClientDetail('${c.id}')">
+        <td>${escapeHtml(c.name)}</td>
+        <td class="num">${monthTotal.toFixed(0)} ج.م</td>
+        <td class="num">${allTotal.toFixed(0)} ج.م</td>
+      </tr>
+    `;
+  }).join('');
+
+  if(openClientDetailId && clients.some(c=>c.id===openClientDetailId)){
+    renderClientDetail(openClientDetailId);
+  } else {
+    document.getElementById('clientDetailBox').innerHTML = '';
+  }
+}
+document.getElementById('clientExpSearch').addEventListener('input', renderClientExpensesTab);
+
+function toggleClientDetail(id){
+  openClientDetailId = (openClientDetailId === id) ? null : id;
+  renderClientExpensesTab();
+}
+
+async function renderClientDetail(id){
+  const c = loadClients().find(x=>x.id===id);
+  if(!c) return;
+  const trips = loadTrips().filter(t=>t.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
+  const total = trips.reduce((s,t)=>s+t.cost,0);
+
+  const rows = trips.map(t => `
+    <tr>
+      <td class="num">${t.date}</td>
+      <td><span class="tag">${escapeHtml(t.type)}</span></td>
+      <td>${escapeHtml(t.place)||'—'}</td>
+      <td class="num">${t.cost.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  let files = [];
+  try{ files = await getFilesForClient(id); }catch(e){ files = []; }
+  const fileRows = files.map(f => `
+    <div class="attach-row">
+      <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${id}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${id}'))">حذف</button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('clientDetailBox').innerHTML = `
+    <div class="client-detail">
+      <div class="head">
+        <h3>${escapeHtml(c.name)}</h3>
+        <span class="tag" style="font-size:14px;">إجمالي: ${total.toFixed(0)} ج.م</span>
+      </div>
+      <div class="info-line">
+        <span>المأمورية: <b>${escapeHtml(c.taxOffice)||'—'}</b></span>
+        <span>التليفون: <b>${escapeHtml(c.phone)||'—'}</b></span>
+        <span>انتهاء السجل التجاري: <b class="${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</b></span>
+        <span>انتهاء البطاقة الضريبية: <b class="${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</b></span>
+      </div>
+      <table>
+        <thead><tr><th>التاريخ</th><th>النوع</th><th>الجهة</th><th>التكلفة</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" class="empty">مفيش مشاوير مسجلة للعميل ده لسه</td></tr>'}</tbody>
+      </table>
+      <div class="attach-box">
+        <h3 style="margin:0 0 8px;color:var(--teal);font-size:14.5px;">أوراق ومستندات العميل</h3>
+        <input type="file" multiple onchange="handleFileUpload('${id}', this)">
+        <div class="attach-list">
+          ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
+const FILES_DB_NAME = 'mishwar_files_db';
+function openFilesDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(FILES_DB_NAME, 1);
+    req.onupgradeneeded = (e)=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('files')){
+        const store = d.createObjectStore('files',{keyPath:'id'});
+        store.createIndex('clientId','clientId',{unique:false});
+      }
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+
+async function addFilesToClient(clientId, fileList){
+  const db = await openFilesDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('files','readwrite');
+    const store = tx.objectStore('files');
+    Array.from(fileList).forEach(file => {
+      store.put({ id: uid(), clientId, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
+    });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getFilesForClient(clientId){
+  const db = await openFilesDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('files','readonly');
+    const req = tx.objectStore('files').index('clientId').getAll(clientId);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+
+async function deleteClientFile(id, clientId){
+  const db = await openFilesDB();
+  await new Promise((resolve,reject)=>{
+    const tx = db.transaction('files','readwrite');
+    tx.objectStore('files').delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  renderClientDetail(clientId);
+}
+
+function fmtSize(bytes){
+  if(bytes < 1024) return bytes + ' بايت';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' ك.ب';
+  return (bytes/(1024*1024)).toFixed(1) + ' م.ب';
+}
+
+async function handleFileUpload(clientId, inputEl){
+  if(!inputEl.files.length) return;
+  await addFilesToClient(clientId, inputEl.files);
+  inputEl.value = '';
+  renderClientDetail(clientId);
+}
+
+async function downloadClientFile(id, clientId){
+  const files = await getFilesForClient(clientId);
+  const f = files.find(x=>x.id===id);
+  if(!f) return;
+  const url = URL.createObjectURL(f.blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = f.name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- CASH WITH OFFICE OWNER ---------- */
+function addCashReceipt(){
+  const date = document.getElementById('cashDate').value || todayStr();
+  const amount = parseFloat(document.getElementById('cashAmount').value) || 0;
+  const note = document.getElementById('cashNote').value.trim();
+  if(amount<=0){ alert('اكتب مبلغ صحيح'); return; }
+  const receipts = loadReceipts();
+  receipts.push({id: uid(), date, amount, note});
+  saveReceipts(receipts);
+  document.getElementById('cashDate').value = '';
+  document.getElementById('cashAmount').value = '';
+  document.getElementById('cashNote').value = '';
+  renderCashTab();
+  renderHomeTab();
+}
+
+function deleteReceipt(id){
+  if(!confirm('تشيل المبلغ ده من السجل؟')) return;
+  saveReceipts(loadReceipts().filter(r=>r.id!==id));
+  renderCashTab();
+  renderHomeTab();
+}
+
+function renderCashTab(){
+  const receipts = loadReceipts().sort((a,b)=>b.date.localeCompare(a.date));
+  const totalReceived = receipts.reduce((s,r)=>s+r.amount,0);
+  const totalSpent = loadTrips().reduce((s,t)=>s+t.cost,0);
+  const balance = totalReceived - totalSpent;
+
+  document.getElementById('cashCards').innerHTML = `
+    <div class="card"><div class="label">إجمالي المستلم من صاحب المكتب</div><div class="value num">${totalReceived.toFixed(0)} ج.م</div></div>
+    <div class="card"><div class="label">إجمالي مصاريف المشاوير (كل الوقت)</div><div class="value num">${totalSpent.toFixed(0)} ج.م</div></div>
+    <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي معاك دلوقتي</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
+  `;
+
+  const body = document.getElementById('cashBody');
+  const empty = document.getElementById('cashEmpty');
+  if(receipts.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  body.innerHTML = receipts.map(r => `
+    <tr>
+      <td class="num">${r.date}</td>
+      <td class="num">${r.amount.toFixed(0)}</td>
+      <td>${escapeHtml(r.note)||'—'}</td>
+      <td><button class="act btn-danger btn-small" onclick="deleteReceipt('${r.id}')">حذف</button></td>
+    </tr>
+  `).join('');
+}
+
+/* ---------- INIT ---------- */
+renderTodayBadge();
+populateClientHelpers();
+renderHomeTab();
+
+
+</script>
+
+</body>
+</html>
