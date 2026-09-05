@@ -571,6 +571,12 @@
           <label>تاريخ انتهاء البطاقة الضريبية</label>
           <input type="date" id="cTaxCardExpiry">
         </div>
+        <div class="field">
+          <label>تاريخ انتهاء التوكن</label>
+          <input type="date" id="cTokenExpiry">
+        </div>
+      </div>
+      <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
           <div class="row-actions" style="margin-top:0;">
             <button class="act btn-primary" onclick="saveClient()" id="clientSaveBtn">حفظ العميل</button>
@@ -588,7 +594,7 @@
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th></th></tr>
+            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء التوكن</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -975,6 +981,7 @@ function saveClient(){
     phone: document.getElementById('cPhone').value.trim(),
     crExpiry: document.getElementById('cCrExpiry').value,
     taxCardExpiry: document.getElementById('cTaxCardExpiry').value,
+    tokenExpiry: document.getElementById('cTokenExpiry').value,
   };
   const clients = loadClients();
   if(editingClientId){
@@ -996,6 +1003,7 @@ function resetClientForm(){
   document.getElementById('cPhone').value = '';
   document.getElementById('cCrExpiry').value = '';
   document.getElementById('cTaxCardExpiry').value = '';
+  document.getElementById('cTokenExpiry').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -1009,6 +1017,7 @@ function editClient(id){
   document.getElementById('cPhone').value = c.phone || '';
   document.getElementById('cCrExpiry').value = c.crExpiry || '';
   document.getElementById('cTaxCardExpiry').value = c.taxCardExpiry || '';
+  document.getElementById('cTokenExpiry').value = c.tokenExpiry || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1042,6 +1051,7 @@ function renderClientsTab(){
       <td class="num">${escapeHtml(c.phone)||'—'}</td>
       <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
+      <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
       <td>
         <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
         <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
@@ -1061,7 +1071,7 @@ function saveTrip(){
   let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
   if(!client){
     if(!confirm(`العميل "${typedName}" مش مسجل، تحب تضيفه دلوقتي؟`)) return;
-    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:''};
+    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:''};
     clients.push(client);
     saveClients(clients);
     populateClientHelpers();
@@ -1189,7 +1199,7 @@ function getExpiringDocs(){
   const now = new Date();
   const list = [];
   clients.forEach(c=>{
-    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية']].forEach(([field,label])=>{
+    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية'],['tokenExpiry','التوكن']].forEach(([field,label])=>{
       if(c[field]){
         const d = new Date(c[field]);
         const days = Math.ceil((d-now)/86400000);
@@ -1363,6 +1373,7 @@ async function renderClientDetail(id){
         <span>التليفون: <b>${escapeHtml(c.phone)||'—'}</b></span>
         <span>انتهاء السجل التجاري: <b class="${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</b></span>
         <span>انتهاء البطاقة الضريبية: <b class="${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</b></span>
+        <span>انتهاء التوكن: <b class="${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</b></span>
       </div>
       <table>
         <thead><tr><th>التاريخ</th><th>النوع</th><th>الجهة</th><th>التكلفة</th></tr></thead>
