@@ -1487,6 +1487,11 @@ function renderCashTab(){
   `).join('');
 }
 
+function reminderWaLink(r){
+  const msg = `تنبيه: ${r.text} — التاريخ المطلوب: ${r.date}`;
+  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
+
 /* ---------- REMINDERS ---------- */
 function addReminder(){
   const text = document.getElementById('reminderText').value.trim();
@@ -1538,6 +1543,7 @@ function renderAlertsTab(){
             <div class="reminder-text">${escapeHtml(r.text)}</div>
             <div class="reminder-date">${isDue?'مطلوب تنفيذه: ':'التاريخ: '}${r.date}</div>
           </div>
+          <a class="wa-link" target="_blank" href="${reminderWaLink(r)}">واتساب</a>
           <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
         </div>
       `;
@@ -1558,6 +1564,7 @@ function renderAlertsTab(){
           <div class="reminder-text">${escapeHtml(r.text)}</div>
           <div class="reminder-date">التاريخ: ${r.date}</div>
         </div>
+        <a class="wa-link" target="_blank" href="${reminderWaLink(r)}">واتساب</a>
         <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
       </div>
     `).join('');
