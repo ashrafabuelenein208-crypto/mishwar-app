@@ -587,6 +587,18 @@
     </section>
 
     <section>
+      <h2>استيراد عملاء من إكسيل</h2>
+      <p style="color:#6b7280; font-size:14px; margin-bottom:10px;">
+        ارفع ملف إكسيل فيه كل العملاء دفعة واحدة بدل ما تضيفهم واحد واحد. لو مش عندك ملف جاهز، حمّل النموذج الأول واملاه بنفس ترتيب الأعمدة.
+      </p>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-ghost" onclick="downloadClientTemplate()">تحميل نموذج إكسيل</button>
+        <button class="act btn-primary" onclick="document.getElementById('clientImportFile').click()">استيراد من إكسيل</button>
+        <input type="file" id="clientImportFile" accept=".xlsx,.xls" style="display:none;" onchange="importClientsFromExcel(event)">
+      </div>
+    </section>
+
+    <section>
       <h2>كل العملاء</h2>
       <div class="search-box">
         <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
@@ -1030,6 +1042,94 @@ function deleteClient(id){
   saveClients(loadClients().filter(c=>c.id!==id));
   populateClientHelpers();
   renderClientsTab();
+}
+
+function excelCellToDateStr(val){
+  if(!val) return '';
+  if(val instanceof Date && !isNaN(val)){
+    const y = val.getFullYear(), m = String(val.getMonth()+1).padStart(2,'0'), d = String(val.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(val).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  return '';
+}
+
+async function downloadClientTemplate(){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('عملاء');
+  ws.views = [{ rightToLeft: true }];
+  ws.columns = [
+    { header: 'اسم العميل / الشركة', key: 'name', width: 30 },
+    { header: 'المأمورية', key: 'taxOffice', width: 26 },
+    { header: 'رقم التليفون', key: 'phone', width: 16 },
+    { header: 'انتهاء السجل التجاري (YYYY-MM-DD)', key: 'crExpiry', width: 28 },
+    { header: 'انتهاء البطاقة الضريبية (YYYY-MM-DD)', key: 'taxCardExpiry', width: 30 },
+    { header: 'انتهاء التوكن (YYYY-MM-DD)', key: 'tokenExpiry', width: 24 },
+  ];
+  ws.getRow(1).font = { bold: true };
+  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.addRow({ name: 'مثال: شركة النور للتجارة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', tokenExpiry: '2026-12-01' });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'نموذج_استيراد_عملاء.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function importClientsFromExcel(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  try{
+    const buffer = await file.arrayBuffer();
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buffer);
+    const ws = wb.worksheets[0];
+    if(!ws){ alert('الملف فاضي أو مش صيغة إكسيل صحيحة'); event.target.value = ''; return; }
+
+    const clients = loadClients();
+    const existingNames = new Set(clients.map(c => c.name.trim().toLowerCase()));
+    let added = 0, skipped = 0, invalid = 0;
+
+    ws.eachRow((row, rowNumber) => {
+      if(rowNumber === 1) return; // header row
+      const vals = row.values; // 1-indexed
+      const name = vals[1] ? String(vals[1]).trim() : '';
+      if(!name){ invalid++; return; }
+      if(existingNames.has(name.toLowerCase())){ skipped++; return; }
+
+      clients.push({
+        id: uid(),
+        name,
+        taxOffice: vals[2] ? String(vals[2]).trim() : '',
+        phone: vals[3] ? String(vals[3]).trim() : '',
+        crExpiry: excelCellToDateStr(vals[4]),
+        taxCardExpiry: excelCellToDateStr(vals[5]),
+        tokenExpiry: excelCellToDateStr(vals[6]),
+      });
+      existingNames.add(name.toLowerCase());
+      added++;
+    });
+
+    saveClients(clients);
+    populateClientHelpers();
+    renderClientsTab();
+    alert(`تم الاستيراد ✅\nتمت إضافة: ${added} عميل\nمتخطى (موجود بالفعل): ${skipped}\nصفوف بدون اسم: ${invalid}`);
+  }catch(err){
+    console.error(err);
+    alert('حصل خطأ أثناء قراءة الملف. اتأكد إنه ملف Excel (.xlsx) سليم.');
+  }finally{
+    event.target.value = '';
+  }
 }
 
 function isExpiringSoon(dateStr){
