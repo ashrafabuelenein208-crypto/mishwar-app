@@ -324,6 +324,21 @@
     background:#f7f8f6;border-radius:8px;padding:8px 12px;font-size:13.5px;
   }
   .attach-row .meta{color:var(--navy-dim);font-size:12px;}
+
+  .reminder-row{
+    display:flex;align-items:center;gap:12px;
+    background:#fff;border:1px solid var(--line);border-radius:9px;
+    padding:12px 14px;margin-bottom:9px;
+  }
+  .reminder-row.due{background:var(--red-soft);border-color:#e4b7a8;}
+  .reminder-row.due .reminder-date{color:var(--red);font-weight:700;}
+  .reminder-row input[type="checkbox"]{width:20px;height:20px;flex-shrink:0;cursor:pointer;accent-color:var(--navy);}
+  .reminder-row .reminder-body{flex:1;min-width:0;}
+  .reminder-row .reminder-text{font-size:14.5px;color:var(--ink);font-weight:600;word-break:break-word;}
+  .reminder-row .reminder-date{font-size:12.5px;color:var(--navy-dim);margin-top:2px;}
+  .reminder-row.done{opacity:.65;}
+  .reminder-row.done .reminder-text{text-decoration:line-through;color:#8a938e;}
+  .reminder-archive-title{font-size:13px;color:var(--navy-dim);font-weight:700;margin:22px 0 10px;}
 </style>
 </head>
 <body>
@@ -388,6 +403,7 @@
     <button data-tab="clientExpenses">مصاريف كل عميل</button>
     <button data-tab="clients">العملاء</button>
     <button data-tab="cash">الحساب مع صاحب المكتب</button>
+    <button data-tab="alerts">التنبيهات</button>
   </nav>
 </header>
 
@@ -611,6 +627,35 @@
         <tbody id="cashBody"></tbody>
       </table>
       <div class="empty" id="cashEmpty" style="display:none;">لسه مفيش مبالغ متسجلة</div>
+    </section>
+  </div>
+
+  <!-- ALERTS / REMINDERS -->
+  <div class="panel" id="panel-alerts">
+    <section>
+      <h2>إضافة تنبيه جديد</h2>
+      <div class="grid3">
+        <div class="field" style="grid-column:span 2;">
+          <label>المهمة / الأمر</label>
+          <input type="text" id="reminderText" placeholder="مثال: تقديم إقرار ضريبة القيمة المضافة لعميل كذا">
+        </div>
+        <div class="field">
+          <label>تاريخ التنفيذ</label>
+          <input type="date" id="reminderDate">
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="act btn-primary" onclick="addReminder()">حفظ التنبيه</button>
+      </div>
+    </section>
+    <section>
+      <h2>التنبيهات الحالية</h2>
+      <div id="reminderActiveList"></div>
+      <div class="empty" id="reminderActiveEmpty" style="display:none;">مفيش تنبيهات لسه، ضيف تنبيه جديد من فوق</div>
+    </section>
+    <section id="reminderArchiveSection" style="display:none;">
+      <div class="reminder-archive-title">تنبيهات منتهية (مؤرشفة)</div>
+      <div id="reminderArchiveList"></div>
     </section>
   </div>
 
@@ -858,6 +903,9 @@ function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY()) || '[]'); }
 function saveTrips(t){ localStorage.setItem(TKEY(), JSON.stringify(t)); }
 function loadReceipts(){ return JSON.parse(localStorage.getItem(RKEY()) || '[]'); }
 function saveReceipts(r){ localStorage.setItem(RKEY(), JSON.stringify(r)); }
+function AKEY(){ return 'mishwar_reminders_v1_' + authUid(); }
+function loadReminders(){ return JSON.parse(localStorage.getItem(AKEY()) || '[]'); }
+function saveReminders(a){ localStorage.setItem(AKEY(), JSON.stringify(a)); }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -876,6 +924,7 @@ document.getElementById('tabsNav').addEventListener('click', (e)=>{
   if(btn.dataset.tab === 'clientExpenses') renderClientExpensesTab();
   if(btn.dataset.tab === 'clients') renderClientsTab();
   if(btn.dataset.tab === 'cash') renderCashTab();
+  if(btn.dataset.tab === 'alerts') renderAlertsTab();
   if(btn.dataset.tab === 'log') renderLogTab();
   if(btn.dataset.tab === 'home') renderHomeTab();
 });
@@ -1436,6 +1485,83 @@ function renderCashTab(){
       <td><button class="act btn-danger btn-small" onclick="deleteReceipt('${r.id}')">حذف</button></td>
     </tr>
   `).join('');
+}
+
+/* ---------- REMINDERS ---------- */
+function addReminder(){
+  const text = document.getElementById('reminderText').value.trim();
+  const date = document.getElementById('reminderDate').value;
+  if(!text){ alert('اكتب المهمة أو الأمر المطلوب'); return; }
+  if(!date){ alert('اختار تاريخ التنفيذ'); return; }
+  const reminders = loadReminders();
+  reminders.push({id: uid(), text, date, done:false});
+  saveReminders(reminders);
+  document.getElementById('reminderText').value = '';
+  document.getElementById('reminderDate').value = '';
+  renderAlertsTab();
+}
+
+function toggleReminderDone(id){
+  const reminders = loadReminders();
+  const r = reminders.find(x=>x.id===id);
+  if(r) r.done = !r.done;
+  saveReminders(reminders);
+  renderAlertsTab();
+}
+
+function deleteReminder(id){
+  if(!confirm('تشيل التنبيه ده نهائي؟')) return;
+  saveReminders(loadReminders().filter(r=>r.id!==id));
+  renderAlertsTab();
+}
+
+function renderAlertsTab(){
+  const reminders = loadReminders();
+  const today = todayStr();
+
+  const active = reminders.filter(r=>!r.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const archived = reminders.filter(r=>r.done).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const activeList = document.getElementById('reminderActiveList');
+  const activeEmpty = document.getElementById('reminderActiveEmpty');
+  if(active.length===0){
+    activeList.innerHTML = '';
+    activeEmpty.style.display = 'block';
+  } else {
+    activeEmpty.style.display = 'none';
+    activeList.innerHTML = active.map(r => {
+      const isDue = r.date <= today;
+      return `
+        <div class="reminder-row ${isDue?'due':''}">
+          <input type="checkbox" onchange="toggleReminderDone('${r.id}')">
+          <div class="reminder-body">
+            <div class="reminder-text">${escapeHtml(r.text)}</div>
+            <div class="reminder-date">${isDue?'مطلوب تنفيذه: ':'التاريخ: '}${r.date}</div>
+          </div>
+          <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const archiveSection = document.getElementById('reminderArchiveSection');
+  const archiveList = document.getElementById('reminderArchiveList');
+  if(archived.length===0){
+    archiveSection.style.display = 'none';
+    archiveList.innerHTML = '';
+  } else {
+    archiveSection.style.display = 'block';
+    archiveList.innerHTML = archived.map(r => `
+      <div class="reminder-row done">
+        <input type="checkbox" checked onchange="toggleReminderDone('${r.id}')">
+        <div class="reminder-body">
+          <div class="reminder-text">${escapeHtml(r.text)}</div>
+          <div class="reminder-date">التاريخ: ${r.date}</div>
+        </div>
+        <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
+      </div>
+    `).join('');
+  }
 }
 
 /* ---------- INIT ---------- */
