@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="سجل المشاوير">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{
     --ink:#1c2230;
@@ -1165,26 +1165,141 @@ function renderLogTab(){
 document.getElementById('filterClient').addEventListener('change', renderLogTab);
 document.getElementById('filterMonth').addEventListener('change', renderLogTab);
 
-function exportExcel(){
+async function exportExcel(){
   const trips = getFilteredTrips();
   if(trips.length===0){ alert('مفيش بيانات للتصدير في الفلتر الحالي'); return; }
 
-  const rows = trips.map(t => ({
-    'التاريخ': t.date,
-    'العميل': clientName(t.clientId),
-    'نوع المشوار': t.type,
-    'الجهة': t.place || '',
-    'التكلفة (جنيه)': t.cost,
-    'ملاحظة': t.note || ''
-  }));
-  const totalRow = { 'التاريخ':'', 'العميل':'', 'نوع المشوار':'', 'الجهة':'الإجمالي', 'التكلفة (جنيه)': trips.reduce((s,t)=>s+t.cost,0), 'ملاحظة':'' };
-  rows.push(totalRow);
+  const NAVY = 'FF16233D';
+  const BRONZE = 'FFA9772F';
+  const LIGHT = 'FFF3F4F6';
+  const WHITE = 'FFFFFFFF';
+  const INK = 'FF1C2230';
 
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:12},{wch:26},{wch:20},{wch:24},{wch:14},{wch:24}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'مشاوير');
-  XLSX.writeFile(wb, 'فاتورة_مشاوير_' + todayStr() + '.xlsx');
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'مكتب الغريب للمحاسبة والمراجعة';
+  wb.created = new Date();
+
+  const ws = wb.addWorksheet('مشاوير', {
+    views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+  });
+
+  const columns = [
+    { header: 'التاريخ', key: 'date', width: 14 },
+    { header: 'العميل', key: 'client', width: 30 },
+    { header: 'نوع المشوار', key: 'type', width: 22 },
+    { header: 'الجهة', key: 'place', width: 26 },
+    { header: 'التكلفة (جنيه)', key: 'cost', width: 16 },
+    { header: 'ملاحظة', key: 'note', width: 30 },
+  ];
+  ws.columns = columns;
+
+  // Title row (merged) - office name + report title
+  ws.mergeCells(1, 1, 1, columns.length);
+  const titleCell = ws.getCell(1, 1);
+  titleCell.value = 'مكتب الغريب للمحاسبة والمراجعة — فاتورة مشاوير العملاء';
+  titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: WHITE } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  ws.getRow(1).height = 30;
+
+  // Subtitle row: date range / generated date (merged)
+  ws.mergeCells(2, 1, 2, columns.length);
+  const subCell = ws.getCell(2, 1);
+  subCell.value = 'تاريخ التصدير: ' + todayStr();
+  subCell.font = { name: 'Arial', size: 11, italic: true, color: { argb: INK } };
+  subCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } };
+  ws.getRow(2).height = 20;
+
+  // Header row (row 3)
+  const headerRow = ws.getRow(3);
+  columns.forEach((col, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = col.header;
+    cell.font = { name: 'Arial', size: 12, bold: true, color: { argb: WHITE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRONZE } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF8A6023' } },
+      bottom: { style: 'thin', color: { argb: 'FF8A6023' } },
+      left: { style: 'thin', color: { argb: 'FF8A6023' } },
+      right: { style: 'thin', color: { argb: 'FF8A6023' } },
+    };
+  });
+  headerRow.height = 24;
+
+  // Data rows
+  let rowIndex = 4;
+  let total = 0;
+  trips.forEach((t, idx) => {
+    const row = ws.getRow(rowIndex);
+    row.getCell(1).value = t.date;
+    row.getCell(2).value = clientName(t.clientId);
+    row.getCell(3).value = t.type;
+    row.getCell(4).value = t.place || '';
+    row.getCell(5).value = t.cost;
+    row.getCell(6).value = t.note || '';
+    total += Number(t.cost) || 0;
+
+    const bg = idx % 2 === 0 ? WHITE : LIGHT;
+    for (let c = 1; c <= columns.length; c++){
+      const cell = row.getCell(c);
+      cell.font = { name: 'Arial', size: 11, color: { argb: INK } };
+      cell.alignment = { horizontal: c===5 ? 'center' : (c===2||c===3||c===4||c===6 ? 'right' : 'center'), vertical: 'middle' };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+        bottom: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+        left: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+        right: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+      };
+    }
+    row.getCell(5).numFmt = '#,##0.00';
+    rowIndex++;
+  });
+
+  // Total row
+  const totalRow = ws.getRow(rowIndex);
+  ws.mergeCells(rowIndex, 1, rowIndex, 4);
+  const totalLabelCell = totalRow.getCell(1);
+  totalLabelCell.value = 'الإجمالي';
+  totalLabelCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: WHITE } };
+  totalLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  totalLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+
+  const totalValueCell = totalRow.getCell(5);
+  totalValueCell.value = total;
+  totalValueCell.numFmt = '#,##0.00';
+  totalValueCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: WHITE } };
+  totalValueCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  totalValueCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+
+  const totalNoteCell = totalRow.getCell(6);
+  totalNoteCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+
+  [1,4,5,6].forEach(c=>{
+    totalRow.getCell(c).border = {
+      top: { style: 'medium', color: { argb: NAVY } },
+      bottom: { style: 'medium', color: { argb: NAVY } },
+      left: { style: 'thin', color: { argb: NAVY } },
+      right: { style: 'thin', color: { argb: NAVY } },
+    };
+  });
+  totalRow.height = 24;
+
+  ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: columns.length } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'فاتورة_مشاوير_' + todayStr() + '.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ---------- EXPIRY ALERTS ---------- */
