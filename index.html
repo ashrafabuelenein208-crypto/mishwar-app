@@ -736,6 +736,7 @@ function handleAuthSubmit(){
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginMsg').textContent = '';
   if(!email || !pass){ document.getElementById('loginErr').textContent = 'اكتب الإيميل وكلمة المرور'; return; }
+  localStorage.setItem('mishwar_last_email', email);
   if(authMode === 'signup'){
     auth.createUserWithEmailAndPassword(email, pass).then((cred)=>{
       sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
@@ -756,8 +757,9 @@ function handleForgotPassword(){
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginMsg').textContent = '';
   if(!email){ document.getElementById('loginErr').textContent = 'اكتب إيميلك فوق الأول عشان نبعتلك رابط إعادة التعيين'; return; }
+  localStorage.setItem('mishwar_last_email', email);
   auth.sendPasswordResetEmail(email).then(()=>{
-    document.getElementById('loginMsg').textContent = 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني';
+    document.getElementById('loginMsg').textContent = 'اتبعت رابط إعادة التعيين لـ: ' + email + ' — لو مش موجود في الوارد، دور في الرسائل غير المرغوب فيها (Spam)';
   }).catch(err=>{
     document.getElementById('loginErr').textContent = translateAuthError(err);
   });
@@ -779,7 +781,7 @@ function showAuthForms(){
   document.getElementById('loginOverlay').style.display = 'flex';
   document.getElementById('lockGate').style.display = 'none';
   document.getElementById('authForms').style.display = 'block';
-  document.getElementById('authEmail').value = '';
+  document.getElementById('authEmail').value = localStorage.getItem('mishwar_last_email') || '';
   document.getElementById('authPass').value = '';
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginMsg').textContent = '';
