@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سجل مشاوير العملاء</title>
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%D8%B3%D8%AC%D9%84%20%D9%85%D8%B4%D8%A7%D9%88%D9%8A%D8%B1%20%D8%A7%D9%84%D8%B9%D9%85%D9%84%D8%A7%D8%A1%22%2C%22short_name%22%3A%22%D8%B3%D8%AC%D9%84%20%D8%A7%D9%84%D9%85%D8%B4%D8%A7%D9%88%D9%8A%D8%B1%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%2316233D%22%2C%22theme_color%22%3A%22%2316233D%22%2C%22dir%22%3A%22rtl%22%2C%22lang%22%3A%22ar%22%7D">
-<meta name="theme-color" content="#16233D">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="سجل المشاوير">
@@ -329,10 +327,18 @@
     <h2>سجل مشاوير العملاء</h2>
     <p>مكتب الغريب للمحاسبة والمراجعة</p>
 
-    <div id="biometricGate" style="display:none;">
-      <p style="margin-bottom:16px;">مرحبًا بعودتك</p>
-      <button class="act btn-primary" style="width:100%;margin-bottom:10px;" onclick="tryBiometricUnlock()">🔓 الدخول بالبصمة</button>
-      <button class="act btn-ghost" style="width:100%;" onclick="showPasswordForm()">الدخول بكلمة المرور بدلاً من ذلك</button>
+    <div id="lockGate" style="display:none;">
+      <p id="lockEmailTxt" style="margin-bottom:16px;color:var(--navy-dim);font-size:14px;"></p>
+      <div id="lockBiometricBtn" style="display:none;">
+        <button class="act btn-primary" style="width:100%;margin-bottom:10px;" onclick="tryBiometricUnlock()">🔓 الدخول بالبصمة</button>
+      </div>
+      <div class="field" style="text-align:right;">
+        <label>كلمة المرور</label>
+        <input type="password" id="lockPass" placeholder="كلمة المرور" style="text-align:right;letter-spacing:0;">
+      </div>
+      <div class="login-err" id="lockErr"></div>
+      <button class="act btn-primary" style="width:100%;margin-bottom:8px;" onclick="handleLockUnlock()">دخول</button>
+      <button class="act btn-ghost" style="width:100%;font-size:13px;" onclick="handleSwitchAccount()">تسجيل الخروج / تبديل الحساب</button>
     </div>
 
     <div id="authForms">
@@ -599,17 +605,16 @@
     </section>
   </div>
 
-  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) — من غير سيرفر أو انترنت، وكل حساب بياناته منفصلة عن غيره</footer>
+  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) — من غير سيرفر أو انترنت</footer>
 
 </main>
 
 <script>
-/* ===== base key names (each is now suffixed per logged-in account, see scopedKey) ===== */
-const CKEY = 'mishwar_clients_v2';
-const TKEY = 'mishwar_trips_v2';
-const RKEY = 'mishwar_receipts_v2';
-const WAKEY = 'mishwar_wa_number';
-const MIGRATION_FLAG = 'mishwar_migrated_to_scoped_v1';
+function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'; }
+function CKEY(){ return 'mishwar_clients_v2_' + authUid(); }
+function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
+function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
+function WAKEY(){ return 'mishwar_wa_number_' + authUid(); }
 
 const EDIT_PIN = '9697';
 
@@ -625,16 +630,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-
-/* currentUid identifies whose data we're reading/writing right now.
-   Every localStorage key used by this app is suffixed with the account's
-   uid via scopedKey(), so two different accounts on the same phone never
-   see each other's clients/trips/cash/files. */
-let currentUid = null;
-
-function scopedKey(base){
-  return currentUid ? (base + '__u_' + currentUid) : base;
-}
 
 let authMode = 'login';
 
@@ -667,11 +662,15 @@ function handleAuthSubmit(){
   document.getElementById('loginMsg').textContent = '';
   if(!email || !pass){ document.getElementById('loginErr').textContent = 'اكتب الإيميل وكلمة المرور'; return; }
   if(authMode === 'signup'){
-    auth.createUserWithEmailAndPassword(email, pass).catch(err => {
+    auth.createUserWithEmailAndPassword(email, pass).then((cred)=>{
+      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+    }).catch(err => {
       document.getElementById('loginErr').textContent = translateAuthError(err);
     });
   } else {
-    auth.signInWithEmailAndPassword(email, pass).catch(err => {
+    auth.signInWithEmailAndPassword(email, pass).then((cred)=>{
+      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+    }).catch(err => {
       document.getElementById('loginErr').textContent = translateAuthError(err);
     });
   }
@@ -689,13 +688,61 @@ function handleForgotPassword(){
   });
 }
 
-function showPasswordForm(){
-  document.getElementById('biometricGate').style.display = 'none';
-  document.getElementById('authForms').style.display = 'block';
+/* ---- Lock gate (shown every time the app opens, even if a Firebase session already exists) ---- */
+function showLockGate(user){
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('authForms').style.display = 'none';
+  document.getElementById('lockGate').style.display = 'block';
+  document.getElementById('lockEmailTxt').textContent = 'مسجل الدخول بـ: ' + user.email;
+  const hasBiometric = !!getBiometricCredentialId(user.uid);
+  document.getElementById('lockBiometricBtn').style.display = hasBiometric ? 'block' : 'none';
+  document.getElementById('lockPass').value = '';
+  document.getElementById('lockErr').textContent = '';
 }
 
-/* ---- Biometric (WebAuthn) device lock ---- */
-function getBiometricCredentialId(){ return localStorage.getItem('mishwar_biometric_cred_id'); }
+function showAuthForms(){
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('lockGate').style.display = 'none';
+  document.getElementById('authForms').style.display = 'block';
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPass').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginMsg').textContent = '';
+}
+
+async function handleLockUnlock(){
+  const pass = document.getElementById('lockPass').value;
+  document.getElementById('lockErr').textContent = '';
+  if(!pass){ document.getElementById('lockErr').textContent = 'اكتب كلمة المرور'; return; }
+  const user = auth.currentUser;
+  if(!user){ showAuthForms(); return; }
+  try{
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, pass);
+    await user.reauthenticateWithCredential(cred);
+    sessionStorage.setItem('mishwar_unlocked_uid', user.uid);
+    unlockApp();
+  }catch(e){
+    document.getElementById('lockErr').textContent = translateAuthError(e);
+  }
+}
+
+function handleSwitchAccount(){
+  if(!confirm('تسجيل الخروج والدخول بحساب تاني؟')) return;
+  auth.signOut().then(()=>{
+    sessionStorage.removeItem('mishwar_unlocked_uid');
+    showAuthForms();
+  });
+}
+
+function unlockApp(){
+  document.getElementById('loginOverlay').style.display = 'none';
+  renderAccountSection();
+  populateClientHelpers();
+  renderHomeTab();
+}
+
+/* ---- Biometric (WebAuthn) device lock — scoped per account (uid) ---- */
+function getBiometricCredentialId(uid){ return localStorage.getItem('mishwar_biometric_cred_id_' + uid); }
 
 async function enableBiometric(){
   if(!window.PublicKeyCredential){ alert('جهازك أو المتصفح الحالي مش بيدعم البصمة'); return; }
@@ -716,9 +763,8 @@ async function enableBiometric(){
     });
     if(cred){
       const credIdB64 = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
-      localStorage.setItem('mishwar_biometric_cred_id', credIdB64);
-      localStorage.setItem('mishwar_biometric_email', user.email);
-      alert('تم تفعيل الدخول بالبصمة على هذا الجهاز');
+      localStorage.setItem('mishwar_biometric_cred_id_' + user.uid, credIdB64);
+      alert('تم تفعيل الدخول بالبصمة على هذا الجهاز لهذا الحساب');
       renderAccountSection();
     }
   }catch(e){
@@ -727,91 +773,44 @@ async function enableBiometric(){
 }
 
 function disableBiometric(){
-  localStorage.removeItem('mishwar_biometric_cred_id');
-  localStorage.removeItem('mishwar_biometric_email');
+  const user = auth.currentUser;
+  if(!user) return;
+  localStorage.removeItem('mishwar_biometric_cred_id_' + user.uid);
   renderAccountSection();
 }
 
 async function tryBiometricUnlock(){
-  const credIdB64 = getBiometricCredentialId();
-  if(!credIdB64){ showPasswordForm(); return; }
+  const user = auth.currentUser;
+  if(!user) return;
+  const credIdB64 = getBiometricCredentialId(user.uid);
+  if(!credIdB64){ return; }
   try{
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const rawId = Uint8Array.from(atob(credIdB64), c => c.charCodeAt(0));
     const assertion = await navigator.credentials.get({
       publicKey: { challenge, allowCredentials: [{ type: 'public-key', id: rawId }], userVerification: 'required', timeout: 60000 }
     });
-    if(assertion){ document.getElementById('loginOverlay').style.display = 'none'; }
+    if(assertion){
+      sessionStorage.setItem('mishwar_unlocked_uid', user.uid);
+      unlockApp();
+    }
   }catch(e){
-    document.getElementById('loginErr').textContent = 'محصلش التحقق بالبصمة، جرب بكلمة المرور';
-    showPasswordForm();
+    document.getElementById('lockErr').textContent = 'محصلش التحقق بالبصمة، جرب بكلمة المرور';
   }
 }
 
-/* ---- one-time migration: move any pre-fix, unscoped data to the first
-   account that logs in after this update, then wipe the old shared keys
-   so a different account logging in afterwards starts clean ---- */
-async function migrateLegacyDataIfNeeded(uidForMigration){
-  if(localStorage.getItem(MIGRATION_FLAG)) return;
-
-  [CKEY, TKEY, RKEY, WAKEY].forEach(base => {
-    const legacy = localStorage.getItem(base);
-    if(legacy !== null){
-      const scoped = base + '__u_' + uidForMigration;
-      if(localStorage.getItem(scoped) === null){
-        localStorage.setItem(scoped, legacy);
-      }
-      localStorage.removeItem(base);
-    }
-  });
-
-  try{
-    const db = await openFilesDB();
-    await new Promise((resolve,reject)=>{
-      const tx = db.transaction('files','readwrite');
-      const store = tx.objectStore('files');
-      const req = store.openCursor();
-      req.onsuccess = (e)=>{
-        const cursor = e.target.result;
-        if(cursor){
-          const rec = cursor.value;
-          if(!rec.ownerUid){
-            rec.ownerUid = uidForMigration;
-            cursor.update(rec);
-          }
-          cursor.continue();
-        }
-      };
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-    });
-  }catch(e){ /* no files db yet, ignore */ }
-
-  localStorage.setItem(MIGRATION_FLAG, '1');
-}
-
 /* ---- Auth state listener ---- */
-auth.onAuthStateChanged(async (user) => {
+auth.onAuthStateChanged((user) => {
   if(user){
-    currentUid = user.uid;
-    document.getElementById('loginOverlay').style.display = 'none';
-    await migrateLegacyDataIfNeeded(currentUid);
-    renderTodayBadge();
-    populateClientHelpers();
-    renderHomeTab();
-    renderAccountSection();
-  } else {
-    currentUid = null;
-    document.getElementById('loginOverlay').style.display = 'flex';
-    const credIdB64 = getBiometricCredentialId();
-    const savedEmail = localStorage.getItem('mishwar_biometric_email');
-    if(credIdB64 && savedEmail){
-      document.getElementById('biometricGate').style.display = 'block';
-      document.getElementById('authForms').style.display = 'none';
+    const unlockedUid = sessionStorage.getItem('mishwar_unlocked_uid');
+    if(unlockedUid === user.uid){
+      unlockApp();
     } else {
-      document.getElementById('biometricGate').style.display = 'none';
-      document.getElementById('authForms').style.display = 'block';
+      showLockGate(user);
     }
+  } else {
+    sessionStorage.removeItem('mishwar_unlocked_uid');
+    showAuthForms();
   }
 });
 
@@ -825,7 +824,7 @@ function renderAccountSection(){
   if(!box) return;
   const user = auth.currentUser;
   if(!user){ box.innerHTML=''; return; }
-  const hasBiometric = !!getBiometricCredentialId();
+  const hasBiometric = !!getBiometricCredentialId(user.uid);
   box.innerHTML = `
     <div style="font-size:13.5px;color:var(--navy-dim);margin-bottom:10px;">مسجل الدخول بـ: <b style="color:var(--ink);">${escapeHtml(user.email)}</b></div>
     <div class="row-actions">
@@ -844,12 +843,12 @@ function requirePin(cb){
   if(p === EDIT_PIN){ cb(); } else { alert('الكود غير صحيح'); }
 }
 
-function loadClients(){ return JSON.parse(localStorage.getItem(scopedKey(CKEY)) || '[]'); }
-function saveClients(c){ localStorage.setItem(scopedKey(CKEY), JSON.stringify(c)); }
-function loadTrips(){ return JSON.parse(localStorage.getItem(scopedKey(TKEY)) || '[]'); }
-function saveTrips(t){ localStorage.setItem(scopedKey(TKEY), JSON.stringify(t)); }
-function loadReceipts(){ return JSON.parse(localStorage.getItem(scopedKey(RKEY)) || '[]'); }
-function saveReceipts(r){ localStorage.setItem(scopedKey(RKEY), JSON.stringify(r)); }
+function loadClients(){ return JSON.parse(localStorage.getItem(CKEY()) || '[]'); }
+function saveClients(c){ localStorage.setItem(CKEY(), JSON.stringify(c)); }
+function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY()) || '[]'); }
+function saveTrips(t){ localStorage.setItem(TKEY(), JSON.stringify(t)); }
+function loadReceipts(){ return JSON.parse(localStorage.getItem(RKEY()) || '[]'); }
+function saveReceipts(r){ localStorage.setItem(RKEY(), JSON.stringify(r)); }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -1108,7 +1107,7 @@ function exportExcel(){
 /* ---------- EXPIRY ALERTS ---------- */
 function saveWaNumber(){
   const val = document.getElementById('waNumberInput').value.trim().replace(/[^0-9]/g,'');
-  localStorage.setItem(scopedKey(WAKEY), val);
+  localStorage.setItem(WAKEY(), val);
   alert('اتحفظ الرقم');
 }
 
@@ -1134,7 +1133,7 @@ function renderExpiryAlerts(){
   const box = document.getElementById('expiryAlertsBox');
   const items = getExpiringDocs();
   if(items.length===0){ box.innerHTML=''; return; }
-  const waNumber = localStorage.getItem(scopedKey(WAKEY)) || '';
+  const waNumber = localStorage.getItem(WAKEY()) || '';
 
   box.innerHTML = `
     <div class="alert-banner">
@@ -1164,7 +1163,7 @@ function copyAlertText(msg){
 /* ---------- HOME ---------- */
 function renderHomeTab(){
   renderExpiryAlerts();
-  const waSaved = localStorage.getItem(scopedKey(WAKEY));
+  const waSaved = localStorage.getItem(WAKEY());
   if(waSaved && document.getElementById('waNumberInput')) document.getElementById('waNumberInput').value = waSaved;
   const trips = loadTrips();
   const receipts = loadReceipts();
@@ -1307,10 +1306,7 @@ async function renderClientDetail(id){
   `;
 }
 
-/* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ----------
-   One shared IndexedDB across all accounts on this device, but every
-   record carries ownerUid and reads/writes always filter by the
-   currently signed-in account, so files never cross between accounts. */
+/* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
 const FILES_DB_NAME = 'mishwar_files_db';
 function openFilesDB(){
   return new Promise((resolve,reject)=>{
@@ -1333,7 +1329,7 @@ async function addFilesToClient(clientId, fileList){
     const tx = db.transaction('files','readwrite');
     const store = tx.objectStore('files');
     Array.from(fileList).forEach(file => {
-      store.put({ id: uid(), clientId, ownerUid: currentUid, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
+      store.put({ id: uid(), clientId, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
     });
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -1345,7 +1341,7 @@ async function getFilesForClient(clientId){
   return new Promise((resolve,reject)=>{
     const tx = db.transaction('files','readonly');
     const req = tx.objectStore('files').index('clientId').getAll(clientId);
-    req.onsuccess = ()=>resolve((req.result||[]).filter(f => f.ownerUid === currentUid));
+    req.onsuccess = ()=>resolve(req.result);
     req.onerror = ()=>reject(req.error);
   });
 }
@@ -1433,11 +1429,11 @@ function renderCashTab(){
   `).join('');
 }
 
-/* ---------- INIT ----------
-   Data-scoped rendering (populateClientHelpers / renderHomeTab) now runs
-   from inside onAuthStateChanged above, once we know which account is
-   signed in — not here, since before that we don't know whose data to load. */
+/* ---------- INIT ---------- */
 renderTodayBadge();
+populateClientHelpers();
+
+
 </script>
 
 </body>
