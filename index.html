@@ -633,6 +633,21 @@
   <!-- ALERTS / REMINDERS -->
   <div class="panel" id="panel-alerts">
     <section>
+      <h2>رقم الواتساب لإرسال التنبيهات عليه</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
+          <input type="text" id="reminderWaNumberInput" placeholder="201xxxxxxxxx">
+        </div>
+        <div class="field" style="display:flex;align-items:end;">
+          <div class="row-actions" style="margin-top:0;">
+            <button class="act btn-ghost btn-small" onclick="saveReminderWaNumber()">حفظ الرقم</button>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">بعد حفظ الرقم، زرار "واتساب" جنب كل تنبيه هيفتح المحادثة معاه على طول من غير ما يوريك قائمة الأسماء.</p>
+    </section>
+    <section>
       <h2>إضافة تنبيه جديد</h2>
       <div class="grid3">
         <div class="field" style="grid-column:span 2;">
@@ -1489,7 +1504,16 @@ function renderCashTab(){
 
 function reminderWaLink(r){
   const msg = `تنبيه: ${r.text} — التاريخ المطلوب: ${r.date}`;
-  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  const waNumber = localStorage.getItem(WAKEY()) || '';
+  return waNumber
+    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
+
+function saveReminderWaNumber(){
+  const val = document.getElementById('reminderWaNumberInput').value.trim().replace(/[^0-9]/g,'');
+  localStorage.setItem(WAKEY(), val);
+  alert('اتحفظ الرقم');
 }
 
 /* ---------- REMINDERS ---------- */
@@ -1521,6 +1545,9 @@ function deleteReminder(id){
 }
 
 function renderAlertsTab(){
+  const waSaved = localStorage.getItem(WAKEY());
+  if(waSaved && document.getElementById('reminderWaNumberInput')) document.getElementById('reminderWaNumberInput').value = waSaved;
+
   const reminders = loadReminders();
   const today = todayStr();
 
