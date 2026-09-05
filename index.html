@@ -353,6 +353,31 @@
   .reminder-row.done{opacity:.6;}
   .reminder-row.done .reminder-text{text-decoration:line-through;color:#8a97a3;}
   .reminder-archive-title{font-size:13px;color:var(--navy-dim);font-weight:800;margin:22px 0 10px;}
+
+  #chatUnreadDot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:var(--red); margin-inline-start:4px; vertical-align:middle;
+  }
+  .chat-emp-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:#fff; border:1.5px solid var(--line); border-radius:16px;
+    padding:12px 16px; margin-bottom:9px; cursor:pointer;
+  }
+  .chat-emp-row:hover{border-color:var(--navy);}
+  .chat-emp-row .name{font-weight:800; color:var(--navy); font-size:14.5px;}
+  .chat-emp-row .last{font-size:12.5px; color:var(--navy-dim); margin-top:2px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .chat-emp-row .dot{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;}
+  .msg-row{display:flex; max-width:78%;}
+  .msg-row.me{align-self:flex-end; flex-direction:row-reverse;}
+  .msg-row.them{align-self:flex-start;}
+  .msg-bubble{
+    padding:9px 14px; border-radius:16px; font-size:14.5px; line-height:1.5; word-break:break-word;
+  }
+  .msg-row.me .msg-bubble{background:var(--navy); color:#fff; border-bottom-left-radius:4px;}
+  .msg-row.them .msg-bubble{background:#fff; color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
+  .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; text-align:center;}
+  .msg-row.me .msg-time{text-align:left;}
+  .msg-row.them .msg-time{text-align:right;}
 </style>
 </head>
 <body>
@@ -397,6 +422,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
 <header class="top">
   <div class="wrap">
@@ -418,6 +444,7 @@
     <button data-tab="clients">العملاء</button>
     <button data-tab="cash">الحساب مع صاحب المكتب</button>
     <button data-tab="alerts">التنبيهات</button>
+    <button data-tab="chat">الشات <span id="chatUnreadDot" style="display:none;"></span></button>
   </nav>
 </header>
 
@@ -706,7 +733,31 @@
     </section>
   </div>
 
-  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) — من غير سيرفر أو انترنت</footer>
+  <!-- CHAT -->
+  <div class="panel" id="panel-chat">
+    <section id="chatOwnerListSection" style="display:none;">
+      <h2>الشات مع الموظفين</h2>
+      <div id="chatEmployeeList"></div>
+      <div class="empty" id="chatEmployeeEmpty" style="display:none;">لسه مفيش أي رسائل من حد</div>
+    </section>
+
+    <section id="chatThreadSection" style="display:none; padding:0; overflow:hidden;">
+      <div id="chatThreadHeader" style="display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:2px solid var(--bronze-soft);">
+        <button class="act btn-ghost btn-small" id="chatBackBtn" style="display:none;" onclick="closeChatThread()">‹ رجوع</button>
+        <div>
+          <div style="font-weight:900;color:var(--navy);font-size:15px;" id="chatThreadTitle">صاحب المكتب</div>
+          <div style="font-size:12px;color:var(--navy-dim);" id="chatThreadSubtitle"></div>
+        </div>
+      </div>
+      <div id="chatMessages" style="padding:16px 18px; max-height:52vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; background:var(--paper);"></div>
+      <div style="display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--line); background:var(--panel);">
+        <input type="text" id="chatMessageInput" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){sendChatMessage();}" style="flex:1;">
+        <button class="act btn-primary" onclick="sendChatMessage()">إرسال</button>
+      </div>
+    </section>
+  </div>
+
+  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) ما عدا الشات، اللي بيتحفظ لحظيًا على Firestore عشان يوصل للطرف التاني</footer>
 
 </main>
 
@@ -730,6 +781,12 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const db = firebase.firestore();
+const OWNER_EMAIL = 'ashrafayman6598@gmail.com';
+function isOwnerAccount(){
+  const u = auth.currentUser;
+  return !!(u && u.email && u.email.toLowerCase() === OWNER_EMAIL);
+}
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let authMode = 'login';
@@ -842,6 +899,7 @@ function unlockApp(){
   renderAccountSection();
   populateClientHelpers();
   renderHomeTab();
+  startChatUnreadWatcher();
 }
 
 /* ---- Biometric (WebAuthn) device lock — scoped per account (uid) ---- */
@@ -976,6 +1034,7 @@ document.getElementById('tabsNav').addEventListener('click', (e)=>{
   if(btn.dataset.tab === 'alerts') renderAlertsTab();
   if(btn.dataset.tab === 'log') renderLogTab();
   if(btn.dataset.tab === 'home') renderHomeTab();
+  if(btn.dataset.tab === 'chat') renderChatTab();
 });
 
 function renderTodayBadge(){
@@ -1891,6 +1950,139 @@ function renderAlertsTab(){
       </div>
     `).join('');
   }
+}
+
+/* ---------- CHAT ---------- */
+let chatUnsubMessages = null;
+let chatUnsubList = null;
+let currentChatPartnerUid = null;
+let currentChatPartnerLabel = '';
+
+function chatDocRef(employeeUid){ return db.collection('chats').doc(employeeUid); }
+
+function startChatUnreadWatcher(){
+  const user = auth.currentUser;
+  if(!user) return;
+  if(chatUnsubList) chatUnsubList();
+  if(isOwnerAccount()){
+    chatUnsubList = db.collection('chats').onSnapshot(snap=>{
+      let anyUnread = false;
+      snap.forEach(doc=>{ if(doc.data().unreadForOwner) anyUnread = true; });
+      document.getElementById('chatUnreadDot').style.display = anyUnread ? 'inline-block' : 'none';
+    }, ()=>{});
+  } else {
+    chatUnsubList = chatDocRef(user.uid).onSnapshot(doc=>{
+      const unread = doc.exists && doc.data().unreadForEmployee;
+      document.getElementById('chatUnreadDot').style.display = unread ? 'inline-block' : 'none';
+    }, ()=>{});
+  }
+}
+
+function renderChatTab(){
+  const user = auth.currentUser;
+  if(!user) return;
+  if(isOwnerAccount()){
+    document.getElementById('chatOwnerListSection').style.display = 'block';
+    if(!currentChatPartnerUid){
+      document.getElementById('chatThreadSection').style.display = 'none';
+      renderChatEmployeeList();
+    } else {
+      openChatThread(currentChatPartnerUid, currentChatPartnerLabel, true);
+    }
+  } else {
+    document.getElementById('chatOwnerListSection').style.display = 'none';
+    document.getElementById('chatBackBtn').style.display = 'none';
+    openChatThread(user.uid, 'صاحب المكتب', false);
+  }
+}
+
+function renderChatEmployeeList(){
+  if(chatUnsubMessages){ chatUnsubMessages(); chatUnsubMessages = null; }
+  db.collection('chats').orderBy('lastTimestamp','desc').onSnapshot(snap=>{
+    const rows = [];
+    snap.forEach(doc=>{
+      if(doc.id === auth.currentUser.uid) return;
+      const d = doc.data();
+      rows.push({ uid: doc.id, email: d.employeeEmail || doc.id, last: d.lastMessage || '', unread: !!d.unreadForOwner });
+    });
+    const list = document.getElementById('chatEmployeeList');
+    document.getElementById('chatEmployeeEmpty').style.display = rows.length ? 'none' : 'block';
+    list.innerHTML = rows.map(r => `
+      <div class="chat-emp-row" onclick="openChatThread('${r.uid}', '${escapeHtml(r.email)}', true)">
+        <div>
+          <div class="name">${escapeHtml(r.email)}</div>
+          <div class="last">${escapeHtml(r.last)}</div>
+        </div>
+        ${r.unread ? '<div class="dot"></div>' : ''}
+      </div>
+    `).join('');
+  }, ()=>{});
+}
+
+function openChatThread(partnerUid, label, isOwnerView){
+  currentChatPartnerUid = partnerUid;
+  currentChatPartnerLabel = label;
+  document.getElementById('chatOwnerListSection').style.display = 'none';
+  document.getElementById('chatThreadSection').style.display = 'block';
+  document.getElementById('chatThreadTitle').textContent = label;
+  document.getElementById('chatBackBtn').style.display = isOwnerView ? 'inline-block' : 'none';
+
+  const readField = isOwnerView ? 'unreadForOwner' : 'unreadForEmployee';
+  chatDocRef(partnerUid).set({ [readField]: false }, { merge: true }).catch(()=>{});
+
+  if(chatUnsubMessages) chatUnsubMessages();
+  chatUnsubMessages = chatDocRef(partnerUid).collection('messages').orderBy('timestamp','asc')
+    .onSnapshot(snap=>{
+      const box = document.getElementById('chatMessages');
+      const myUid = auth.currentUser.uid;
+      box.innerHTML = snap.docs.map(doc=>{
+        const m = doc.data();
+        const mine = m.senderUid === myUid;
+        const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
+        return `
+          <div class="msg-row ${mine?'me':'them'}">
+            <div>
+              <div class="msg-bubble">${escapeHtml(m.text)}</div>
+              <div class="msg-time">${t}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }, ()=>{});
+}
+
+function closeChatThread(){
+  currentChatPartnerUid = null;
+  if(chatUnsubMessages){ chatUnsubMessages(); chatUnsubMessages = null; }
+  document.getElementById('chatThreadSection').style.display = 'none';
+  document.getElementById('chatOwnerListSection').style.display = 'block';
+  renderChatEmployeeList();
+}
+
+function sendChatMessage(){
+  const input = document.getElementById('chatMessageInput');
+  const text = input.value.trim();
+  if(!text || !currentChatPartnerUid) return;
+  const user = auth.currentUser;
+  const owner = isOwnerAccount();
+  input.value = '';
+
+  chatDocRef(currentChatPartnerUid).collection('messages').add({
+    senderUid: user.uid,
+    senderEmail: user.email,
+    text: text,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  const chatMeta = {
+    lastMessage: text,
+    lastTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    unreadForOwner: !owner,
+    unreadForEmployee: owner
+  };
+  if(!owner) chatMeta.employeeEmail = user.email;
+  chatDocRef(currentChatPartnerUid).set(chatMeta, { merge: true });
 }
 
 /* ---------- INIT ---------- */
