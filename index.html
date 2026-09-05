@@ -619,7 +619,7 @@
   <div class="panel" id="panel-cash">
     <div class="cards" id="cashCards"></div>
     <section>
-      <h2>تسجيل مبلغ مستلم من صاحب المكتب</h2>
+      <h2>تسجيل مبلغ مستلم من صاحب المكتب (عام)</h2>
       <div class="grid3">
         <div class="field">
           <label>التاريخ</label>
@@ -630,14 +630,6 @@
           <input type="number" id="cashAmount" min="0" step="1" placeholder="0">
         </div>
         <div class="field">
-          <label>الشركة</label>
-          <select id="cashClientSelect">
-            <option value="">عام (مش مخصص لشركة معينة)</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
           <label>ملاحظة (اختياري)</label>
           <input type="text" id="cashNote" placeholder="مثال: عهدة الأسبوع">
         </div>
@@ -645,16 +637,6 @@
       <div class="row-actions">
         <button class="act btn-primary" onclick="addCashReceipt()">حفظ المبلغ</button>
       </div>
-    </section>
-    <section>
-      <h2>الرصيد لكل شركة</h2>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>الشركة</th><th>المستلم</th><th>المصروف</th><th>المتبقي</th></tr></thead>
-          <tbody id="cashByClientBody"></tbody>
-        </table>
-      </div>
-      <div class="empty" id="cashByClientEmpty" style="display:none;">لسه مفيش بيانات كفاية</div>
     </section>
     <section>
       <h2>سجل المبالغ المستلمة</h2>
@@ -1000,13 +982,6 @@ function populateClientHelpers(){
   const prev = filterSel.value;
   filterSel.innerHTML = '<option value="">كل العملاء</option>' + clients.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
   if(clients.some(c=>c.id===prev)) filterSel.value = prev;
-
-  const cashSel = document.getElementById('cashClientSelect');
-  if(cashSel){
-    const prevCash = cashSel.value;
-    cashSel.innerHTML = '<option value="">عام (مش مخصص لشركة معينة)</option>' + clients.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    if(clients.some(c=>c.id===prevCash)) cashSel.value = prevCash;
-  }
 }
 
 let editingClientId = null;
@@ -1583,12 +1558,25 @@ async function renderClientDetail(id){
   const trips = loadTrips().filter(t=>t.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
   const total = trips.reduce((s,t)=>s+t.cost,0);
 
+  const clientReceipts = loadReceipts().filter(r=>r.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
+  const received = clientReceipts.reduce((s,r)=>s+r.amount,0);
+  const remaining = received - total;
+
   const rows = trips.map(t => `
     <tr>
       <td class="num">${t.date}</td>
       <td><span class="tag">${escapeHtml(t.type)}</span></td>
       <td>${escapeHtml(t.place)||'—'}</td>
       <td class="num">${t.cost.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const receiptRows = clientReceipts.map(r => `
+    <tr>
+      <td class="num">${r.date}</td>
+      <td class="num">${r.amount.toFixed(0)}</td>
+      <td>${escapeHtml(r.note)||'—'}</td>
+      <td><button class="act btn-danger btn-small" onclick="deleteClientReceipt('${r.id}','${id}')">حذف</button></td>
     </tr>
   `).join('');
 
@@ -1608,7 +1596,7 @@ async function renderClientDetail(id){
     <div class="client-detail">
       <div class="head">
         <h3>${escapeHtml(c.name)}</h3>
-        <span class="tag" style="font-size:14px;">إجمالي: ${total.toFixed(0)} ج.م</span>
+        <span class="tag" style="font-size:14px;">إجمالي المصروف: ${total.toFixed(0)} ج.م</span>
       </div>
       <div class="info-line">
         <span>المأمورية: <b>${escapeHtml(c.taxOffice)||'—'}</b></span>
@@ -1617,7 +1605,22 @@ async function renderClientDetail(id){
         <span>انتهاء البطاقة الضريبية: <b class="${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</b></span>
         <span>انتهاء التوكن: <b class="${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</b></span>
       </div>
-      <table>
+
+      <div class="cards" style="margin:14px 0;">
+        <div class="card"><div class="label">المستلم من صاحب المكتب لهذا العميل</div><div class="value num">${received.toFixed(0)} ج.م</div></div>
+        <div class="card"><div class="label">المصروف عليه</div><div class="value num">${total.toFixed(0)} ج.م</div></div>
+        <div class="card ${remaining<0?'warn':'good'}"><div class="label">المتبقي</div><div class="value num">${remaining.toFixed(0)} ج.م</div></div>
+      </div>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-primary" onclick="addClientReceipt('${id}')">استلمت مبلغ لهذا العميل</button>
+      </div>
+      ${clientReceipts.length ? `
+      <table style="margin-top:10px;">
+        <thead><tr><th>التاريخ</th><th>المبلغ المستلم</th><th>ملاحظة</th><th></th></tr></thead>
+        <tbody>${receiptRows}</tbody>
+      </table>` : ''}
+
+      <table style="margin-top:14px;">
         <thead><tr><th>التاريخ</th><th>النوع</th><th>الجهة</th><th>التكلفة</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="4" class="empty">مفيش مشاوير مسجلة للعميل ده لسه</td></tr>'}</tbody>
       </table>
@@ -1630,6 +1633,26 @@ async function renderClientDetail(id){
       </div>
     </div>
   `;
+}
+
+function addClientReceipt(clientId){
+  const amountStr = prompt('اكتب المبلغ اللي استلمته من صاحب المكتب لعميل ده (جنيه):');
+  if(amountStr === null) return;
+  const amount = parseFloat(amountStr);
+  if(!amount || amount <= 0){ alert('اكتب رقم صحيح أكبر من صفر'); return; }
+  const note = prompt('ملاحظة (اختياري):') || '';
+  const receipts = loadReceipts();
+  receipts.push({id: uid(), date: todayStr(), amount, clientId, note});
+  saveReceipts(receipts);
+  renderClientDetail(clientId);
+  renderHomeTab();
+}
+
+function deleteClientReceipt(id, clientId){
+  if(!confirm('تشيل المبلغ ده؟')) return;
+  saveReceipts(loadReceipts().filter(r=>r.id!==id));
+  renderClientDetail(clientId);
+  renderHomeTab();
 }
 
 /* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
@@ -1710,15 +1733,13 @@ async function downloadClientFile(id, clientId){
 function addCashReceipt(){
   const date = document.getElementById('cashDate').value || todayStr();
   const amount = parseFloat(document.getElementById('cashAmount').value) || 0;
-  const clientId = document.getElementById('cashClientSelect').value || '';
   const note = document.getElementById('cashNote').value.trim();
   if(amount<=0){ alert('اكتب مبلغ صحيح'); return; }
   const receipts = loadReceipts();
-  receipts.push({id: uid(), date, amount, clientId, note});
+  receipts.push({id: uid(), date, amount, clientId: '', note});
   saveReceipts(receipts);
   document.getElementById('cashDate').value = '';
   document.getElementById('cashAmount').value = '';
-  document.getElementById('cashClientSelect').value = '';
   document.getElementById('cashNote').value = '';
   renderCashTab();
   renderHomeTab();
@@ -1741,44 +1762,8 @@ function renderCashTab(){
   document.getElementById('cashCards').innerHTML = `
     <div class="card"><div class="label">إجمالي المستلم من صاحب المكتب</div><div class="value num">${totalReceived.toFixed(0)} ج.م</div></div>
     <div class="card"><div class="label">إجمالي مصاريف المشاوير (كل الوقت)</div><div class="value num">${totalSpent.toFixed(0)} ج.م</div></div>
-    <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي معاك دلوقتي (كل الشركات مع بعض)</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
+    <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي معاك دلوقتي</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
   `;
-
-  // Per-client breakdown
-  const byClient = {}; // clientId ('' = عام) -> {received, spent}
-  receipts.forEach(r => {
-    const key = r.clientId || '';
-    if(!byClient[key]) byClient[key] = { received: 0, spent: 0 };
-    byClient[key].received += r.amount;
-  });
-  trips.forEach(t => {
-    const key = t.clientId || '';
-    if(!byClient[key]) byClient[key] = { received: 0, spent: 0 };
-    byClient[key].spent += t.cost;
-  });
-
-  const rows = Object.keys(byClient).map(key => {
-    const label = key ? clientName(key) : 'عام (غير مخصص)';
-    const remaining = byClient[key].received - byClient[key].spent;
-    return { key, label, received: byClient[key].received, spent: byClient[key].spent, remaining };
-  }).sort((a,b) => a.remaining - b.remaining); // most overspent first
-
-  const byClientBody = document.getElementById('cashByClientBody');
-  const byClientEmpty = document.getElementById('cashByClientEmpty');
-  if(rows.length === 0){
-    byClientBody.innerHTML = '';
-    byClientEmpty.style.display = 'block';
-  } else {
-    byClientEmpty.style.display = 'none';
-    byClientBody.innerHTML = rows.map(row => `
-      <tr>
-        <td>${escapeHtml(row.label)}</td>
-        <td class="num">${row.received.toFixed(0)}</td>
-        <td class="num">${row.spent.toFixed(0)}</td>
-        <td class="num" style="color:${row.remaining<0 ? 'var(--red)' : 'var(--green)'};font-weight:600;">${row.remaining.toFixed(0)}</td>
-      </tr>
-    `).join('');
-  }
 
   const body = document.getElementById('cashBody');
   const empty = document.getElementById('cashEmpty');
