@@ -606,7 +606,7 @@
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء التوكن</th><th></th></tr>
+            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -998,15 +998,18 @@ function saveClient(){
     tokenExpiry: document.getElementById('cTokenExpiry').value,
   };
   const clients = loadClients();
+  let newClientId = null;
   if(editingClientId){
     const c = clients.find(x=>x.id===editingClientId);
     Object.assign(c, data);
   } else {
-    clients.push({id: uid(), ...data});
+    newClientId = uid();
+    clients.push({id: newClientId, ...data});
   }
   saveClients(clients);
   resetClientForm();
   populateClientHelpers();
+  if(newClientId){ openClientDocsId = newClientId; }
   renderClientsTab();
 }
 
@@ -1139,14 +1142,46 @@ function isExpiringSoon(dateStr){
   return diffDays < 30;
 }
 
-function renderClientsTab(){
+let openClientDocsId = null;
+
+async function renderClientsTab(){
   const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
   const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
   const body = document.getElementById('clientsBody');
   const empty = document.getElementById('clientsEmpty');
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  body.innerHTML = clients.map(c => `
+
+  const rowsHtml = await Promise.all(clients.map(async c => {
+    let count = 0;
+    try{ count = (await getFilesForClient(c.id)).length; }catch(e){ count = 0; }
+    const isOpen = openClientDocsId === c.id;
+    let docsCellHtml = '';
+    if(isOpen){
+      let files = [];
+      try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
+      const fileRows = files.map(f => `
+        <div class="attach-row">
+          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+          <div class="btns" style="display:flex;gap:6px;">
+            <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
+            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}').then(renderClientsTab))">حذف</button>
+          </div>
+        </div>
+      `).join('');
+      docsCellHtml = `
+        <tr>
+          <td colspan="8">
+            <div class="attach-box" style="margin:0;">
+              <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
+              <div class="attach-list">
+                ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
+              </div>
+            </div>
+          </td>
+        </tr>`;
+    }
+    return `
     <tr>
       <td>${escapeHtml(c.name)}</td>
       <td>${escapeHtml(c.taxOffice)||'—'}</td>
@@ -1154,14 +1189,23 @@ function renderClientsTab(){
       <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
+      <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
       <td>
         <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
         <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
       </td>
     </tr>
-  `).join('');
+    ${docsCellHtml}`;
+  }));
+
+  body.innerHTML = rowsHtml.join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
+
+function toggleClientDocs(id){
+  openClientDocsId = (openClientDocsId === id) ? null : id;
+  renderClientsTab();
+}
 
 /* ---------- TRIPS ---------- */
 let editingTripId = null;
@@ -1558,25 +1602,12 @@ async function renderClientDetail(id){
   const trips = loadTrips().filter(t=>t.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
   const total = trips.reduce((s,t)=>s+t.cost,0);
 
-  const clientReceipts = loadReceipts().filter(r=>r.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
-  const received = clientReceipts.reduce((s,r)=>s+r.amount,0);
-  const remaining = received - total;
-
   const rows = trips.map(t => `
     <tr>
       <td class="num">${t.date}</td>
       <td><span class="tag">${escapeHtml(t.type)}</span></td>
       <td>${escapeHtml(t.place)||'—'}</td>
       <td class="num">${t.cost.toFixed(2)}</td>
-    </tr>
-  `).join('');
-
-  const receiptRows = clientReceipts.map(r => `
-    <tr>
-      <td class="num">${r.date}</td>
-      <td class="num">${r.amount.toFixed(0)}</td>
-      <td>${escapeHtml(r.note)||'—'}</td>
-      <td><button class="act btn-danger btn-small" onclick="deleteClientReceipt('${r.id}','${id}')">حذف</button></td>
     </tr>
   `).join('');
 
@@ -1596,7 +1627,7 @@ async function renderClientDetail(id){
     <div class="client-detail">
       <div class="head">
         <h3>${escapeHtml(c.name)}</h3>
-        <span class="tag" style="font-size:14px;">إجمالي المصروف: ${total.toFixed(0)} ج.م</span>
+        <span class="tag" style="font-size:14px;">إجمالي: ${total.toFixed(0)} ج.م</span>
       </div>
       <div class="info-line">
         <span>المأمورية: <b>${escapeHtml(c.taxOffice)||'—'}</b></span>
@@ -1605,22 +1636,7 @@ async function renderClientDetail(id){
         <span>انتهاء البطاقة الضريبية: <b class="${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</b></span>
         <span>انتهاء التوكن: <b class="${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</b></span>
       </div>
-
-      <div class="cards" style="margin:14px 0;">
-        <div class="card"><div class="label">المستلم من صاحب المكتب لهذا العميل</div><div class="value num">${received.toFixed(0)} ج.م</div></div>
-        <div class="card"><div class="label">المصروف عليه</div><div class="value num">${total.toFixed(0)} ج.م</div></div>
-        <div class="card ${remaining<0?'warn':'good'}"><div class="label">المتبقي</div><div class="value num">${remaining.toFixed(0)} ج.م</div></div>
-      </div>
-      <div class="row-actions" style="margin-top:0;">
-        <button class="act btn-primary" onclick="addClientReceipt('${id}')">استلمت مبلغ لهذا العميل</button>
-      </div>
-      ${clientReceipts.length ? `
-      <table style="margin-top:10px;">
-        <thead><tr><th>التاريخ</th><th>المبلغ المستلم</th><th>ملاحظة</th><th></th></tr></thead>
-        <tbody>${receiptRows}</tbody>
-      </table>` : ''}
-
-      <table style="margin-top:14px;">
+      <table>
         <thead><tr><th>التاريخ</th><th>النوع</th><th>الجهة</th><th>التكلفة</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="4" class="empty">مفيش مشاوير مسجلة للعميل ده لسه</td></tr>'}</tbody>
       </table>
@@ -1633,26 +1649,6 @@ async function renderClientDetail(id){
       </div>
     </div>
   `;
-}
-
-function addClientReceipt(clientId){
-  const amountStr = prompt('اكتب المبلغ اللي استلمته من صاحب المكتب لعميل ده (جنيه):');
-  if(amountStr === null) return;
-  const amount = parseFloat(amountStr);
-  if(!amount || amount <= 0){ alert('اكتب رقم صحيح أكبر من صفر'); return; }
-  const note = prompt('ملاحظة (اختياري):') || '';
-  const receipts = loadReceipts();
-  receipts.push({id: uid(), date: todayStr(), amount, clientId, note});
-  saveReceipts(receipts);
-  renderClientDetail(clientId);
-  renderHomeTab();
-}
-
-function deleteClientReceipt(id, clientId){
-  if(!confirm('تشيل المبلغ ده؟')) return;
-  saveReceipts(loadReceipts().filter(r=>r.id!==id));
-  renderClientDetail(clientId);
-  renderHomeTab();
 }
 
 /* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
@@ -1717,6 +1713,13 @@ async function handleFileUpload(clientId, inputEl){
   await addFilesToClient(clientId, inputEl.files);
   inputEl.value = '';
   renderClientDetail(clientId);
+}
+
+async function handleFileUploadInClientsTab(clientId, inputEl){
+  if(!inputEl.files.length) return;
+  await addFilesToClient(clientId, inputEl.files);
+  inputEl.value = '';
+  renderClientsTab();
 }
 
 async function downloadClientFile(id, clientId){
