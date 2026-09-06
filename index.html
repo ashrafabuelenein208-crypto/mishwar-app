@@ -388,6 +388,24 @@
   .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; text-align:center;}
   .msg-row.me .msg-time{text-align:left;}
   .msg-row.them .msg-time{text-align:right;}
+  #chatToast{
+    position:fixed; top:0; left:50%; transform:translate(-50%, -120%);
+    z-index:9999; background:var(--navy); color:#fff;
+    padding:12px 18px; border-radius:0 0 16px 16px;
+    box-shadow:0 6px 18px rgba(15,23,42,.25);
+    font-size:13.5px; max-width:90vw; cursor:pointer;
+    transition:transform .3s ease;
+    display:flex; align-items:center; gap:10px;
+  }
+  #chatToast.show{ transform:translate(-50%, 0); }
+  #chatToast .toast-avatar{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    background:var(--bronze); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px;
+  }
+  #chatToast .toast-text{ overflow:hidden; }
+  #chatToast .toast-name{ font-weight:800; }
+  #chatToast .toast-msg{ font-size:12px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw; }
   #chatVoiceBtn.recording{ background:var(--red); color:#fff; animation:recPulse 1.1s infinite; }
   @keyframes recPulse{
     0%{ box-shadow:0 0 0 0 rgba(156,59,46,.5); }
@@ -397,6 +415,8 @@
 </style>
 </head>
 <body>
+
+<div id="chatToast" onclick="handleChatToastClick()"></div>
 
 <div id="loginOverlay">
   <div class="login-box">
@@ -1027,19 +1047,24 @@ function escapeHtml(s){
 }
 
 /* ---------- TABS ---------- */
-document.getElementById('tabsNav').addEventListener('click', (e)=>{
-  const btn = e.target.closest('button[data-tab]');
+function activateTab(tabName){
+  const btn = document.querySelector('#tabsNav button[data-tab="'+tabName+'"]');
   if(!btn) return;
   document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
-  if(btn.dataset.tab === 'clients') renderClientsTab();
-  if(btn.dataset.tab === 'cash') renderCashTab();
-  if(btn.dataset.tab === 'alerts') renderAlertsTab();
-  if(btn.dataset.tab === 'log') renderLogTab();
-  if(btn.dataset.tab === 'home') renderHomeTab();
-  if(btn.dataset.tab === 'chat') renderChatTab();
+  document.getElementById('panel-'+tabName).classList.add('active');
+  if(tabName === 'clients') renderClientsTab();
+  if(tabName === 'cash') renderCashTab();
+  if(tabName === 'alerts') renderAlertsTab();
+  if(tabName === 'log') renderLogTab();
+  if(tabName === 'home') renderHomeTab();
+  if(tabName === 'chat') renderChatTab();
+}
+document.getElementById('tabsNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  activateTab(btn.dataset.tab);
 });
 
 function renderTodayBadge(){
@@ -1859,6 +1884,12 @@ function renderAlertsTab(){
 let chatUnsubMessages = null;
 let chatUnsubThreadsList = null;
 let chatUnsubUsersList = null;
+let chatUnsubGlobalWatcher = null;
+let chatUnreadWatcherInitialized = false;
+let chatKnownUnreadState = {};
+let chatToastTimeout = null;
+let chatToastTargetUid = null;
+let chatToastTargetLabel = null;
 let currentChatId = null;
 let currentChatPartnerUid = null;
 let currentChatPartnerLabel = '';
@@ -1891,17 +1922,54 @@ function syncUserProfile(user){
 function startChatUnreadWatcher(){
   const user = auth.currentUser;
   if(!user) return;
-  if(chatUnsubThreadsList) chatUnsubThreadsList();
-  chatUnsubThreadsList = db.collection('chats').where('participants','array-contains', user.uid)
+  if(chatUnsubGlobalWatcher) chatUnsubGlobalWatcher();
+  chatUnreadWatcherInitialized = false;
+  chatKnownUnreadState = {};
+  chatUnsubGlobalWatcher = db.collection('chats').where('participants','array-contains', user.uid)
     .onSnapshot(snap=>{
       let anyUnread = false;
       snap.forEach(doc=>{
         const d = doc.data();
-        if(Array.isArray(d.unreadFor) && d.unreadFor.includes(user.uid)) anyUnread = true;
+        const chatId = doc.id;
+        const isUnread = Array.isArray(d.unreadFor) && d.unreadFor.includes(user.uid);
+        if(isUnread) anyUnread = true;
+
+        const wasUnread = chatKnownUnreadState[chatId];
+        if(chatUnreadWatcherInitialized && isUnread && !wasUnread && chatId !== currentChatId){
+          const otherUid = (d.participants || []).find(u => u !== user.uid);
+          const otherEmail = (d.participantEmails && d.participantEmails[otherUid]) || otherUid;
+          showChatToast(otherUid, otherEmail, d.lastMessage || '');
+        }
+        chatKnownUnreadState[chatId] = isUnread;
       });
+      chatUnreadWatcherInitialized = true;
       const dot = document.getElementById('chatUnreadDot');
       if(dot) dot.style.display = anyUnread ? 'inline-block' : 'none';
     }, ()=>{});
+}
+
+function showChatToast(uid, email, lastMessage){
+  chatToastTargetUid = uid;
+  chatToastTargetLabel = email;
+  const el = document.getElementById('chatToast');
+  el.innerHTML = `
+    <div class="toast-avatar">${initialFromEmail(email)}</div>
+    <div class="toast-text">
+      <div class="toast-name">${escapeHtml(displayNameFromEmail(email))}</div>
+      <div class="toast-msg">${escapeHtml(lastMessage)}</div>
+    </div>
+  `;
+  el.classList.add('show');
+  clearTimeout(chatToastTimeout);
+  chatToastTimeout = setTimeout(()=>{ el.classList.remove('show'); }, 4500);
+}
+
+function handleChatToastClick(){
+  document.getElementById('chatToast').classList.remove('show');
+  clearTimeout(chatToastTimeout);
+  if(!chatToastTargetUid) return;
+  activateTab('chat');
+  openChatThread(chatToastTargetUid, chatToastTargetLabel);
 }
 
 function renderChatTab(){
@@ -2032,6 +2100,14 @@ function closeChatThread(){
   renderChatTab();
 }
 
+function ensureChatParticipants(){
+  const user = auth.currentUser;
+  return chatDocRef(currentChatId).set({
+    participants: [user.uid, currentChatPartnerUid],
+    participantEmails: { [user.uid]: user.email, [currentChatPartnerUid]: currentChatPartnerLabel }
+  }, { merge: true });
+}
+
 function touchChatMeta(lastMessagePreview){
   const user = auth.currentUser;
   chatDocRef(currentChatId).set({
@@ -2043,22 +2119,27 @@ function touchChatMeta(lastMessagePreview){
   }, { merge: true });
 }
 
-function sendChatMessage(){
+async function sendChatMessage(){
   const input = document.getElementById('chatMessageInput');
   const text = input.value.trim();
   if(!text || !currentChatId) return;
   const user = auth.currentUser;
   input.value = '';
 
-  chatDocRef(currentChatId).collection('messages').add({
-    senderUid: user.uid,
-    senderEmail: user.email,
-    type: 'text',
-    text: text,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  touchChatMeta(text);
+  try{
+    await ensureChatParticipants();
+    await chatDocRef(currentChatId).collection('messages').add({
+      senderUid: user.uid,
+      senderEmail: user.email,
+      type: 'text',
+      text: text,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    touchChatMeta(text);
+  }catch(err){
+    console.error(err);
+    alert('حصل خطأ في إرسال الرسالة: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
 }
 
 const FIRESTORE_SAFE_MEDIA_BYTES = 700000; // stay comfortably under Firestore's 1MB per-document limit
@@ -2109,6 +2190,7 @@ async function sendChatImage(inputEl){
       alert('الصورة كبيرة جدًا حتى بعد الضغط. جرب صورة تانية أصغر.');
       return;
     }
+    await ensureChatParticipants();
     await chatDocRef(currentChatId).collection('messages').add({
       senderUid: user.uid,
       senderEmail: user.email,
@@ -2119,7 +2201,7 @@ async function sendChatImage(inputEl){
     touchChatMeta('📷 صورة');
   }catch(err){
     console.error(err);
-    alert('حصل خطأ في إرسال الصورة. جرب تاني.');
+    alert('حصل خطأ في إرسال الصورة: ' + (err && err.message ? err.message : 'غير معروف'));
   }finally{
     statusEl.style.display = 'none';
   }
@@ -2172,6 +2254,7 @@ async function uploadVoiceNote(blob){
     }
     const user = auth.currentUser;
     const dataUrl = await fileToDataUrl(blob);
+    await ensureChatParticipants();
     await chatDocRef(currentChatId).collection('messages').add({
       senderUid: user.uid,
       senderEmail: user.email,
@@ -2182,7 +2265,7 @@ async function uploadVoiceNote(blob){
     touchChatMeta('🎤 رسالة صوتية');
   }catch(err){
     console.error(err);
-    alert('حصل خطأ في إرسال الرسالة الصوتية. جرب تاني.');
+    alert('حصل خطأ في إرسال الرسالة الصوتية: ' + (err && err.message ? err.message : 'غير معروف'));
   }finally{
     statusEl.style.display = 'none';
   }
