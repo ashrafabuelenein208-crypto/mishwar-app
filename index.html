@@ -412,11 +412,32 @@
     70%{ box-shadow:0 0 0 9px rgba(156,59,46,0); }
     100%{ box-shadow:0 0 0 0 rgba(156,59,46,0); }
   }
+  #imgLightbox{
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(10,14,20,.92); align-items:center; justify-content:center; flex-direction:column; gap:14px;
+  }
+  #imgLightbox.show{ display:flex; }
+  #imgLightbox img{ max-width:92vw; max-height:78vh; border-radius:10px; }
+  #imgLightbox .lightbox-actions{ display:flex; gap:12px; }
+  #imgLightbox .lightbox-actions button{
+    border:none; border-radius:12px; padding:10px 22px; font-weight:800; font-size:14px; cursor:pointer;
+    font-family:inherit;
+  }
+  #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
+  #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
 </style>
 </head>
 <body>
 
 <div id="chatToast" onclick="handleChatToastClick()"></div>
+
+<div id="imgLightbox">
+  <img id="lightboxImg" src="" alt="صورة">
+  <div class="lightbox-actions">
+    <button class="lb-download" onclick="downloadLightboxImage()">تحميل الصورة</button>
+    <button class="lb-close" onclick="closeImgLightbox()">إغلاق</button>
+  </div>
+</div>
 
 <div id="loginOverlay">
   <div class="login-box">
@@ -926,6 +947,9 @@ function unlockApp(){
   renderHomeTab();
   syncUserProfile(auth.currentUser);
   startChatUnreadWatcher();
+  if('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission().catch(()=>{});
+  }
 }
 
 /* ---- Biometric (WebAuthn) device lock — scoped per account (uid) ---- */
@@ -1961,7 +1985,14 @@ function showChatToast(uid, email, lastMessage){
   `;
   el.classList.add('show');
   clearTimeout(chatToastTimeout);
-  chatToastTimeout = setTimeout(()=>{ el.classList.remove('show'); }, 4500);
+  chatToastTimeout = setTimeout(()=>{ el.classList.remove('show'); }, 6000);
+
+  if('Notification' in window && Notification.permission === 'granted'){
+    try{
+      const n = new Notification(displayNameFromEmail(email), { body: lastMessage || 'رسالة جديدة' });
+      n.onclick = () => { window.focus(); handleChatToastClick(); };
+    }catch(e){}
+  }
 }
 
 function handleChatToastClick(){
@@ -2074,7 +2105,7 @@ function openChatThread(partnerUid, label){
         const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
         let bubbleInner;
         if(m.type === 'image'){
-          bubbleInner = `<a href="${m.dataUrl}" target="_blank" rel="noopener"><img src="${m.dataUrl}" alt="صورة" style="max-width:220px;max-height:220px;border-radius:12px;display:block;"></a>`;
+          bubbleInner = `<img src="${m.dataUrl}" alt="صورة" onclick="openImgLightbox(this.src)" style="max-width:220px;max-height:220px;border-radius:12px;display:block;cursor:pointer;">`;
         } else if(m.type === 'audio'){
           bubbleInner = `<audio controls src="${m.dataUrl}" style="max-width:220px;"></audio>`;
         } else {
@@ -2143,6 +2174,25 @@ async function sendChatMessage(){
 }
 
 const FIRESTORE_SAFE_MEDIA_BYTES = 700000; // stay comfortably under Firestore's 1MB per-document limit
+
+function openImgLightbox(dataUrl){
+  document.getElementById('lightboxImg').src = dataUrl;
+  document.getElementById('imgLightbox').classList.add('show');
+}
+function closeImgLightbox(){
+  document.getElementById('imgLightbox').classList.remove('show');
+  document.getElementById('lightboxImg').src = '';
+}
+function downloadLightboxImage(){
+  const url = document.getElementById('lightboxImg').src;
+  if(!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'صورة_شات_' + Date.now() + '.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
 function fileToDataUrl(file){
   return new Promise((resolve, reject)=>{
