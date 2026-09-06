@@ -450,7 +450,6 @@
     <button data-tab="home" class="active">الرئيسية</button>
     <button data-tab="trip">تسجيل مشوار</button>
     <button data-tab="log">سجل المشاوير</button>
-    <button data-tab="clientExpenses">مصاريف كل عميل</button>
     <button data-tab="clients">العملاء</button>
     <button data-tab="cash">الحساب مع صاحب المكتب</button>
     <button data-tab="alerts">التنبيهات</button>
@@ -572,24 +571,6 @@
       <div class="row-actions">
         <button class="act btn-ghost btn-small" onclick="exportExcel()">تصدير فاتورة Excel</button>
       </div>
-    </section>
-  </div>
-
-  <!-- CLIENT EXPENSES -->
-  <div class="panel" id="panel-clientExpenses">
-    <section>
-      <h2>مصاريف كل عميل</h2>
-      <div class="search-box">
-        <input type="text" id="clientExpSearch" placeholder="دور باسم العميل...">
-      </div>
-      <table>
-        <thead>
-          <tr><th>العميل</th><th>مصاريف الشهر الحالي</th><th>إجمالي كل الوقت</th></tr>
-        </thead>
-        <tbody id="clientExpBody"></tbody>
-      </table>
-      <div class="empty" id="clientExpEmpty" style="display:none;">مفيش عملاء لسه</div>
-      <div id="clientDetailBox"></div>
     </section>
   </div>
 
@@ -1043,7 +1024,6 @@ document.getElementById('tabsNav').addEventListener('click', (e)=>{
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
-  if(btn.dataset.tab === 'clientExpenses') renderClientExpensesTab();
   if(btn.dataset.tab === 'clients') renderClientsTab();
   if(btn.dataset.tab === 'cash') renderCashTab();
   if(btn.dataset.tab === 'alerts') renderAlertsTab();
@@ -1644,101 +1624,6 @@ function renderHomeTab(){
   `).join('');
 }
 
-/* ---------- CLIENT EXPENSES TAB ---------- */
-let openClientDetailId = null;
-
-function renderClientExpensesTab(){
-  const q = (document.getElementById('clientExpSearch').value || '').trim().toLowerCase();
-  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
-  const trips = loadTrips();
-  const thisMonth = todayStr().slice(0,7);
-
-  const body = document.getElementById('clientExpBody');
-  const empty = document.getElementById('clientExpEmpty');
-  if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; document.getElementById('clientDetailBox').innerHTML=''; return; }
-  empty.style.display='none';
-
-  body.innerHTML = clients.map(c => {
-    const cTrips = trips.filter(t=>t.clientId===c.id);
-    const monthTotal = cTrips.filter(t=>t.date.startsWith(thisMonth)).reduce((s,t)=>s+t.cost,0);
-    const allTotal = cTrips.reduce((s,t)=>s+t.cost,0);
-    return `
-      <tr class="client-row" onclick="toggleClientDetail('${c.id}')">
-        <td>${escapeHtml(c.name)}</td>
-        <td class="num">${monthTotal.toFixed(0)} ج.م</td>
-        <td class="num">${allTotal.toFixed(0)} ج.م</td>
-      </tr>
-    `;
-  }).join('');
-
-  if(openClientDetailId && clients.some(c=>c.id===openClientDetailId)){
-    renderClientDetail(openClientDetailId);
-  } else {
-    document.getElementById('clientDetailBox').innerHTML = '';
-  }
-}
-document.getElementById('clientExpSearch').addEventListener('input', renderClientExpensesTab);
-
-function toggleClientDetail(id){
-  openClientDetailId = (openClientDetailId === id) ? null : id;
-  renderClientExpensesTab();
-}
-
-async function renderClientDetail(id){
-  const c = loadClients().find(x=>x.id===id);
-  if(!c) return;
-  const trips = loadTrips().filter(t=>t.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
-  const total = trips.reduce((s,t)=>s+t.cost,0);
-
-  const rows = trips.map(t => `
-    <tr>
-      <td class="num">${t.date}</td>
-      <td><span class="tag">${escapeHtml(t.type)}</span></td>
-      <td>${escapeHtml(t.place)||'—'}</td>
-      <td class="num">${t.cost.toFixed(2)}</td>
-    </tr>
-  `).join('');
-
-  let files = [];
-  try{ files = await getFilesForClient(id); }catch(e){ files = []; }
-  const fileRows = files.map(f => `
-    <div class="attach-row">
-      <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
-      <div class="btns" style="display:flex;gap:6px;">
-        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${id}')">تحميل</button>
-        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${id}'))">حذف</button>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('clientDetailBox').innerHTML = `
-    <div class="client-detail">
-      <div class="head">
-        <h3>${escapeHtml(c.name)}</h3>
-        <span class="tag" style="font-size:14px;">إجمالي: ${total.toFixed(0)} ج.م</span>
-      </div>
-      <div class="info-line">
-        <span>المأمورية: <b>${escapeHtml(c.taxOffice)||'—'}</b></span>
-        <span>التليفون: <b>${escapeHtml(c.phone)||'—'}</b></span>
-        <span>انتهاء السجل التجاري: <b class="${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</b></span>
-        <span>انتهاء البطاقة الضريبية: <b class="${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</b></span>
-        <span>انتهاء التوكن: <b class="${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</b></span>
-      </div>
-      <table>
-        <thead><tr><th>التاريخ</th><th>النوع</th><th>الجهة</th><th>التكلفة</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4" class="empty">مفيش مشاوير مسجلة للعميل ده لسه</td></tr>'}</tbody>
-      </table>
-      <div class="attach-box">
-        <h3 style="margin:0 0 8px;color:var(--navy);font-size:14.5px;">أوراق ومستندات العميل</h3>
-        <input type="file" multiple onchange="handleFileUpload('${id}', this)">
-        <div class="attach-list">
-          ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
 /* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
 const FILES_DB_NAME = 'mishwar_files_db';
 function openFilesDB(){
@@ -1787,20 +1672,13 @@ async function deleteClientFile(id, clientId){
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
-  renderClientDetail(clientId);
+  renderClientsTab();
 }
 
 function fmtSize(bytes){
   if(bytes < 1024) return bytes + ' بايت';
   if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' ك.ب';
   return (bytes/(1024*1024)).toFixed(1) + ' م.ب';
-}
-
-async function handleFileUpload(clientId, inputEl){
-  if(!inputEl.files.length) return;
-  await addFilesToClient(clientId, inputEl.files);
-  inputEl.value = '';
-  renderClientDetail(clientId);
 }
 
 async function handleFileUploadInClientsTab(clientId, inputEl){
