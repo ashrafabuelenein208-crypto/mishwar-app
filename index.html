@@ -388,6 +388,12 @@
   .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; text-align:center;}
   .msg-row.me .msg-time{text-align:left;}
   .msg-row.them .msg-time{text-align:right;}
+  #chatVoiceBtn.recording{ background:var(--red); color:#fff; animation:recPulse 1.1s infinite; }
+  @keyframes recPulse{
+    0%{ box-shadow:0 0 0 0 rgba(156,59,46,.5); }
+    70%{ box-shadow:0 0 0 9px rgba(156,59,46,0); }
+    100%{ box-shadow:0 0 0 0 rgba(156,59,46,0); }
+  }
 </style>
 </head>
 <body>
@@ -433,6 +439,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 
 <header class="top">
   <div class="wrap">
@@ -750,7 +757,11 @@
         </div>
       </div>
       <div id="chatMessages" style="padding:16px 18px; max-height:52vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; background:var(--paper);"></div>
-      <div style="display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--line); background:var(--panel);">
+      <div id="chatUploadStatus" style="display:none; padding:6px 16px; font-size:12.5px; color:var(--navy-dim);"></div>
+      <div style="display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--line); background:var(--panel);align-items:center;">
+        <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="sendChatImage(this)">
+        <button class="act btn-ghost btn-small" title="ابعت صورة" onclick="document.getElementById('chatImageInput').click()">📷</button>
+        <button class="act btn-ghost btn-small" id="chatVoiceBtn" title="سجل رسالة صوتية" onclick="toggleVoiceRecording()">🎤</button>
         <input type="text" id="chatMessageInput" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){sendChatMessage();}" style="flex:1;">
         <button class="act btn-primary" onclick="sendChatMessage()">إرسال</button>
       </div>
@@ -782,6 +793,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let authMode = 'login';
@@ -1994,10 +2006,18 @@ function openChatThread(partnerUid, label){
         const m = doc.data();
         const mine = m.senderUid === myUid;
         const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
+        let bubbleInner;
+        if(m.type === 'image'){
+          bubbleInner = `<a href="${m.url}" target="_blank" rel="noopener"><img src="${m.url}" alt="صورة" style="max-width:220px;max-height:220px;border-radius:12px;display:block;"></a>`;
+        } else if(m.type === 'audio'){
+          bubbleInner = `<audio controls src="${m.url}" style="max-width:220px;"></audio>`;
+        } else {
+          bubbleInner = escapeHtml(m.text);
+        }
         return `
           <div class="msg-row ${mine?'me':'them'}">
             <div>
-              <div class="msg-bubble">${escapeHtml(m.text)}</div>
+              <div class="msg-bubble">${bubbleInner}</div>
               <div class="msg-time">${t}</div>
             </div>
           </div>
@@ -2014,6 +2034,17 @@ function closeChatThread(){
   renderChatTab();
 }
 
+function touchChatMeta(lastMessagePreview){
+  const user = auth.currentUser;
+  chatDocRef(currentChatId).set({
+    participants: [user.uid, currentChatPartnerUid],
+    participantEmails: { [user.uid]: user.email, [currentChatPartnerUid]: currentChatPartnerLabel },
+    lastMessage: lastMessagePreview,
+    lastTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    unreadFor: firebase.firestore.FieldValue.arrayUnion(currentChatPartnerUid)
+  }, { merge: true });
+}
+
 function sendChatMessage(){
   const input = document.getElementById('chatMessageInput');
   const text = input.value.trim();
@@ -2024,17 +2055,100 @@ function sendChatMessage(){
   chatDocRef(currentChatId).collection('messages').add({
     senderUid: user.uid,
     senderEmail: user.email,
+    type: 'text',
     text: text,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  chatDocRef(currentChatId).set({
-    participants: [user.uid, currentChatPartnerUid],
-    participantEmails: { [user.uid]: user.email, [currentChatPartnerUid]: currentChatPartnerLabel },
-    lastMessage: text,
-    lastTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    unreadFor: firebase.firestore.FieldValue.arrayUnion(currentChatPartnerUid)
-  }, { merge: true });
+  touchChatMeta(text);
+}
+
+async function sendChatImage(inputEl){
+  const file = inputEl.files[0];
+  if(!file || !currentChatId) return;
+  inputEl.value = '';
+  const statusEl = document.getElementById('chatUploadStatus');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'جارٍ رفع الصورة...';
+  try{
+    const user = auth.currentUser;
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `chat_media/${currentChatId}/${Date.now()}_${user.uid}.${ext}`;
+    const ref = storage.ref().child(path);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    await chatDocRef(currentChatId).collection('messages').add({
+      senderUid: user.uid,
+      senderEmail: user.email,
+      type: 'image',
+      url,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    touchChatMeta('📷 صورة');
+  }catch(err){
+    console.error(err);
+    alert('حصل خطأ في رفع الصورة. اتأكد إن Firebase Storage مفعّل وقواعده مظبوطة.');
+  }finally{
+    statusEl.style.display = 'none';
+  }
+}
+
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecordingVoice = false;
+
+async function toggleVoiceRecording(){
+  if(!currentChatId) return;
+  const btn = document.getElementById('chatVoiceBtn');
+  if(!isRecordingVoice){
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        uploadVoiceNote(new Blob(recordedChunks, { type: 'audio/webm' }));
+      };
+      mediaRecorder.start();
+      isRecordingVoice = true;
+      btn.textContent = '⏹️';
+      btn.classList.add('recording');
+    }catch(err){
+      alert('محتاج تسمح للتطبيق بالوصول للمايك عشان تسجل رسالة صوتية.');
+    }
+  } else {
+    mediaRecorder.stop();
+    isRecordingVoice = false;
+    btn.textContent = '🎤';
+    btn.classList.remove('recording');
+  }
+}
+
+async function uploadVoiceNote(blob){
+  const statusEl = document.getElementById('chatUploadStatus');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'جارٍ رفع الرسالة الصوتية...';
+  try{
+    const user = auth.currentUser;
+    const path = `chat_media/${currentChatId}/${Date.now()}_${user.uid}.webm`;
+    const ref = storage.ref().child(path);
+    await ref.put(blob);
+    const url = await ref.getDownloadURL();
+    await chatDocRef(currentChatId).collection('messages').add({
+      senderUid: user.uid,
+      senderEmail: user.email,
+      type: 'audio',
+      url,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    touchChatMeta('🎤 رسالة صوتية');
+  }catch(err){
+    console.error(err);
+    alert('حصل خطأ في رفع الرسالة الصوتية. اتأكد إن Firebase Storage مفعّل وقواعده مظبوطة.');
+  }finally{
+    statusEl.style.display = 'none';
+  }
 }
 
 /* ---------- INIT ---------- */
