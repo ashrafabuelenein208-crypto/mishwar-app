@@ -743,8 +743,9 @@
 
     <section id="chatNewSection">
       <h2>ابدأ محادثة جديدة</h2>
-      <div class="search-box">
-        <input type="text" id="chatUserSearch" placeholder="دور بإيميل حد مسجل في التطبيق..." oninput="renderChatUserList()">
+      <div class="search-box" style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="chatUserSearch" placeholder="دور بإيميل حد مسجل في التطبيق..." oninput="renderChatUserList()" onkeydown="if(event.key==='Enter'){renderChatUserList();}" style="flex:1;">
+        <button class="act btn-primary btn-small" onclick="renderChatUserList()" style="white-space:nowrap;">بحث</button>
       </div>
       <div id="chatUserList"></div>
       <div class="empty" id="chatUserEmpty" style="display:none;">مفيش حد تاني مسجل في التطبيق لسه</div>
