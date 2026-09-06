@@ -439,7 +439,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 
 <header class="top">
   <div class="wrap">
@@ -793,7 +792,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let authMode = 'login';
@@ -2008,9 +2006,9 @@ function openChatThread(partnerUid, label){
         const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
         let bubbleInner;
         if(m.type === 'image'){
-          bubbleInner = `<a href="${m.url}" target="_blank" rel="noopener"><img src="${m.url}" alt="صورة" style="max-width:220px;max-height:220px;border-radius:12px;display:block;"></a>`;
+          bubbleInner = `<a href="${m.dataUrl}" target="_blank" rel="noopener"><img src="${m.dataUrl}" alt="صورة" style="max-width:220px;max-height:220px;border-radius:12px;display:block;"></a>`;
         } else if(m.type === 'audio'){
-          bubbleInner = `<audio controls src="${m.url}" style="max-width:220px;"></audio>`;
+          bubbleInner = `<audio controls src="${m.dataUrl}" style="max-width:220px;"></audio>`;
         } else {
           bubbleInner = escapeHtml(m.text);
         }
@@ -2063,31 +2061,65 @@ function sendChatMessage(){
   touchChatMeta(text);
 }
 
+const FIRESTORE_SAFE_MEDIA_BYTES = 700000; // stay comfortably under Firestore's 1MB per-document limit
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function compressImageToDataUrl(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if(width > height && width > maxDim){ height = Math.round(height * (maxDim / width)); width = maxDim; }
+      else if(height > maxDim){ width = Math.round(width * (maxDim / height)); height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 async function sendChatImage(inputEl){
   const file = inputEl.files[0];
   if(!file || !currentChatId) return;
   inputEl.value = '';
   const statusEl = document.getElementById('chatUploadStatus');
   statusEl.style.display = 'block';
-  statusEl.textContent = 'جارٍ رفع الصورة...';
+  statusEl.textContent = 'جارٍ تجهيز الصورة...';
   try{
     const user = auth.currentUser;
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `chat_media/${currentChatId}/${Date.now()}_${user.uid}.${ext}`;
-    const ref = storage.ref().child(path);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
+    // Try progressively smaller/lower-quality versions until it fits comfortably in one Firestore document
+    let dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+      alert('الصورة كبيرة جدًا حتى بعد الضغط. جرب صورة تانية أصغر.');
+      return;
+    }
     await chatDocRef(currentChatId).collection('messages').add({
       senderUid: user.uid,
       senderEmail: user.email,
       type: 'image',
-      url,
+      dataUrl,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     touchChatMeta('📷 صورة');
   }catch(err){
     console.error(err);
-    alert('حصل خطأ في رفع الصورة. اتأكد إن Firebase Storage مفعّل وقواعده مظبوطة.');
+    alert('حصل خطأ في إرسال الصورة. جرب تاني.');
   }finally{
     statusEl.style.display = 'none';
   }
@@ -2096,6 +2128,8 @@ async function sendChatImage(inputEl){
 let mediaRecorder = null;
 let recordedChunks = [];
 let isRecordingVoice = false;
+let voiceRecordTimeout = null;
+const MAX_VOICE_SECONDS = 45; // keeps the resulting file safely under Firestore's per-document size limit
 
 async function toggleVoiceRecording(){
   if(!currentChatId) return;
@@ -2114,10 +2148,12 @@ async function toggleVoiceRecording(){
       isRecordingVoice = true;
       btn.textContent = '⏹️';
       btn.classList.add('recording');
+      voiceRecordTimeout = setTimeout(()=>{ if(isRecordingVoice) toggleVoiceRecording(); }, MAX_VOICE_SECONDS * 1000);
     }catch(err){
       alert('محتاج تسمح للتطبيق بالوصول للمايك عشان تسجل رسالة صوتية.');
     }
   } else {
+    clearTimeout(voiceRecordTimeout);
     mediaRecorder.stop();
     isRecordingVoice = false;
     btn.textContent = '🎤';
@@ -2128,24 +2164,25 @@ async function toggleVoiceRecording(){
 async function uploadVoiceNote(blob){
   const statusEl = document.getElementById('chatUploadStatus');
   statusEl.style.display = 'block';
-  statusEl.textContent = 'جارٍ رفع الرسالة الصوتية...';
+  statusEl.textContent = 'جارٍ إرسال الرسالة الصوتية...';
   try{
+    if(blob.size > FIRESTORE_SAFE_MEDIA_BYTES){
+      alert('الرسالة الصوتية طويلة شوية. جرب تسجّل رسالة أقصر (أقل من ٤٥ ثانية).');
+      return;
+    }
     const user = auth.currentUser;
-    const path = `chat_media/${currentChatId}/${Date.now()}_${user.uid}.webm`;
-    const ref = storage.ref().child(path);
-    await ref.put(blob);
-    const url = await ref.getDownloadURL();
+    const dataUrl = await fileToDataUrl(blob);
     await chatDocRef(currentChatId).collection('messages').add({
       senderUid: user.uid,
       senderEmail: user.email,
       type: 'audio',
-      url,
+      dataUrl,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     touchChatMeta('🎤 رسالة صوتية');
   }catch(err){
     console.error(err);
-    alert('حصل خطأ في رفع الرسالة الصوتية. اتأكد إن Firebase Storage مفعّل وقواعده مظبوطة.');
+    alert('حصل خطأ في إرسال الرسالة الصوتية. جرب تاني.');
   }finally{
     statusEl.style.display = 'none';
   }
