@@ -385,9 +385,12 @@
   }
   .msg-row.me .msg-bubble{background:var(--navy); color:#fff; border-bottom-left-radius:4px;}
   .msg-row.them .msg-bubble{background:#fff; color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
-  .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; text-align:center;}
-  .msg-row.me .msg-time{text-align:left;}
-  .msg-row.them .msg-time{text-align:right;}
+  .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; display:flex; align-items:center; gap:3px;}
+  .msg-row.me .msg-time{justify-content:flex-end;}
+  .msg-row.them .msg-time{justify-content:flex-start;}
+  .msg-ticks{display:inline-flex; color:var(--navy-dim); flex-shrink:0;}
+  .msg-ticks.read{color:#34b7f1;}
+  .msg-ticks svg{display:block;}
   #chatToast{
     position:fixed; top:0; left:50%; transform:translate(-50%, -120%);
     z-index:9999; background:var(--navy); color:#fff;
@@ -501,6 +504,7 @@
     <button data-tab="cash">الحساب مع صاحب المكتب</button>
     <button data-tab="alerts">التنبيهات</button>
     <button data-tab="chat">الشات <span id="chatUnreadDot" style="display:none;"></span></button>
+    <button data-tab="owner" id="ownerTabBtn" style="display:none;">لوحة صاحب المكتب</button>
   </nav>
 </header>
 
@@ -808,7 +812,44 @@
     </section>
   </div>
 
-  <footer class="note">البيانات محفوظة على جهازك فقط (localStorage) ما عدا الشات، اللي بيتحفظ لحظيًا على Firestore عشان يوصل للطرف التاني</footer>
+  <!-- OWNER DASHBOARD -->
+  <div class="panel" id="panel-owner">
+    <section id="ownerEmployeesSection">
+      <h2>مصاريف الموظفين</h2>
+      <div class="cards" id="ownerTotalsCards"></div>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-ghost btn-small" onclick="renderOwnerTab()">🔄 تحديث</button>
+      </div>
+      <div id="ownerEmployeesList"></div>
+      <div class="empty" id="ownerEmployeesEmpty" style="display:none;">مفيش موظفين مسجلين لسه</div>
+    </section>
+
+    <section id="ownerDetailSection" style="display:none;">
+      <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
+        <button class="act btn-ghost btn-small" onclick="closeOwnerDetail()">‹ رجوع لكل الموظفين</button>
+      </div>
+      <h2 id="ownerDetailTitle" style="margin-top:0;"></h2>
+      <div class="cards" id="ownerDetailCards"></div>
+      <h3 style="margin:18px 0 8px;font-size:14px;color:var(--navy);">المشاوير</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th></tr></thead>
+          <tbody id="ownerDetailTripsBody"></tbody>
+        </table>
+        <div class="empty" id="ownerDetailTripsEmpty" style="display:none;">مفيش مشاوير مسجلة لهذا الموظف</div>
+      </div>
+      <h3 style="margin:18px 0 8px;font-size:14px;color:var(--navy);">العُهدة المستلمة</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th></tr></thead>
+          <tbody id="ownerDetailCashBody"></tbody>
+        </table>
+        <div class="empty" id="ownerDetailCashEmpty" style="display:none;">مفيش عهدة مسجلة لهذا الموظف</div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="note">البيانات محفوظة على جهازك (localStorage) ومتزامنة كمان لحظيًا مع Firestore (المشاوير، العُهدة، والشات) عشان صاحب المكتب يقدر يشوفها</footer>
 
 </main>
 
@@ -947,6 +988,8 @@ function unlockApp(){
   renderHomeTab();
   syncUserProfile(auth.currentUser);
   startChatUnreadWatcher();
+  watchOwnRole();
+  ensureLedgerMigrated();
   if('Notification' in window && Notification.permission === 'default'){
     Notification.requestPermission().catch(()=>{});
   }
@@ -1043,6 +1086,10 @@ function renderAccountSection(){
         ? `<button class="act btn-ghost btn-small" onclick="disableBiometric()">إلغاء الدخول بالبصمة على هذا الجهاز</button>`
         : `<button class="act btn-ghost btn-small" onclick="enableBiometric()">🔒 فعّل الدخول بالبصمة على هذا الجهاز</button>`
       }
+      ${currentUserRole === 'owner'
+        ? `<span class="tag" style="align-self:center;">✓ حساب صاحب المكتب</span>`
+        : `<button class="act btn-ghost btn-small" onclick="claimOwnerRole()">تفعيل حساب صاحب المكتب</button>`
+      }
       <button class="act btn-danger btn-small" onclick="logout()">تسجيل الخروج</button>
     </div>
   `;
@@ -1057,12 +1104,200 @@ function requirePin(cb){
 function loadClients(){ return JSON.parse(localStorage.getItem(CKEY()) || '[]'); }
 function saveClients(c){ localStorage.setItem(CKEY(), JSON.stringify(c)); }
 function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY()) || '[]'); }
-function saveTrips(t){ localStorage.setItem(TKEY(), JSON.stringify(t)); }
+function saveTrips(t){
+  const prev = loadTrips();
+  localStorage.setItem(TKEY(), JSON.stringify(t));
+  syncLedgerToFirestore('trips', prev, t);
+}
 function loadReceipts(){ return JSON.parse(localStorage.getItem(RKEY()) || '[]'); }
-function saveReceipts(r){ localStorage.setItem(RKEY(), JSON.stringify(r)); }
+function saveReceipts(r){
+  const prev = loadReceipts();
+  localStorage.setItem(RKEY(), JSON.stringify(r));
+  syncLedgerToFirestore('cash', prev, r);
+}
 function AKEY(){ return 'mishwar_reminders_v1_' + authUid(); }
 function loadReminders(){ return JSON.parse(localStorage.getItem(AKEY()) || '[]'); }
 function saveReminders(a){ localStorage.setItem(AKEY(), JSON.stringify(a)); }
+
+/* ---------- Ledger mirror on Firestore (per-user subcollections) ----------
+   localStorage stays the source of truth for the device (offline-first);
+   we mirror every add/edit/delete to Firestore too so صاحب المكتب can read
+   every employee's trips/cash from their own dashboard. Best-effort: if the
+   device is offline the write just fails quietly and localStorage still has it. */
+function ledgerColRef(kind){
+  const user = auth.currentUser;
+  if(!user) return null;
+  return db.collection('users').doc(user.uid).collection(kind);
+}
+function syncLedgerToFirestore(kind, prevArr, newArr){
+  const col = ledgerColRef(kind);
+  if(!col) return;
+  const prevMap = new Map((prevArr||[]).map(x=>[x.id, x]));
+  const newMap = new Map((newArr||[]).map(x=>[x.id, x]));
+  newMap.forEach((item, id)=>{
+    const old = prevMap.get(id);
+    if(!old || JSON.stringify(old) !== JSON.stringify(item)){
+      col.doc(id).set(Object.assign({}, item, {
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }), { merge: true }).catch(()=>{});
+    }
+  });
+  prevMap.forEach((_, id)=>{
+    if(!newMap.has(id)) col.doc(id).delete().catch(()=>{});
+  });
+}
+/* One-time bulk push of any pre-existing local data the first time this ships
+   for an account (later changes go through syncLedgerToFirestore above). */
+async function ensureLedgerMigrated(){
+  const user = auth.currentUser;
+  if(!user) return;
+  const flagKey = 'mishwar_ledger_migrated_v1_' + user.uid;
+  if(localStorage.getItem(flagKey)) return;
+  try{
+    const trips = loadTrips();
+    const receipts = loadReceipts();
+    const jobs = [];
+    trips.forEach(t=>{
+      jobs.push(db.collection('users').doc(user.uid).collection('trips').doc(t.id)
+        .set(Object.assign({}, t, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }), { merge:true }));
+    });
+    receipts.forEach(r=>{
+      jobs.push(db.collection('users').doc(user.uid).collection('cash').doc(r.id)
+        .set(Object.assign({}, r, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }), { merge:true }));
+    });
+    await Promise.all(jobs);
+    localStorage.setItem(flagKey, '1');
+  }catch(e){ /* offline or blocked — will retry on next login */ }
+}
+
+/* ---------- Owner dashboard (لوحة صاحب المكتب) ----------
+   Reads every employee's mirrored trips/cash subcollections (see
+   syncLedgerToFirestore above) — one-shot get() per employee, refreshed
+   whenever the tab is opened or the "تحديث" button is pressed. */
+let currentOwnerViewUid = null;
+
+async function fetchLedgerTotals(uid){
+  const [tripsSnap, cashSnap] = await Promise.all([
+    db.collection('users').doc(uid).collection('trips').get(),
+    db.collection('users').doc(uid).collection('cash').get()
+  ]);
+  const totalSpent = tripsSnap.docs.reduce((s,d)=> s + (Number(d.data().cost)||0), 0);
+  const totalReceived = cashSnap.docs.reduce((s,d)=> s + (Number(d.data().amount)||0), 0);
+  return { totalSpent, totalReceived, balance: totalReceived - totalSpent };
+}
+
+async function renderOwnerTab(){
+  if(currentUserRole !== 'owner') return;
+  document.getElementById('ownerEmployeesSection').style.display = 'block';
+  document.getElementById('ownerDetailSection').style.display = 'none';
+  currentOwnerViewUid = null;
+  const list = document.getElementById('ownerEmployeesList');
+  const emptyEl = document.getElementById('ownerEmployeesEmpty');
+  const cardsBox = document.getElementById('ownerTotalsCards');
+  list.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  emptyEl.style.display = 'none';
+  try{
+    const usersSnap = await db.collection('users').get();
+    const rows = usersSnap.docs.map(d=>d.data()).filter(u=>u && u.uid && u.email);
+    if(!rows.length){
+      list.innerHTML=''; emptyEl.style.display='block'; cardsBox.innerHTML=''; return;
+    }
+    const withTotals = await Promise.all(rows.map(async r=>{
+      const totals = await fetchLedgerTotals(r.uid);
+      return Object.assign({}, r, totals);
+    }));
+    const grandSpent = withTotals.reduce((s,r)=>s+r.totalSpent,0);
+    const grandReceived = withTotals.reduce((s,r)=>s+r.totalReceived,0);
+    const grandBalance = grandReceived - grandSpent;
+    cardsBox.innerHTML = `
+      <div class="card"><div class="label">إجمالي العُهدة لكل الموظفين</div><div class="value num">${grandReceived.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">إجمالي مصاريف كل الموظفين</div><div class="value num">${grandSpent.toFixed(0)} ج.م</div></div>
+      <div class="card ${grandBalance<0?'warn':'good'}"><div class="label">إجمالي المتبقي</div><div class="value num">${grandBalance.toFixed(0)} ج.م</div></div>
+    `;
+    withTotals.sort((a,b)=> displayNameFromEmail(a.email).localeCompare(displayNameFromEmail(b.email)));
+    list.innerHTML = withTotals.map(r => `
+      <div class="chat-emp-row" onclick="openEmployeeLedger('${r.uid}', '${escapeHtml(r.email)}')">
+        <div class="left">
+          <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
+          <div class="info">
+            <div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div>
+            <div class="last">اتصرف ${r.totalSpent.toFixed(0)} ج.م • عهدة ${r.totalReceived.toFixed(0)} ج.م</div>
+          </div>
+        </div>
+        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
+      </div>
+    `).join('');
+  }catch(e){
+    list.innerHTML = '<div class="empty">محصلش تحميل بيانات الموظفين، جرب "تحديث" تاني</div>';
+  }
+}
+
+function openEmployeeLedger(uid, email){
+  currentOwnerViewUid = uid;
+  document.getElementById('ownerEmployeesSection').style.display = 'none';
+  document.getElementById('ownerDetailSection').style.display = 'block';
+  document.getElementById('ownerDetailTitle').textContent = displayNameFromEmail(email);
+  renderOwnerDetail();
+}
+
+function closeOwnerDetail(){
+  currentOwnerViewUid = null;
+  document.getElementById('ownerDetailSection').style.display = 'none';
+  document.getElementById('ownerEmployeesSection').style.display = 'block';
+}
+
+async function renderOwnerDetail(){
+  if(!currentOwnerViewUid) return;
+  const viewingUid = currentOwnerViewUid;
+  const cardsBox = document.getElementById('ownerDetailCards');
+  const tripsBody = document.getElementById('ownerDetailTripsBody');
+  const tripsEmpty = document.getElementById('ownerDetailTripsEmpty');
+  const cashBody = document.getElementById('ownerDetailCashBody');
+  const cashEmpty = document.getElementById('ownerDetailCashEmpty');
+  cardsBox.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  tripsBody.innerHTML = ''; cashBody.innerHTML = '';
+  tripsEmpty.style.display = 'none'; cashEmpty.style.display = 'none';
+  try{
+    const [tripsSnap, cashSnap] = await Promise.all([
+      db.collection('users').doc(viewingUid).collection('trips').get(),
+      db.collection('users').doc(viewingUid).collection('cash').get()
+    ]);
+    if(currentOwnerViewUid !== viewingUid) return; // user navigated away while loading
+    const trips = tripsSnap.docs.map(d=>d.data()).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    const cash = cashSnap.docs.map(d=>d.data()).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    const totalSpent = trips.reduce((s,t)=>s+(Number(t.cost)||0),0);
+    const totalReceived = cash.reduce((s,c)=>s+(Number(c.amount)||0),0);
+    const balance = totalReceived - totalSpent;
+    cardsBox.innerHTML = `
+      <div class="card"><div class="label">إجمالي العُهدة المستلمة</div><div class="value num">${totalReceived.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">إجمالي المصاريف</div><div class="value num">${totalSpent.toFixed(0)} ج.م</div></div>
+      <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
+    `;
+    if(trips.length){
+      tripsBody.innerHTML = trips.map(t => `
+        <tr>
+          <td class="num">${escapeHtml(t.date)||'—'}</td>
+          <td>${escapeHtml(t.clientName)||'—'}</td>
+          <td><span class="tag">${escapeHtml(t.type)||'—'}</span></td>
+          <td>${escapeHtml(t.place)||'—'}</td>
+          <td class="num">${(Number(t.cost)||0).toFixed(2)}</td>
+          <td>${escapeHtml(t.note)||'—'}</td>
+        </tr>
+      `).join('');
+    } else { tripsEmpty.style.display='block'; }
+    if(cash.length){
+      cashBody.innerHTML = cash.map(c => `
+        <tr>
+          <td class="num">${escapeHtml(c.date)||'—'}</td>
+          <td class="num">${(Number(c.amount)||0).toFixed(2)}</td>
+          <td>${escapeHtml(c.note)||'—'}</td>
+        </tr>
+      `).join('');
+    } else { cashEmpty.style.display='block'; }
+  }catch(e){
+    cardsBox.innerHTML = '<div class="empty">محصلش تحميل بيانات الموظف ده</div>';
+  }
+}
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -1084,6 +1319,7 @@ function activateTab(tabName){
   if(tabName === 'log') renderLogTab();
   if(tabName === 'home') renderHomeTab();
   if(tabName === 'chat') renderChatTab();
+  if(tabName === 'owner') renderOwnerTab();
 }
 document.getElementById('tabsNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-tab]');
@@ -1359,9 +1595,9 @@ function saveTrip(){
   const trips = loadTrips();
   if(editingTripId){
     const t = trips.find(x=>x.id===editingTripId);
-    if(t) Object.assign(t, {clientId: client.id, type, place, date, cost, note});
+    if(t) Object.assign(t, {clientId: client.id, clientName: client.name, type, place, date, cost, note});
   } else {
-    trips.push({id: uid(), clientId: client.id, type, place, date, cost, note});
+    trips.push({id: uid(), clientId: client.id, clientName: client.name, type, place, date, cost, note});
   }
   saveTrips(trips);
   resetTripForm();
@@ -1906,9 +2142,21 @@ function renderAlertsTab(){
 
 /* ---------- CHAT (any account can message any other account, 1:1) ---------- */
 let chatUnsubMessages = null;
+let chatUnsubChatDoc = null;
 let chatUnsubThreadsList = null;
 let chatUnsubUsersList = null;
 let chatUnsubGlobalWatcher = null;
+let currentPartnerLastReadMs = 0;
+let latestChatMessageDocs = [];
+
+// WhatsApp-style single/double check tick icons (use currentColor so CSS controls the state color)
+const CHAT_TICK_PATH = "M11.892 3.2a.5.5 0 0 1 .015.707l-6.2 6.6a.5.5 0 0 1-.73.008L2.1 7.64a.5.5 0 1 1 .715-.7l2.51 2.56 5.86-6.243a.5.5 0 0 1 .707-.057z";
+function chatTickIcon(count){
+  if(count === 1){
+    return `<svg viewBox="0 0 16 15" width="14" height="13"><path fill="currentColor" d="${CHAT_TICK_PATH}"/></svg>`;
+  }
+  return `<svg viewBox="0 0 20 15" width="17" height="13"><path fill="currentColor" d="${CHAT_TICK_PATH}"/><path fill="currentColor" d="${CHAT_TICK_PATH}" transform="translate(5,0)"/></svg>`;
+}
 let chatUnreadWatcherInitialized = false;
 let chatKnownUnreadState = {};
 let chatToastTimeout = null;
@@ -1941,6 +2189,36 @@ function syncUserProfile(user){
     email: user.email,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).catch(()=>{});
+}
+
+/* ---------- Owner role (صاحب المكتب) ----------
+   Change this code to something private only you know before giving the app
+   to employees — whoever enters it correctly gets the owner dashboard tab. */
+const OWNER_SETUP_CODE = 'GHARIB-OWNER-2026';
+let chatUnsubOwnRole = null;
+let currentUserRole = 'employee';
+
+function watchOwnRole(){
+  const user = auth.currentUser;
+  if(!user) return;
+  if(chatUnsubOwnRole) chatUnsubOwnRole();
+  chatUnsubOwnRole = db.collection('users').doc(user.uid).onSnapshot(docSnap=>{
+    currentUserRole = (docSnap.data() || {}).role || 'employee';
+    const btn = document.getElementById('ownerTabBtn');
+    if(btn) btn.style.display = (currentUserRole === 'owner') ? 'inline-block' : 'none';
+    renderAccountSection();
+  }, ()=>{});
+}
+
+function claimOwnerRole(){
+  const code = prompt('اكتب كود تفعيل صاحب المكتب:');
+  if(code === null) return;
+  if(code !== OWNER_SETUP_CODE){ alert('الكود غير صحيح'); return; }
+  const user = auth.currentUser;
+  if(!user) return;
+  db.collection('users').doc(user.uid).set({ role: 'owner' }, { merge: true })
+    .then(()=> alert('تم تفعيل صلاحية صاحب المكتب على الحساب ده'))
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function startChatUnreadWatcher(){
@@ -2091,43 +2369,79 @@ function openChatThread(partnerUid, label){
   document.getElementById('chatThreadTitle').textContent = displayNameFromEmail(label);
 
   chatDocRef(currentChatId).set({
-    unreadFor: firebase.firestore.FieldValue.arrayRemove(user.uid)
+    unreadFor: firebase.firestore.FieldValue.arrayRemove(user.uid),
+    ['lastRead.' + user.uid]: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).catch(()=>{});
+
+  currentPartnerLastReadMs = 0;
+  latestChatMessageDocs = [];
+
+  if(chatUnsubChatDoc) chatUnsubChatDoc();
+  chatUnsubChatDoc = chatDocRef(currentChatId).onSnapshot(docSnap=>{
+    const d = docSnap.data() || {};
+    const lr = d.lastRead && d.lastRead[currentChatPartnerUid];
+    currentPartnerLastReadMs = (lr && lr.toMillis) ? lr.toMillis() : 0;
+    renderChatMessagesBox();
+  }, ()=>{});
 
   if(chatUnsubMessages) chatUnsubMessages();
   chatUnsubMessages = chatDocRef(currentChatId).collection('messages').orderBy('timestamp','asc')
     .onSnapshot(snap=>{
-      const box = document.getElementById('chatMessages');
-      const myUid = user.uid;
-      box.innerHTML = snap.docs.map(doc=>{
-        const m = doc.data();
-        const mine = m.senderUid === myUid;
-        const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
-        let bubbleInner;
-        if(m.type === 'image'){
-          bubbleInner = `<img src="${m.dataUrl}" alt="صورة" onclick="openImgLightbox(this.src)" style="max-width:220px;max-height:220px;border-radius:12px;display:block;cursor:pointer;">`;
-        } else if(m.type === 'audio'){
-          bubbleInner = `<audio controls src="${m.dataUrl}" style="max-width:220px;"></audio>`;
-        } else {
-          bubbleInner = escapeHtml(m.text);
-        }
-        return `
-          <div class="msg-row ${mine?'me':'them'}">
-            <div>
-              <div class="msg-bubble">${bubbleInner}</div>
-              <div class="msg-time">${t}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      box.scrollTop = box.scrollHeight;
+      latestChatMessageDocs = snap.docs;
+      // The partner is actively viewing this open thread, so any message that
+      // arrives while it's open counts as read on their side too.
+      renderChatMessagesBox();
     }, ()=>{});
+}
+
+function renderChatMessagesBox(){
+  const box = document.getElementById('chatMessages');
+  if(!box) return;
+  const user = auth.currentUser;
+  if(!user) return;
+  const myUid = user.uid;
+  box.innerHTML = latestChatMessageDocs.map(doc=>{
+    const m = doc.data();
+    const mine = m.senderUid === myUid;
+    const hasServerTime = !!(m.timestamp && m.timestamp.toDate);
+    const t = hasServerTime ? m.timestamp.toDate().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}) : '';
+    let bubbleInner;
+    if(m.type === 'image'){
+      bubbleInner = `<img src="${m.dataUrl}" alt="صورة" onclick="openImgLightbox(this.src)" style="max-width:220px;max-height:220px;border-radius:12px;display:block;cursor:pointer;">`;
+    } else if(m.type === 'audio'){
+      bubbleInner = `<audio controls src="${m.dataUrl}" style="max-width:220px;"></audio>`;
+    } else {
+      bubbleInner = escapeHtml(m.text);
+    }
+    let ticksHtml = '';
+    if(mine){
+      if(!hasServerTime){
+        ticksHtml = `<span class="msg-ticks sending" title="جارٍ الإرسال">${chatTickIcon(1)}</span>`;
+      } else {
+        const msgMs = m.timestamp.toDate().getTime();
+        const isRead = currentPartnerLastReadMs > 0 && msgMs <= currentPartnerLastReadMs;
+        ticksHtml = `<span class="msg-ticks ${isRead?'read':'sent'}" title="${isRead?'تمت القراءة':'تم الإرسال'}">${chatTickIcon(2)}</span>`;
+      }
+    }
+    return `
+      <div class="msg-row ${mine?'me':'them'}">
+        <div>
+          <div class="msg-bubble">${bubbleInner}</div>
+          <div class="msg-time">${mine ? t + ticksHtml : t}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
 }
 
 function closeChatThread(){
   currentChatId = null;
   currentChatPartnerUid = null;
   if(chatUnsubMessages){ chatUnsubMessages(); chatUnsubMessages = null; }
+  if(chatUnsubChatDoc){ chatUnsubChatDoc(); chatUnsubChatDoc = null; }
+  latestChatMessageDocs = [];
+  currentPartnerLastReadMs = 0;
   renderChatTab();
 }
 
@@ -2139,15 +2453,17 @@ function ensureChatParticipants(){
   }, { merge: true });
 }
 
-function touchChatMeta(lastMessagePreview){
+function touchChatMeta(lastMessagePreview, lastMessageId){
   const user = auth.currentUser;
-  chatDocRef(currentChatId).set({
+  const payload = {
     participants: [user.uid, currentChatPartnerUid],
     participantEmails: { [user.uid]: user.email, [currentChatPartnerUid]: currentChatPartnerLabel },
     lastMessage: lastMessagePreview,
     lastTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
     unreadFor: firebase.firestore.FieldValue.arrayUnion(currentChatPartnerUid)
-  }, { merge: true });
+  };
+  if(lastMessageId) payload.lastMessageId = lastMessageId;
+  chatDocRef(currentChatId).set(payload, { merge: true });
 }
 
 async function sendChatMessage(){
