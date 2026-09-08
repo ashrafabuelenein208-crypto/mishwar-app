@@ -715,7 +715,7 @@
         </div>
         <div class="field">
           <label>رقم التسجيل الضريبي</label>
-          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي">
+          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي (٩ أرقام)" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)">
         </div>
       </div>
       <div class="grid2">
@@ -749,7 +749,7 @@
     <section>
       <h2>كل العملاء</h2>
       <div class="search-box">
-        <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
+        <input type="text" id="clientListSearch" placeholder="دور باسم العميل أو رقم التسجيل الضريبي...">
       </div>
       <div style="overflow-x:auto;">
         <table>
@@ -1872,6 +1872,12 @@ let editingClientId = null;
 function saveClient(){
   const name = document.getElementById('cName').value.trim();
   if(!name){ document.getElementById('cName').focus(); return; }
+  const taxRegNoVal = document.getElementById('cTaxRegNo').value.trim();
+  if(taxRegNoVal && taxRegNoVal.length !== 9){
+    alert('رقم التسجيل الضريبي لازم يكون ٩ أرقام بالظبط');
+    document.getElementById('cTaxRegNo').focus();
+    return;
+  }
   const col = officeClientsCol();
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   const data = {
@@ -2046,7 +2052,7 @@ let openClientDocsId = null;
 
 async function renderClientsTab(){
   const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
-  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q) || (c.taxRegNo||'').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
   const body = document.getElementById('clientsBody');
   const empty = document.getElementById('clientsEmpty');
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
