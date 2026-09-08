@@ -1029,9 +1029,6 @@ function unlockApp(){
   startChatUnreadWatcher();
   watchOwnRole();
   ensureLedgerMigrated();
-  if('Notification' in window && Notification.permission === 'default'){
-    Notification.requestPermission().catch(()=>{});
-  }
 }
 
 /* ---- Biometric (WebAuthn) device lock — scoped per account (uid) ---- */
@@ -1126,10 +1123,21 @@ function renderAccountSection(){
       statusBanner = `<div style="background:var(--red-soft);color:var(--red);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:10px;">حسابك متعمليش قبول من صاحب المكتب</div>`;
     }
   }
+  let notifButton = '';
+  if('Notification' in window){
+    if(Notification.permission === 'granted'){
+      notifButton = `<span class="tag" style="align-self:center;">🔔 إشعارات الرسايل مفعّلة</span>`;
+    } else if(Notification.permission === 'denied'){
+      notifButton = `<span class="tag" style="align-self:center;color:var(--red);">🔕 الإشعارات ملغية من إعدادات المتصفح</span>`;
+    } else {
+      notifButton = `<button class="act btn-primary btn-small" onclick="requestChatNotifPermission()">🔔 فعّل إشعارات الرسايل</button>`;
+    }
+  }
   box.innerHTML = `
     ${statusBanner}
     <div style="font-size:13.5px;color:var(--navy-dim);margin-bottom:10px;">مسجل الدخول بـ: <b style="color:var(--ink);">${escapeHtml(user.email)}</b></div>
     <div class="row-actions">
+      ${notifButton}
       ${hasBiometric
         ? `<button class="act btn-ghost btn-small" onclick="disableBiometric()">إلغاء الدخول بالبصمة على هذا الجهاز</button>`
         : `<button class="act btn-ghost btn-small" onclick="enableBiometric()">🔒 فعّل الدخول بالبصمة على هذا الجهاز</button>`
@@ -1141,6 +1149,18 @@ function renderAccountSection(){
       <button class="act btn-danger btn-small" onclick="logout()">تسجيل الخروج</button>
     </div>
   `;
+}
+
+function requestChatNotifPermission(){
+  if(!('Notification' in window)){ alert('المتصفح ده مش بيدعم الإشعارات.'); return; }
+  Notification.requestPermission().then(result=>{
+    renderAccountSection();
+    if(result === 'granted'){
+      new Notification('تمام ✅', { body: 'الإشعارات اشتغلت، هتوصلك أي رسالة جديدة على الشات' });
+    } else if(result === 'denied'){
+      alert('اخترت "Block". لو غيرت رأيك، لازم تفعّلها يدويًا من إعدادات المتصفح/الموقع.');
+    }
+  });
 }
 
 function requirePin(cb){
