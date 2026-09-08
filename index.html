@@ -495,6 +495,10 @@
         <label>كلمة المرور</label>
         <input type="password" id="authPass" placeholder="كلمة المرور" style="text-align:right;letter-spacing:0;">
       </div>
+      <div class="field" id="authJoinCodeField" style="text-align:right;display:none;">
+        <label>كود انضمام المكتب</label>
+        <input type="text" id="authJoinCode" placeholder="اطلب الكود من صاحب المكتب" style="text-align:right;letter-spacing:0;">
+      </div>
       <div class="login-err" id="loginErr"></div>
       <div class="login-msg" id="loginMsg" style="color:var(--green);font-size:13px;min-height:18px;margin-bottom:8px;"></div>
 
@@ -953,10 +957,17 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let authMode = 'login';
 
+/* Change this before sharing the app link with your real employees — only
+   people who type this code can create a new account. Keep it private and
+   change it any time from here (no need to tell anyone except your actual staff). */
+const EMPLOYEE_JOIN_CODE = 'GHARIB-2026';
+
 function toggleAuthMode(){
   authMode = authMode === 'login' ? 'signup' : 'login';
   document.getElementById('authMainBtn').textContent = authMode === 'login' ? 'دخول' : 'إنشاء الحساب';
   document.getElementById('authSwitchBtn').textContent = authMode === 'login' ? 'مفيش حساب؟ سجّل واحد جديد' : 'عندك حساب بالفعل؟ سجّل الدخول';
+  document.getElementById('authJoinCodeField').style.display = authMode === 'signup' ? 'block' : 'none';
+  document.getElementById('authJoinCode').value = '';
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginMsg').textContent = '';
 }
@@ -983,6 +994,11 @@ function handleAuthSubmit(){
   if(!email || !pass){ document.getElementById('loginErr').textContent = 'اكتب الإيميل وكلمة المرور'; return; }
   localStorage.setItem('mishwar_last_email', email);
   if(authMode === 'signup'){
+    const joinCode = document.getElementById('authJoinCode').value.trim();
+    if(joinCode !== EMPLOYEE_JOIN_CODE){
+      document.getElementById('loginErr').textContent = 'كود الانضمام غلط. اطلب الكود الصحيح من صاحب المكتب.';
+      return;
+    }
     auth.createUserWithEmailAndPassword(email, pass).then((cred)=>{
       sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
     }).catch(err => {
@@ -1319,6 +1335,11 @@ async function renderOwnerTab(){
     if(pendingRows.length || rejectedRows.length){
       pendingBox.style.display = 'block';
       pendingList.innerHTML =
+        (pendingRows.length > 1 ? `
+          <div class="row-actions" style="margin:0 0 10px;">
+            <button class="act btn-danger btn-small" onclick="rejectAllPending()">رفض كل الطلبات المعلّقة (${pendingRows.length})</button>
+          </div>
+        ` : '') +
         pendingRows.map(u => `
           <div class="chat-emp-row">
             <div class="left">
@@ -1398,6 +1419,23 @@ function rejectEmployee(uid){
   db.collection('users').doc(uid).set({ status: 'rejected' }, { merge: true })
     .then(()=> renderOwnerTab())
     .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+}
+
+async function rejectAllPending(){
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
+  const usersSnap = await db.collection('users').get();
+  const pendingUids = usersSnap.docs
+    .map(d=>d.data())
+    .filter(u=> u && u.uid && u.uid !== myUid && (u.status||'pending') === 'pending')
+    .map(u=>u.uid);
+  if(!pendingUids.length) return;
+  if(!confirm(`متأكد إنك عايز ترفض كل الـ ${pendingUids.length} طلب انضمام المعلّقين دلوقتي؟`)) return;
+  try{
+    await Promise.all(pendingUids.map(uid => db.collection('users').doc(uid).set({ status: 'rejected' }, { merge: true })));
+    renderOwnerTab();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
 }
 
 function renounceOwnerRole(){
@@ -2815,6 +2853,7 @@ function renderChatUserList(){
     snap.forEach(doc=>{
       const d = doc.data();
       if(doc.id === user.uid) return;
+      if((d.status||'pending') !== 'approved') return;
       if(q && !(d.email||'').toLowerCase().includes(q)) return;
       rows.push({ uid: doc.id, email: d.email || doc.id });
     });
