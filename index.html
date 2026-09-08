@@ -239,6 +239,31 @@
     color:#8a6f00;
     white-space:nowrap;
   }
+  .tag-green{
+    display:inline-block;
+    padding:3px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:800;
+    background:var(--green-soft);
+    color:var(--green);
+    white-space:nowrap;
+  }
+  .ledger-section{
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:18px;
+    background:#fff;
+    border:1.5px solid var(--line);
+    border-inline-start:5px solid var(--bronze);
+  }
+  .ledger-section.cash-section{ border-inline-start-color:var(--green); }
+  .ledger-section h3{ margin:0 0 10px; font-size:14px; color:var(--navy); display:flex; align-items:center; gap:8px; }
+  .ledger-section h3::before{
+    content:''; display:inline-block; width:10px; height:10px; border-radius:50%;
+    background:var(--bronze);
+  }
+  .ledger-section.cash-section h3::before{ background:var(--green); }
 
   .empty{text-align:center;color:#8a97a3;padding:30px 10px;font-size:14px;}
 
@@ -816,35 +841,49 @@
   <div class="panel" id="panel-owner">
     <section id="ownerEmployeesSection">
       <h2>مصاريف الموظفين</h2>
+
+      <div id="ownerPendingBox" style="display:none;margin-bottom:18px;">
+        <h3 style="margin:0 0 8px;font-size:14px;color:var(--navy);">طلبات الانضمام</h3>
+        <div id="ownerPendingList"></div>
+      </div>
+
       <div class="cards" id="ownerTotalsCards"></div>
       <div class="row-actions" style="margin-top:0;">
         <button class="act btn-ghost btn-small" onclick="renderOwnerTab()">🔄 تحديث</button>
+        <button class="act btn-ghost btn-small" onclick="exportOwnerAllExcel()">📊 تصدير Excel لكل الموظفين</button>
       </div>
       <div id="ownerEmployeesList"></div>
-      <div class="empty" id="ownerEmployeesEmpty" style="display:none;">مفيش موظفين مسجلين لسه</div>
+      <div class="empty" id="ownerEmployeesEmpty" style="display:none;">مفيش موظفين مقبولين لسه</div>
     </section>
 
     <section id="ownerDetailSection" style="display:none;">
       <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
         <button class="act btn-ghost btn-small" onclick="closeOwnerDetail()">‹ رجوع لكل الموظفين</button>
+        <button class="act btn-ghost btn-small" onclick="exportOwnerEmployeeExcel()">📊 تصدير Excel</button>
       </div>
       <h2 id="ownerDetailTitle" style="margin-top:0;"></h2>
       <div class="cards" id="ownerDetailCards"></div>
-      <h3 style="margin:18px 0 8px;font-size:14px;color:var(--navy);">المشاوير</h3>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th></tr></thead>
-          <tbody id="ownerDetailTripsBody"></tbody>
-        </table>
-        <div class="empty" id="ownerDetailTripsEmpty" style="display:none;">مفيش مشاوير مسجلة لهذا الموظف</div>
+
+      <div class="ledger-section trips-section">
+        <h3>المشاوير</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th></tr></thead>
+            <tbody id="ownerDetailTripsBody"></tbody>
+          </table>
+          <div class="empty" id="ownerDetailTripsEmpty" style="display:none;">مفيش مشاوير مسجلة لهذا الموظف</div>
+        </div>
       </div>
-      <h3 style="margin:18px 0 8px;font-size:14px;color:var(--navy);">العُهدة المستلمة</h3>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th></tr></thead>
-          <tbody id="ownerDetailCashBody"></tbody>
-        </table>
-        <div class="empty" id="ownerDetailCashEmpty" style="display:none;">مفيش عهدة مسجلة لهذا الموظف</div>
+
+      <div class="ledger-section cash-section">
+        <h3>العُهدة المستلمة</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th></tr></thead>
+            <tbody id="ownerDetailCashBody"></tbody>
+          </table>
+          <div class="empty" id="ownerDetailCashEmpty" style="display:none;">مفيش عهدة مسجلة لهذا الموظف</div>
+        </div>
       </div>
     </section>
   </div>
@@ -1079,7 +1118,16 @@ function renderAccountSection(){
   const user = auth.currentUser;
   if(!user){ box.innerHTML=''; return; }
   const hasBiometric = !!getBiometricCredentialId(user.uid);
+  let statusBanner = '';
+  if(currentUserRole !== 'owner'){
+    if(currentUserStatus === 'pending'){
+      statusBanner = `<div style="background:var(--bronze-soft);color:#8a6f00;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:10px;">⏳ حسابك لسه قيد مراجعة صاحب المكتب، هيظهرلك كل حاجة عادي لحد ما يتم القبول</div>`;
+    } else if(currentUserStatus === 'rejected'){
+      statusBanner = `<div style="background:var(--red-soft);color:var(--red);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:10px;">حسابك متعمليش قبول من صاحب المكتب</div>`;
+    }
+  }
   box.innerHTML = `
+    ${statusBanner}
     <div style="font-size:13.5px;color:var(--navy-dim);margin-bottom:10px;">مسجل الدخول بـ: <b style="color:var(--ink);">${escapeHtml(user.email)}</b></div>
     <div class="row-actions">
       ${hasBiometric
@@ -1175,15 +1223,19 @@ async function ensureLedgerMigrated(){
    syncLedgerToFirestore above) — one-shot get() per employee, refreshed
    whenever the tab is opened or the "تحديث" button is pressed. */
 let currentOwnerViewUid = null;
+let ownerAllEmployeesCache = [];
+let ownerDetailCache = { uid: null, label: '', trips: [], cash: [] };
 
-async function fetchLedgerTotals(uid){
+async function fetchLedgerData(uid){
   const [tripsSnap, cashSnap] = await Promise.all([
     db.collection('users').doc(uid).collection('trips').get(),
     db.collection('users').doc(uid).collection('cash').get()
   ]);
-  const totalSpent = tripsSnap.docs.reduce((s,d)=> s + (Number(d.data().cost)||0), 0);
-  const totalReceived = cashSnap.docs.reduce((s,d)=> s + (Number(d.data().amount)||0), 0);
-  return { totalSpent, totalReceived, balance: totalReceived - totalSpent };
+  const trips = tripsSnap.docs.map(d=>d.data());
+  const cash = cashSnap.docs.map(d=>d.data());
+  const totalSpent = trips.reduce((s,t)=> s + (Number(t.cost)||0), 0);
+  const totalReceived = cash.reduce((s,c)=> s + (Number(c.amount)||0), 0);
+  return { trips, cash, totalSpent, totalReceived, balance: totalReceived - totalSpent };
 }
 
 async function renderOwnerTab(){
@@ -1191,21 +1243,68 @@ async function renderOwnerTab(){
   document.getElementById('ownerEmployeesSection').style.display = 'block';
   document.getElementById('ownerDetailSection').style.display = 'none';
   currentOwnerViewUid = null;
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
   const list = document.getElementById('ownerEmployeesList');
   const emptyEl = document.getElementById('ownerEmployeesEmpty');
   const cardsBox = document.getElementById('ownerTotalsCards');
+  const pendingBox = document.getElementById('ownerPendingBox');
+  const pendingList = document.getElementById('ownerPendingList');
   list.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
   emptyEl.style.display = 'none';
+  pendingBox.style.display = 'none';
   try{
     const usersSnap = await db.collection('users').get();
-    const rows = usersSnap.docs.map(d=>d.data()).filter(u=>u && u.uid && u.email);
-    if(!rows.length){
+    const allRows = usersSnap.docs.map(d=>d.data()).filter(u=>u && u.uid && u.email && u.uid !== myUid);
+
+    const pendingRows = allRows.filter(u => (u.status||'pending') === 'pending');
+    const rejectedRows = allRows.filter(u => u.status === 'rejected');
+    const approvedRows = allRows.filter(u => u.status === 'approved');
+
+    if(pendingRows.length || rejectedRows.length){
+      pendingBox.style.display = 'block';
+      pendingList.innerHTML =
+        pendingRows.map(u => `
+          <div class="chat-emp-row">
+            <div class="left">
+              <div class="chat-emp-avatar">${initialFromEmail(u.email)}</div>
+              <div class="info">
+                <div class="name">${escapeHtml(displayNameFromEmail(u.email))}</div>
+                <div class="last">${escapeHtml(u.email)} • طلب انضمام جديد</div>
+              </div>
+            </div>
+            <div class="row-actions" style="margin:0;">
+              <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">✓ قبول</button>
+              <button class="act btn-danger btn-small" onclick="event.stopPropagation();rejectEmployee('${u.uid}')">رفض</button>
+            </div>
+          </div>
+        `).join('') +
+        rejectedRows.map(u => `
+          <div class="chat-emp-row" style="opacity:.65;">
+            <div class="left">
+              <div class="chat-emp-avatar">${initialFromEmail(u.email)}</div>
+              <div class="info">
+                <div class="name">${escapeHtml(displayNameFromEmail(u.email))}</div>
+                <div class="last">${escapeHtml(u.email)} • مرفوض</div>
+              </div>
+            </div>
+            <div class="row-actions" style="margin:0;">
+              <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">إعادة نظر: قبول</button>
+            </div>
+          </div>
+        `).join('');
+    } else {
+      pendingList.innerHTML = '';
+    }
+
+    if(!approvedRows.length){
+      ownerAllEmployeesCache = [];
       list.innerHTML=''; emptyEl.style.display='block'; cardsBox.innerHTML=''; return;
     }
-    const withTotals = await Promise.all(rows.map(async r=>{
-      const totals = await fetchLedgerTotals(r.uid);
-      return Object.assign({}, r, totals);
+    const withTotals = await Promise.all(approvedRows.map(async r=>{
+      const data = await fetchLedgerData(r.uid);
+      return Object.assign({}, r, data);
     }));
+    ownerAllEmployeesCache = withTotals;
     const grandSpent = withTotals.reduce((s,r)=>s+r.totalSpent,0);
     const grandReceived = withTotals.reduce((s,r)=>s+r.totalReceived,0);
     const grandBalance = grandReceived - grandSpent;
@@ -1221,7 +1320,7 @@ async function renderOwnerTab(){
           <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
           <div class="info">
             <div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div>
-            <div class="last">اتصرف ${r.totalSpent.toFixed(0)} ج.م • عهدة ${r.totalReceived.toFixed(0)} ج.م</div>
+            <div class="last">اتصرف <b style="color:#8a6f00;">${r.totalSpent.toFixed(0)} ج.م</b> • عهدة <b style="color:var(--green);">${r.totalReceived.toFixed(0)} ج.م</b></div>
           </div>
         </div>
         <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
@@ -1230,6 +1329,19 @@ async function renderOwnerTab(){
   }catch(e){
     list.innerHTML = '<div class="empty">محصلش تحميل بيانات الموظفين، جرب "تحديث" تاني</div>';
   }
+}
+
+function approveEmployee(uid){
+  db.collection('users').doc(uid).set({ status: 'approved' }, { merge: true })
+    .then(()=> renderOwnerTab())
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+}
+
+function rejectEmployee(uid){
+  if(!confirm('متأكد إنك عايز ترفض طلب الانضمام ده؟')) return;
+  db.collection('users').doc(uid).set({ status: 'rejected' }, { merge: true })
+    .then(()=> renderOwnerTab())
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function openEmployeeLedger(uid, email){
@@ -1258,19 +1370,17 @@ async function renderOwnerDetail(){
   tripsBody.innerHTML = ''; cashBody.innerHTML = '';
   tripsEmpty.style.display = 'none'; cashEmpty.style.display = 'none';
   try{
-    const [tripsSnap, cashSnap] = await Promise.all([
-      db.collection('users').doc(viewingUid).collection('trips').get(),
-      db.collection('users').doc(viewingUid).collection('cash').get()
-    ]);
+    const data = await fetchLedgerData(viewingUid);
     if(currentOwnerViewUid !== viewingUid) return; // user navigated away while loading
-    const trips = tripsSnap.docs.map(d=>d.data()).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
-    const cash = cashSnap.docs.map(d=>d.data()).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
-    const totalSpent = trips.reduce((s,t)=>s+(Number(t.cost)||0),0);
-    const totalReceived = cash.reduce((s,c)=>s+(Number(c.amount)||0),0);
-    const balance = totalReceived - totalSpent;
+    const trips = data.trips.slice().sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    const cash = data.cash.slice().sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    const totalSpent = data.totalSpent;
+    const totalReceived = data.totalReceived;
+    const balance = data.balance;
+    ownerDetailCache = { uid: viewingUid, label: document.getElementById('ownerDetailTitle').textContent, trips, cash };
     cardsBox.innerHTML = `
-      <div class="card"><div class="label">إجمالي العُهدة المستلمة</div><div class="value num">${totalReceived.toFixed(0)} ج.م</div></div>
-      <div class="card"><div class="label">إجمالي المصاريف</div><div class="value num">${totalSpent.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">إجمالي العُهدة المستلمة</div><div class="value num" style="color:var(--green);">${totalReceived.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">إجمالي المصاريف</div><div class="value num" style="color:#8a6f00;">${totalSpent.toFixed(0)} ج.م</div></div>
       <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
     `;
     if(trips.length){
@@ -1280,7 +1390,7 @@ async function renderOwnerDetail(){
           <td>${escapeHtml(t.clientName)||'—'}</td>
           <td><span class="tag">${escapeHtml(t.type)||'—'}</span></td>
           <td>${escapeHtml(t.place)||'—'}</td>
-          <td class="num">${(Number(t.cost)||0).toFixed(2)}</td>
+          <td class="num" style="color:#8a6f00;font-weight:800;">${(Number(t.cost)||0).toFixed(2)}</td>
           <td>${escapeHtml(t.note)||'—'}</td>
         </tr>
       `).join('');
@@ -1289,7 +1399,7 @@ async function renderOwnerDetail(){
       cashBody.innerHTML = cash.map(c => `
         <tr>
           <td class="num">${escapeHtml(c.date)||'—'}</td>
-          <td class="num">${(Number(c.amount)||0).toFixed(2)}</td>
+          <td class="num" style="color:var(--green);font-weight:800;">${(Number(c.amount)||0).toFixed(2)}</td>
           <td>${escapeHtml(c.note)||'—'}</td>
         </tr>
       `).join('');
@@ -1297,6 +1407,265 @@ async function renderOwnerDetail(){
   }catch(e){
     cardsBox.innerHTML = '<div class="empty">محصلش تحميل بيانات الموظف ده</div>';
   }
+}
+
+/* ---------- Owner dashboard Excel export (same visual style as exportExcel) ---------- */
+const XL_NAVY = 'FF16233D';
+const XL_BRONZE = 'FFA9772F';
+const XL_GREEN = 'FF1F9D6C';
+const XL_LIGHT = 'FFF3F4F6';
+const XL_WHITE = 'FFFFFFFF';
+const XL_INK = 'FF1C2230';
+
+function xlTitleRow(ws, colCount, text, height){
+  ws.mergeCells(1, 1, 1, colCount);
+  const cell = ws.getCell(1, 1);
+  cell.value = text;
+  cell.font = { name: 'Arial', size: 15, bold: true, color: { argb: XL_WHITE } };
+  cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_NAVY } };
+  ws.getRow(1).height = height || 30;
+}
+function xlSubtitleRow(ws, colCount, text){
+  ws.mergeCells(2, 1, 2, colCount);
+  const cell = ws.getCell(2, 1);
+  cell.value = text;
+  cell.font = { name: 'Arial', size: 11, italic: true, color: { argb: XL_INK } };
+  cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_LIGHT } };
+  ws.getRow(2).height = 20;
+}
+function xlHeaderRow(ws, columns, accentColor){
+  const row = ws.getRow(3);
+  columns.forEach((col, i) => {
+    const cell = row.getCell(i + 1);
+    cell.value = col.header;
+    cell.font = { name: 'Arial', size: 12, bold: true, color: { argb: XL_WHITE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accentColor } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF8A6023' } },
+      bottom: { style: 'thin', color: { argb: 'FF8A6023' } },
+      left: { style: 'thin', color: { argb: 'FF8A6023' } },
+      right: { style: 'thin', color: { argb: 'FF8A6023' } },
+    };
+  });
+  row.height = 24;
+}
+function xlDataRow(ws, rowIndex, values, moneyCols, idx){
+  const row = ws.getRow(rowIndex);
+  const bg = idx % 2 === 0 ? XL_WHITE : XL_LIGHT;
+  values.forEach((v, i) => {
+    const cell = row.getCell(i + 1);
+    cell.value = v;
+    cell.font = { name: 'Arial', size: 11, color: { argb: XL_INK } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+      bottom: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+      left: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+      right: { style: 'thin', color: { argb: 'FFDDE1E6' } },
+    };
+    if(moneyCols.includes(i+1)) cell.numFmt = '#,##0.00';
+  });
+  return row;
+}
+function xlTotalRow(ws, rowIndex, colCount, labelSpan, moneyCol, total){
+  const row = ws.getRow(rowIndex);
+  ws.mergeCells(rowIndex, 1, rowIndex, labelSpan);
+  const labelCell = row.getCell(1);
+  labelCell.value = 'الإجمالي';
+  labelCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: XL_WHITE } };
+  labelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_NAVY } };
+  for(let c=1; c<=colCount; c++){
+    const cell = row.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_NAVY } };
+    cell.border = {
+      top: { style: 'medium', color: { argb: XL_NAVY } },
+      bottom: { style: 'medium', color: { argb: XL_NAVY } },
+      left: { style: 'thin', color: { argb: XL_NAVY } },
+      right: { style: 'thin', color: { argb: XL_NAVY } },
+    };
+  }
+  const valCell = row.getCell(moneyCol);
+  valCell.value = total;
+  valCell.numFmt = '#,##0.00';
+  valCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: XL_WHITE } };
+  valCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  row.height = 24;
+}
+function xlDownload(wb, filename){
+  return wb.xlsx.writeBuffer().then(buffer=>{
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+async function exportOwnerAllExcel(){
+  if(!ownerAllEmployeesCache.length){ alert('دوس "تحديث" الأول عشان تحمّل بيانات الموظفين'); return; }
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'مكتب الغريب للمحاسبة والمراجعة';
+  wb.created = new Date();
+  const employees = ownerAllEmployeesCache.map(r => Object.assign({}, r, { name: displayNameFromEmail(r.email) }));
+
+  // Sheet 1: ملخص
+  const wsSummary = wb.addWorksheet('ملخص', {
+    views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+  });
+  const summaryCols = [
+    { header: 'الموظف', width: 30 },
+    { header: 'العُهدة المستلمة', width: 20 },
+    { header: 'المصاريف', width: 20 },
+    { header: 'المتبقي', width: 20 },
+  ];
+  wsSummary.columns = summaryCols.map(c=>({ width: c.width }));
+  xlTitleRow(wsSummary, summaryCols.length, 'مكتب الغريب للمحاسبة والمراجعة — ملخص مصاريف الموظفين');
+  xlSubtitleRow(wsSummary, summaryCols.length, 'تاريخ التصدير: ' + todayStr());
+  xlHeaderRow(wsSummary, summaryCols, XL_NAVY);
+  let rIdx = 4, grandReceived = 0, grandSpent = 0;
+  employees.forEach((e, idx)=>{
+    xlDataRow(wsSummary, rIdx, [e.name, e.totalReceived, e.totalSpent, e.balance], [2,3,4], idx);
+    grandReceived += e.totalReceived; grandSpent += e.totalSpent;
+    rIdx++;
+  });
+  wsSummary.mergeCells(rIdx, 1, rIdx, 1);
+  const sLabel = wsSummary.getRow(rIdx).getCell(1);
+  sLabel.value = 'الإجمالي';
+  sLabel.font = { name: 'Arial', size: 12, bold: true, color: { argb: XL_WHITE } };
+  sLabel.alignment = { horizontal: 'center', vertical: 'middle' };
+  sLabel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_NAVY } };
+  [2,3,4].forEach(c=>{
+    const cell = wsSummary.getRow(rIdx).getCell(c);
+    cell.value = c===2 ? grandReceived : (c===3 ? grandSpent : (grandReceived-grandSpent));
+    cell.numFmt = '#,##0.00';
+    cell.font = { name: 'Arial', size: 12, bold: true, color: { argb: XL_WHITE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_NAVY } };
+  });
+  wsSummary.getRow(rIdx).height = 24;
+  wsSummary.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: summaryCols.length } };
+
+  // Sheet 2: المشاوير (كل الموظفين)
+  const wsTrips = wb.addWorksheet('المشاوير', {
+    views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+  });
+  const tripCols = [
+    { header: 'الموظف', width: 22 }, { header: 'التاريخ', width: 14 }, { header: 'العميل', width: 26 },
+    { header: 'نوع المشوار', width: 20 }, { header: 'الجهة', width: 22 }, { header: 'التكلفة', width: 14 }, { header: 'ملاحظة', width: 26 },
+  ];
+  wsTrips.columns = tripCols.map(c=>({ width: c.width }));
+  xlTitleRow(wsTrips, tripCols.length, 'مكتب الغريب للمحاسبة والمراجعة — مشاوير كل الموظفين');
+  xlSubtitleRow(wsTrips, tripCols.length, 'تاريخ التصدير: ' + todayStr());
+  xlHeaderRow(wsTrips, tripCols, XL_BRONZE);
+  const allTrips = [];
+  employees.forEach(e => e.trips.forEach(t => allTrips.push(Object.assign({}, t, { empName: e.name }))));
+  allTrips.sort((a,b)=> a.empName.localeCompare(b.empName) || String(b.date||'').localeCompare(String(a.date||'')));
+  rIdx = 4; let tripsTotal = 0;
+  allTrips.forEach((t, idx)=>{
+    xlDataRow(wsTrips, rIdx, [t.empName, t.date||'', t.clientName||'', t.type||'', t.place||'', Number(t.cost)||0, t.note||''], [6], idx);
+    tripsTotal += Number(t.cost)||0;
+    rIdx++;
+  });
+  if(allTrips.length) xlTotalRow(wsTrips, rIdx, tripCols.length, 5, 6, tripsTotal);
+  wsTrips.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: tripCols.length } };
+
+  // Sheet 3: العُهدة المستلمة (كل الموظفين)
+  const wsCash = wb.addWorksheet('العُهدة المستلمة', {
+    views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+  });
+  const cashCols = [
+    { header: 'الموظف', width: 22 }, { header: 'التاريخ', width: 14 }, { header: 'المبلغ', width: 16 }, { header: 'ملاحظة', width: 30 },
+  ];
+  wsCash.columns = cashCols.map(c=>({ width: c.width }));
+  xlTitleRow(wsCash, cashCols.length, 'مكتب الغريب للمحاسبة والمراجعة — عُهدة كل الموظفين');
+  xlSubtitleRow(wsCash, cashCols.length, 'تاريخ التصدير: ' + todayStr());
+  xlHeaderRow(wsCash, cashCols, XL_GREEN);
+  const allCash = [];
+  employees.forEach(e => e.cash.forEach(c => allCash.push(Object.assign({}, c, { empName: e.name }))));
+  allCash.sort((a,b)=> a.empName.localeCompare(b.empName) || String(b.date||'').localeCompare(String(a.date||'')));
+  rIdx = 4; let cashTotal = 0;
+  allCash.forEach((c, idx)=>{
+    xlDataRow(wsCash, rIdx, [c.empName, c.date||'', Number(c.amount)||0, c.note||''], [3], idx);
+    cashTotal += Number(c.amount)||0;
+    rIdx++;
+  });
+  if(allCash.length) xlTotalRow(wsCash, rIdx, cashCols.length, 2, 3, cashTotal);
+  wsCash.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cashCols.length } };
+
+  await xlDownload(wb, 'مصاريف_الموظفين_' + todayStr() + '.xlsx');
+}
+
+async function exportOwnerEmployeeExcel(){
+  if(!ownerDetailCache.uid || ownerDetailCache.uid !== currentOwnerViewUid){
+    alert('استنى لحد ما البيانات تخلص تحميل الأول');
+    return;
+  }
+  const { label, trips, cash } = ownerDetailCache;
+  if(!trips.length && !cash.length){ alert('مفيش بيانات للتصدير للموظف ده'); return; }
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'مكتب الغريب للمحاسبة والمراجعة';
+  wb.created = new Date();
+
+  if(trips.length){
+    const ws = wb.addWorksheet('المشاوير', {
+      views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+    });
+    const cols = [
+      { header: 'التاريخ', width: 14 }, { header: 'العميل', width: 28 }, { header: 'نوع المشوار', width: 20 },
+      { header: 'الجهة', width: 24 }, { header: 'التكلفة', width: 16 }, { header: 'ملاحظة', width: 30 },
+    ];
+    ws.columns = cols.map(c=>({ width: c.width }));
+    xlTitleRow(ws, cols.length, 'مكتب الغريب للمحاسبة والمراجعة — مشاوير ' + label);
+    xlSubtitleRow(ws, cols.length, 'تاريخ التصدير: ' + todayStr());
+    xlHeaderRow(ws, cols, XL_BRONZE);
+    let rIdx = 4, total = 0;
+    trips.forEach((t, idx)=>{
+      xlDataRow(ws, rIdx, [t.date||'', t.clientName||'', t.type||'', t.place||'', Number(t.cost)||0, t.note||''], [5], idx);
+      total += Number(t.cost)||0;
+      rIdx++;
+    });
+    xlTotalRow(ws, rIdx, cols.length, 4, 5, total);
+    ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cols.length } };
+  }
+
+  if(cash.length){
+    const ws = wb.addWorksheet('العُهدة المستلمة', {
+      views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }],
+      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 }
+    });
+    const cols = [
+      { header: 'التاريخ', width: 14 }, { header: 'المبلغ', width: 16 }, { header: 'ملاحظة', width: 32 },
+    ];
+    ws.columns = cols.map(c=>({ width: c.width }));
+    xlTitleRow(ws, cols.length, 'مكتب الغريب للمحاسبة والمراجعة — عُهدة ' + label);
+    xlSubtitleRow(ws, cols.length, 'تاريخ التصدير: ' + todayStr());
+    xlHeaderRow(ws, cols, XL_GREEN);
+    let rIdx = 4, total = 0;
+    cash.forEach((c, idx)=>{
+      xlDataRow(ws, rIdx, [c.date||'', Number(c.amount)||0, c.note||''], [2], idx);
+      total += Number(c.amount)||0;
+      rIdx++;
+    });
+    xlTotalRow(ws, rIdx, cols.length, 1, 2, total);
+    ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cols.length } };
+  }
+
+  await xlDownload(wb, 'كشف_' + label.replace(/\s+/g,'_') + '_' + todayStr() + '.xlsx');
 }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -2184,11 +2553,19 @@ function initialFromEmail(email){
 /* Keep a lightweight public directory of registered accounts (email only) so people can find each other. */
 function syncUserProfile(user){
   if(!user) return;
-  db.collection('users').doc(user.uid).set({
-    uid: user.uid,
-    email: user.email,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true }).catch(()=>{});
+  const ref = db.collection('users').doc(user.uid);
+  ref.get().then(docSnap=>{
+    const base = {
+      uid: user.uid,
+      email: user.email,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if(!docSnap.exists){
+      // first time this account ever logs in — starts as a pending join request
+      base.status = 'pending';
+    }
+    return ref.set(base, { merge: true });
+  }).catch(()=>{});
 }
 
 /* ---------- Owner role (صاحب المكتب) ----------
@@ -2197,13 +2574,16 @@ function syncUserProfile(user){
 const OWNER_SETUP_CODE = 'GHARIB-OWNER-2026';
 let chatUnsubOwnRole = null;
 let currentUserRole = 'employee';
+let currentUserStatus = 'pending';
 
 function watchOwnRole(){
   const user = auth.currentUser;
   if(!user) return;
   if(chatUnsubOwnRole) chatUnsubOwnRole();
   chatUnsubOwnRole = db.collection('users').doc(user.uid).onSnapshot(docSnap=>{
-    currentUserRole = (docSnap.data() || {}).role || 'employee';
+    const data = docSnap.data() || {};
+    currentUserRole = data.role || 'employee';
+    currentUserStatus = data.status || 'pending';
     const btn = document.getElementById('ownerTabBtn');
     if(btn) btn.style.display = (currentUserRole === 'owner') ? 'inline-block' : 'none';
     renderAccountSection();
@@ -2216,7 +2596,7 @@ function claimOwnerRole(){
   if(code !== OWNER_SETUP_CODE){ alert('الكود غير صحيح'); return; }
   const user = auth.currentUser;
   if(!user) return;
-  db.collection('users').doc(user.uid).set({ role: 'owner' }, { merge: true })
+  db.collection('users').doc(user.uid).set({ role: 'owner', status: 'approved' }, { merge: true })
     .then(()=> alert('تم تفعيل صلاحية صاحب المكتب على الحساب ده'))
     .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
