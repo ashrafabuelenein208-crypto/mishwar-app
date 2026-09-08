@@ -1319,11 +1319,14 @@ async function renderOwnerTab(){
         <div class="left">
           <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
           <div class="info">
-            <div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div>
+            <div class="name">${escapeHtml(displayNameFromEmail(r.email))} ${r.role === 'owner' ? '<span style="color:var(--bronze);">👑 صاحب مكتب</span>' : ''}</div>
             <div class="last">اتصرف <b style="color:#8a6f00;">${r.totalSpent.toFixed(0)} ج.م</b> • عهدة <b style="color:var(--green);">${r.totalReceived.toFixed(0)} ج.م</b></div>
           </div>
         </div>
-        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${r.role === 'owner' ? `<button class="act btn-danger btn-small" onclick="event.stopPropagation();demoteOwner('${r.uid}','${escapeHtml(displayNameFromEmail(r.email))}')">إلغاء صلاحية صاحب المكتب</button>` : ''}
+          <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
+        </div>
       </div>
     `).join('');
   }catch(e){
@@ -1340,6 +1343,13 @@ function approveEmployee(uid){
 function rejectEmployee(uid){
   if(!confirm('متأكد إنك عايز ترفض طلب الانضمام ده؟')) return;
   db.collection('users').doc(uid).set({ status: 'rejected' }, { merge: true })
+    .then(()=> renderOwnerTab())
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+}
+
+function demoteOwner(uid, name){
+  if(!confirm(`متأكد إنك عايز تشيل صلاحية "صاحب المكتب" من ${name}؟ هيرجع موظف عادي.`)) return;
+  db.collection('users').doc(uid).set({ role: 'employee' }, { merge: true })
     .then(()=> renderOwnerTab())
     .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
