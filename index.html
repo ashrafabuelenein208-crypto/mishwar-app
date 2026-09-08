@@ -685,6 +685,42 @@
         </div>
       </div>
       <div class="grid2">
+        <div class="field">
+          <label>نوع الشركة</label>
+          <select id="cCompanyType">
+            <option value="">اختر نوع الشركة</option>
+            <option value="منشأة فردية">منشأة فردية</option>
+            <option value="شركة تضامن">شركة تضامن</option>
+            <option value="شركة توصية بسيطة">شركة توصية بسيطة</option>
+            <option value="شركة مساهمة">شركة مساهمة</option>
+            <option value="شركة ذات مسؤولية محدودة">شركة ذات مسؤولية محدودة</option>
+            <option value="شركة شخص واحد">شركة شخص واحد</option>
+            <option value="شركة واقع من أصل فردي">شركة واقع من أصل فردي</option>
+            <option value="شركة واقع من أصل شركة أشخاص">شركة واقع من أصل شركة أشخاص</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>تاريخ انتهاء شهادة القيمة المضافة</label>
+          <input type="date" id="cVatExpiry">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>مكتب السجل التجاري التابع له</label>
+          <input type="text" id="cCrOffice" placeholder="مثال: مكتب سجل تجاري الجيزة">
+        </div>
+        <div class="field">
+          <label>رقم التسجيل الضريبي</label>
+          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>رقم السجل التجاري</label>
+          <input type="text" id="cCrNo" placeholder="رقم السجل التجاري">
+        </div>
+      </div>
+      <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
           <div class="row-actions" style="margin-top:0;">
             <button class="act btn-primary" onclick="saveClient()" id="clientSaveBtn">حفظ العميل</button>
@@ -714,7 +750,7 @@
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
+            <tr><th>الاسم</th><th>نوع الشركة</th><th>المأمورية</th><th>التليفون</th><th>رقم السجل التجاري</th><th>مكتب السجل التجاري</th><th>رقم التسجيل الضريبي</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -1757,6 +1793,11 @@ function saveClient(){
     crExpiry: document.getElementById('cCrExpiry').value,
     taxCardExpiry: document.getElementById('cTaxCardExpiry').value,
     tokenExpiry: document.getElementById('cTokenExpiry').value,
+    companyType: document.getElementById('cCompanyType').value,
+    vatExpiry: document.getElementById('cVatExpiry').value,
+    crOffice: document.getElementById('cCrOffice').value.trim(),
+    taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
+    crNo: document.getElementById('cCrNo').value.trim(),
   };
   const clients = loadClients();
   let newClientId = null;
@@ -1782,6 +1823,11 @@ function resetClientForm(){
   document.getElementById('cCrExpiry').value = '';
   document.getElementById('cTaxCardExpiry').value = '';
   document.getElementById('cTokenExpiry').value = '';
+  document.getElementById('cCompanyType').value = '';
+  document.getElementById('cVatExpiry').value = '';
+  document.getElementById('cCrOffice').value = '';
+  document.getElementById('cTaxRegNo').value = '';
+  document.getElementById('cCrNo').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -1796,6 +1842,11 @@ function editClient(id){
   document.getElementById('cCrExpiry').value = c.crExpiry || '';
   document.getElementById('cTaxCardExpiry').value = c.taxCardExpiry || '';
   document.getElementById('cTokenExpiry').value = c.tokenExpiry || '';
+  document.getElementById('cCompanyType').value = c.companyType || '';
+  document.getElementById('cVatExpiry').value = c.vatExpiry || '';
+  document.getElementById('cCrOffice').value = c.crOffice || '';
+  document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
+  document.getElementById('cCrNo').value = c.crNo || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1828,15 +1879,20 @@ async function downloadClientTemplate(){
   ws.views = [{ rightToLeft: true }];
   ws.columns = [
     { header: 'اسم العميل / الشركة', key: 'name', width: 30 },
+    { header: 'نوع الشركة', key: 'companyType', width: 26 },
     { header: 'المأمورية', key: 'taxOffice', width: 26 },
     { header: 'رقم التليفون', key: 'phone', width: 16 },
+    { header: 'رقم السجل التجاري', key: 'crNo', width: 20 },
+    { header: 'مكتب السجل التجاري التابع له', key: 'crOffice', width: 28 },
+    { header: 'رقم التسجيل الضريبي', key: 'taxRegNo', width: 22 },
     { header: 'انتهاء السجل التجاري (YYYY-MM-DD)', key: 'crExpiry', width: 28 },
     { header: 'انتهاء البطاقة الضريبية (YYYY-MM-DD)', key: 'taxCardExpiry', width: 30 },
+    { header: 'انتهاء شهادة القيمة المضافة (YYYY-MM-DD)', key: 'vatExpiry', width: 32 },
     { header: 'انتهاء التوكن (YYYY-MM-DD)', key: 'tokenExpiry', width: 24 },
   ];
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.addRow({ name: 'مثال: شركة النور للتجارة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', tokenExpiry: '2026-12-01' });
+  ws.addRow({ name: 'مثال: شركة النور للتجارة', companyType: 'شركة ذات مسؤولية محدودة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crNo: '123456', crOffice: 'مكتب سجل تجاري الجيزة', taxRegNo: '987654321', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01' });
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
@@ -1874,11 +1930,16 @@ async function importClientsFromExcel(event){
       clients.push({
         id: uid(),
         name,
-        taxOffice: vals[2] ? String(vals[2]).trim() : '',
-        phone: vals[3] ? String(vals[3]).trim() : '',
-        crExpiry: excelCellToDateStr(vals[4]),
-        taxCardExpiry: excelCellToDateStr(vals[5]),
-        tokenExpiry: excelCellToDateStr(vals[6]),
+        companyType: vals[2] ? String(vals[2]).trim() : '',
+        taxOffice: vals[3] ? String(vals[3]).trim() : '',
+        phone: vals[4] ? String(vals[4]).trim() : '',
+        crNo: vals[5] ? String(vals[5]).trim() : '',
+        crOffice: vals[6] ? String(vals[6]).trim() : '',
+        taxRegNo: vals[7] ? String(vals[7]).trim() : '',
+        crExpiry: excelCellToDateStr(vals[8]),
+        taxCardExpiry: excelCellToDateStr(vals[9]),
+        vatExpiry: excelCellToDateStr(vals[10]),
+        tokenExpiry: excelCellToDateStr(vals[11]),
       });
       existingNames.add(name.toLowerCase());
       added++;
@@ -1932,7 +1993,7 @@ async function renderClientsTab(){
       `).join('');
       docsCellHtml = `
         <tr>
-          <td colspan="8">
+          <td colspan="13">
             <div class="attach-box" style="margin:0;">
               <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
               <div class="attach-list">
@@ -1945,10 +2006,15 @@ async function renderClientsTab(){
     return `
     <tr>
       <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.companyType)||'—'}</td>
       <td>${escapeHtml(c.taxOffice)||'—'}</td>
       <td class="num">${escapeHtml(c.phone)||'—'}</td>
+      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
+      <td>${escapeHtml(c.crOffice)||'—'}</td>
+      <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
       <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
+      <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
       <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
       <td>
@@ -1978,7 +2044,7 @@ function saveTrip(){
   let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
   if(!client){
     if(!confirm(`العميل "${typedName}" مش مسجل، تحب تضيفه دلوقتي؟`)) return;
-    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:''};
+    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
     clients.push(client);
     saveClients(clients);
     populateClientHelpers();
@@ -2221,7 +2287,7 @@ function getExpiringDocs(){
   const now = new Date();
   const list = [];
   clients.forEach(c=>{
-    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية'],['tokenExpiry','التوكن']].forEach(([field,label])=>{
+    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية'],['vatExpiry','شهادة القيمة المضافة'],['tokenExpiry','التوكن']].forEach(([field,label])=>{
       if(c[field]){
         const d = new Date(c[field]);
         const days = Math.ceil((d-now)/86400000);
