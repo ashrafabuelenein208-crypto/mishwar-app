@@ -453,6 +453,47 @@
   }
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
   #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
+
+  #docsModal{
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(10,14,20,.55);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #docsModal.show{ display:flex; }
+  .docs-panel{
+    background:#fff; border-radius:20px; width:100%; max-width:640px; max-height:88vh;
+    display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 20px 50px rgba(15,23,42,.25);
+  }
+  .docs-panel-head{
+    padding:18px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-shrink:0;
+  }
+  .docs-panel-head h3{ margin:0; font-size:16px; color:var(--navy); }
+  .docs-panel-head .sub{ font-size:12.5px; color:var(--navy-dim); margin-top:2px; }
+  .docs-close-btn{
+    border:none; background:var(--bronze-soft); color:var(--navy); width:34px; height:34px;
+    border-radius:50%; font-size:16px; cursor:pointer; flex-shrink:0; font-family:inherit;
+  }
+  .docs-panel-body{ padding:18px 20px; overflow-y:auto; flex:1; }
+  .docs-upload-box{
+    border:1.5px dashed var(--line); border-radius:14px; padding:16px; text-align:center; margin-bottom:16px;
+  }
+  .docs-upload-box input[type="file"]{ width:100%; }
+  .docs-file-list{ display:flex; flex-direction:column; gap:10px; }
+  .docs-file-card{
+    display:flex; align-items:center; gap:12px;
+    border:1.5px solid var(--line); border-radius:14px; padding:10px 12px;
+  }
+  .docs-file-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--bronze-soft); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+  }
+  .docs-file-info{ flex:1; min-width:0; }
+  .docs-file-name{ font-weight:800; font-size:13.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .docs-file-meta{ font-size:11.5px; color:var(--navy-dim); margin-top:2px; }
+  .docs-file-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .docs-empty{ text-align:center; color:var(--navy-dim); font-size:13.5px; padding:30px 10px; }
 </style>
 </head>
 <body>
@@ -464,6 +505,24 @@
   <div class="lightbox-actions">
     <button class="lb-download" onclick="downloadLightboxImage()">تحميل الصورة</button>
     <button class="lb-close" onclick="closeImgLightbox()">إغلاق</button>
+  </div>
+</div>
+
+<div id="docsModal">
+  <div class="docs-panel">
+    <div class="docs-panel-head">
+      <div>
+        <h3>مستندات العميل</h3>
+        <div class="sub" id="docsModalClientName"></div>
+      </div>
+      <button class="docs-close-btn" onclick="closeClientDocsModal()">✕</button>
+    </div>
+    <div class="docs-panel-body">
+      <div class="docs-upload-box">
+        <input type="file" multiple id="docsModalFileInput" onchange="handleFileUploadInDocsModal(this)">
+      </div>
+      <div class="docs-file-list" id="docsModalFileList"></div>
+    </div>
   </div>
 </div>
 
@@ -495,10 +554,15 @@
         <label>كلمة المرور</label>
         <input type="password" id="authPass" placeholder="كلمة المرور" style="text-align:right;letter-spacing:0;">
       </div>
+      <div class="field" id="authJoinCodeField" style="text-align:right;display:none;">
+        <label>كود المكتب</label>
+        <input type="text" id="authJoinCode" placeholder="اطلب الكود من صاحب المكتب" style="text-align:right;letter-spacing:0;">
+      </div>
       <div class="login-err" id="loginErr"></div>
       <div class="login-msg" id="loginMsg" style="color:var(--green);font-size:13px;min-height:18px;margin-bottom:8px;"></div>
 
       <button class="act btn-primary" style="width:100%;margin-bottom:8px;" id="authMainBtn" onclick="handleAuthSubmit()">دخول</button>
+      <button class="act btn-ghost" style="width:100%;margin-bottom:8px;" onclick="toggleAuthMode()" id="authSwitchBtn">مفيش حساب؟ سجّل واحد جديد</button>
       <button class="act btn-ghost" style="width:100%;font-size:13px;" onclick="handleForgotPassword()">نسيت كلمة المرور؟</button>
     </div>
   </div>
@@ -684,6 +748,42 @@
         </div>
       </div>
       <div class="grid2">
+        <div class="field">
+          <label>نوع الشركة</label>
+          <select id="cCompanyType">
+            <option value="">اختر نوع الشركة</option>
+            <option value="منشأة فردية">منشأة فردية</option>
+            <option value="شركة تضامن">شركة تضامن</option>
+            <option value="شركة توصية بسيطة">شركة توصية بسيطة</option>
+            <option value="شركة مساهمة">شركة مساهمة</option>
+            <option value="شركة ذات مسؤولية محدودة">شركة ذات مسؤولية محدودة</option>
+            <option value="شركة شخص واحد">شركة شخص واحد</option>
+            <option value="شركة واقع من أصل فردي">شركة واقع من أصل فردي</option>
+            <option value="شركة واقع من أصل شركة أشخاص">شركة واقع من أصل شركة أشخاص</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>تاريخ انتهاء شهادة القيمة المضافة</label>
+          <input type="date" id="cVatExpiry">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>مكتب السجل التجاري التابع له</label>
+          <input type="text" id="cCrOffice" placeholder="مثال: مكتب سجل تجاري الجيزة">
+        </div>
+        <div class="field">
+          <label>رقم التسجيل الضريبي</label>
+          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي (٩ أرقام)" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>رقم السجل التجاري</label>
+          <input type="text" id="cCrNo" placeholder="رقم السجل التجاري">
+        </div>
+      </div>
+      <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
           <div class="row-actions" style="margin-top:0;">
             <button class="act btn-primary" onclick="saveClient()" id="clientSaveBtn">حفظ العميل</button>
@@ -708,12 +808,12 @@
     <section>
       <h2>كل العملاء</h2>
       <div class="search-box">
-        <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
+        <input type="text" id="clientListSearch" placeholder="دور باسم العميل أو رقم التسجيل الضريبي...">
       </div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>المأمورية</th><th>التليفون</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
+            <tr><th>الاسم</th><th>نوع الشركة</th><th>المأمورية</th><th>التليفون</th><th>رقم السجل التجاري</th><th>مكتب السجل التجاري</th><th>رقم التسجيل الضريبي</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -859,7 +959,6 @@
       <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
         <button class="act btn-ghost btn-small" onclick="closeOwnerDetail()">‹ رجوع لكل الموظفين</button>
         <button class="act btn-ghost btn-small" onclick="exportOwnerEmployeeExcel()">📊 تصدير Excel</button>
-        <button class="act btn-danger btn-small" onclick="deleteEmployeeCompletely(currentOwnerViewUid, ownerDetailCache.label)">🗑️ حذف الموظف نهائيًا</button>
       </div>
       <h2 id="ownerDetailTitle" style="margin-top:0;"></h2>
       <div class="cards" id="ownerDetailCards"></div>
@@ -894,7 +993,6 @@
 
 <script>
 function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'; }
-function CKEY(){ return 'mishwar_clients_v2_' + authUid(); }
 function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
 function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
 function WAKEY(){ return 'mishwar_wa_number_' + authUid(); }
@@ -915,7 +1013,27 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
-/* Self sign-up is disabled on purpose — صاحب المكتب يضيف الموظفين بنفسه من Firebase Console. */
+let authMode = 'login';
+
+/* Each office/team gets its own join code. Add more entries here if you ever
+   manage more than one office — each code maps to its own shared client list,
+   reminders, and owner dashboard. Change these codes any time; just tell them
+   only to your real employees. Whoever types a valid code while creating an
+   account joins that office automatically (no manual approval needed) and
+   shares clients + reminders with everyone else in the same office. */
+const OFFICE_CODES = {
+  'AYMAN35659702': { officeId: 'ayman-gharib', officeName: 'مكتب أيمن غريب' },
+};
+
+function toggleAuthMode(){
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  document.getElementById('authMainBtn').textContent = authMode === 'login' ? 'دخول' : 'إنشاء الحساب';
+  document.getElementById('authSwitchBtn').textContent = authMode === 'login' ? 'مفيش حساب؟ سجّل واحد جديد' : 'عندك حساب بالفعل؟ سجّل الدخول';
+  document.getElementById('authJoinCodeField').style.display = authMode === 'signup' ? 'block' : 'none';
+  document.getElementById('authJoinCode').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginMsg').textContent = '';
+}
 
 function translateAuthError(err){
   const map = {
@@ -938,11 +1056,33 @@ function handleAuthSubmit(){
   document.getElementById('loginMsg').textContent = '';
   if(!email || !pass){ document.getElementById('loginErr').textContent = 'اكتب الإيميل وكلمة المرور'; return; }
   localStorage.setItem('mishwar_last_email', email);
-  auth.signInWithEmailAndPassword(email, pass).then((cred)=>{
-    sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
-  }).catch(err => {
-    document.getElementById('loginErr').textContent = translateAuthError(err);
-  });
+  if(authMode === 'signup'){
+    const joinCode = document.getElementById('authJoinCode').value.trim().toUpperCase();
+    const office = OFFICE_CODES[joinCode];
+    if(!office){
+      document.getElementById('loginErr').textContent = 'كود المكتب غلط. اطلب الكود الصحيح من صاحب المكتب.';
+      return;
+    }
+    auth.createUserWithEmailAndPassword(email, pass).then((cred)=>{
+      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+      return db.collection('users').doc(cred.user.uid).set({
+        uid: cred.user.uid,
+        email: cred.user.email,
+        officeId: office.officeId,
+        officeName: office.officeName,
+        status: 'approved',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }).catch(err => {
+      document.getElementById('loginErr').textContent = translateAuthError(err);
+    });
+  } else {
+    auth.signInWithEmailAndPassword(email, pass).then((cred)=>{
+      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+    }).catch(err => {
+      document.getElementById('loginErr').textContent = translateAuthError(err);
+    });
+  }
 }
 
 function handleForgotPassword(){
@@ -1013,9 +1153,6 @@ function unlockApp(){
   startChatUnreadWatcher();
   watchOwnRole();
   ensureLedgerMigrated();
-  if('Notification' in window && Notification.permission === 'default'){
-    Notification.requestPermission().catch(()=>{});
-  }
 }
 
 /* ---- Biometric (WebAuthn) device lock — scoped per account (uid) ---- */
@@ -1110,21 +1247,44 @@ function renderAccountSection(){
       statusBanner = `<div style="background:var(--red-soft);color:var(--red);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:10px;">حسابك متعمليش قبول من صاحب المكتب</div>`;
     }
   }
+  let notifButton = '';
+  if('Notification' in window){
+    if(Notification.permission === 'granted'){
+      notifButton = `<span class="tag" style="align-self:center;">🔔 إشعارات الرسايل مفعّلة</span>`;
+    } else if(Notification.permission === 'denied'){
+      notifButton = `<span class="tag" style="align-self:center;color:var(--red);">🔕 الإشعارات ملغية من إعدادات المتصفح</span>`;
+    } else {
+      notifButton = `<button class="act btn-primary btn-small" onclick="requestChatNotifPermission()">🔔 فعّل إشعارات الرسايل</button>`;
+    }
+  }
   box.innerHTML = `
     ${statusBanner}
     <div style="font-size:13.5px;color:var(--navy-dim);margin-bottom:10px;">مسجل الدخول بـ: <b style="color:var(--ink);">${escapeHtml(user.email)}</b></div>
     <div class="row-actions">
+      ${notifButton}
       ${hasBiometric
         ? `<button class="act btn-ghost btn-small" onclick="disableBiometric()">إلغاء الدخول بالبصمة على هذا الجهاز</button>`
         : `<button class="act btn-ghost btn-small" onclick="enableBiometric()">🔒 فعّل الدخول بالبصمة على هذا الجهاز</button>`
       }
       ${currentUserRole === 'owner'
-        ? `<span class="tag" style="align-self:center;">✓ حساب صاحب المكتب</span>`
+        ? `<button class="act btn-danger btn-small" onclick="renounceOwnerRole()">تنازل عن صلاحية صاحب المكتب</button>`
         : `<button class="act btn-ghost btn-small" onclick="claimOwnerRole()">تفعيل حساب صاحب المكتب</button>`
       }
       <button class="act btn-danger btn-small" onclick="logout()">تسجيل الخروج</button>
     </div>
   `;
+}
+
+function requestChatNotifPermission(){
+  if(!('Notification' in window)){ alert('المتصفح ده مش بيدعم الإشعارات.'); return; }
+  Notification.requestPermission().then(result=>{
+    renderAccountSection();
+    if(result === 'granted'){
+      new Notification('تمام ✅', { body: 'الإشعارات اشتغلت، هتوصلك أي رسالة جديدة على الشات' });
+    } else if(result === 'denied'){
+      alert('اخترت "Block". لو غيرت رأيك، لازم تفعّلها يدويًا من إعدادات المتصفح/الموقع.');
+    }
+  });
 }
 
 function requirePin(cb){
@@ -1133,8 +1293,46 @@ function requirePin(cb){
   if(p === EDIT_PIN){ cb(); } else { alert('الكود غير صحيح'); }
 }
 
-function loadClients(){ return JSON.parse(localStorage.getItem(CKEY()) || '[]'); }
-function saveClients(c){ localStorage.setItem(CKEY(), JSON.stringify(c)); }
+function officeClientsCol(){
+  if(!currentOfficeId) return null;
+  return db.collection('offices').doc(currentOfficeId).collection('clients');
+}
+function officeRemindersCol(){
+  if(!currentOfficeId) return null;
+  return db.collection('offices').doc(currentOfficeId).collection('reminders');
+}
+
+let clientsCache = [];
+let clientsUnsub = null;
+function loadClients(){ return clientsCache; }
+function watchOfficeClients(){
+  if(clientsUnsub){ clientsUnsub(); clientsUnsub = null; }
+  const col = officeClientsCol();
+  if(!col){ clientsCache = []; populateClientHelpers(); return; }
+  clientsUnsub = col.onSnapshot(snap=>{
+    clientsCache = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+    populateClientHelpers();
+    const clientsPanel = document.getElementById('panel-clients');
+    if(clientsPanel && clientsPanel.classList.contains('active')) renderClientsTab();
+    const homePanel = document.getElementById('panel-home');
+    if(homePanel && homePanel.classList.contains('active')) renderHomeTab();
+  }, ()=>{});
+}
+
+let remindersCache = [];
+let remindersUnsub = null;
+function loadReminders(){ return remindersCache; }
+function watchOfficeReminders(){
+  if(remindersUnsub){ remindersUnsub(); remindersUnsub = null; }
+  const col = officeRemindersCol();
+  if(!col){ remindersCache = []; return; }
+  remindersUnsub = col.onSnapshot(snap=>{
+    remindersCache = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+    const alertsPanel = document.getElementById('panel-alerts');
+    if(alertsPanel && alertsPanel.classList.contains('active')) renderAlertsTab();
+  }, ()=>{});
+}
+
 function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY()) || '[]'); }
 function saveTrips(t){
   const prev = loadTrips();
@@ -1147,9 +1345,6 @@ function saveReceipts(r){
   localStorage.setItem(RKEY(), JSON.stringify(r));
   syncLedgerToFirestore('cash', prev, r);
 }
-function AKEY(){ return 'mishwar_reminders_v1_' + authUid(); }
-function loadReminders(){ return JSON.parse(localStorage.getItem(AKEY()) || '[]'); }
-function saveReminders(a){ localStorage.setItem(AKEY(), JSON.stringify(a)); }
 
 /* ---------- Ledger mirror on Firestore (per-user subcollections) ----------
    localStorage stays the source of truth for the device (offline-first);
@@ -1238,7 +1433,7 @@ async function renderOwnerTab(){
   pendingBox.style.display = 'none';
   try{
     const usersSnap = await db.collection('users').get();
-    const allRows = usersSnap.docs.map(d=>d.data()).filter(u=>u && u.uid && u.email && u.uid !== myUid);
+    const allRows = usersSnap.docs.map(d=>d.data()).filter(u=>u && u.uid && u.email && u.uid !== myUid && u.officeId === currentOfficeId);
 
     const pendingRows = allRows.filter(u => (u.status||'pending') === 'pending');
     const rejectedRows = allRows.filter(u => u.status === 'rejected');
@@ -1247,6 +1442,11 @@ async function renderOwnerTab(){
     if(pendingRows.length || rejectedRows.length){
       pendingBox.style.display = 'block';
       pendingList.innerHTML =
+        (pendingRows.length > 1 ? `
+          <div class="row-actions" style="margin:0 0 10px;">
+            <button class="act btn-danger btn-small" onclick="rejectAllPending()">رفض كل الطلبات المعلّقة (${pendingRows.length})</button>
+          </div>
+        ` : '') +
         pendingRows.map(u => `
           <div class="chat-emp-row">
             <div class="left">
@@ -1259,7 +1459,6 @@ async function renderOwnerTab(){
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">✓ قبول</button>
               <button class="act btn-danger btn-small" onclick="event.stopPropagation();rejectEmployee('${u.uid}')">رفض</button>
-              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('') +
@@ -1274,7 +1473,6 @@ async function renderOwnerTab(){
             </div>
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">إعادة نظر: قبول</button>
-              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('');
@@ -1305,14 +1503,11 @@ async function renderOwnerTab(){
         <div class="left">
           <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
           <div class="info">
-            <div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div>
+            <div class="name">${escapeHtml(displayNameFromEmail(r.email))} ${r.role === 'owner' ? '<span style="color:var(--bronze);">👑 صاحب مكتب</span>' : ''}</div>
             <div class="last">اتصرف <b style="color:#8a6f00;">${r.totalSpent.toFixed(0)} ج.م</b> • عهدة <b style="color:var(--green);">${r.totalReceived.toFixed(0)} ج.م</b></div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
-          <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${r.uid}','${escapeHtml(r.email)}')">🗑️</button>
-        </div>
+        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
       </div>
     `).join('');
   }catch(e){
@@ -1333,27 +1528,30 @@ function rejectEmployee(uid){
     .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
-async function deleteEmployeeCompletely(uid, email){
-  const name = displayNameFromEmail(email);
-  if(!confirm('متأكد إنك عايز تمسح "' + name + '" نهائيًا؟\nهيتمسح كل مشاويره وعُهدته من قاعدة البيانات، والخطوة دي مش هترجع.')) return;
+async function rejectAllPending(){
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
+  const usersSnap = await db.collection('users').get();
+  const pendingUids = usersSnap.docs
+    .map(d=>d.data())
+    .filter(u=> u && u.uid && u.uid !== myUid && u.officeId === currentOfficeId && (u.status||'pending') === 'pending')
+    .map(u=>u.uid);
+  if(!pendingUids.length) return;
+  if(!confirm(`متأكد إنك عايز ترفض كل الـ ${pendingUids.length} طلب انضمام المعلّقين دلوقتي؟`)) return;
   try{
-    const [tripsSnap, cashSnap] = await Promise.all([
-      db.collection('users').doc(uid).collection('trips').get(),
-      db.collection('users').doc(uid).collection('cash').get()
-    ]);
-    const allDocs = tripsSnap.docs.concat(cashSnap.docs);
-    for(let i=0; i<allDocs.length; i+=450){
-      const batch = db.batch();
-      allDocs.slice(i, i+450).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-    await db.collection('users').doc(uid).delete();
-    alert('اتمسح "' + name + '" من قاعدة البيانات.\nمتنساش كمان تمسح إيميله من Firebase Authentication يدويًا عشان الحساب يقفل تمامًا ويقدرش يسجل دخول تاني.');
-    if(currentOwnerViewUid === uid) closeOwnerDetail();
+    await Promise.all(pendingUids.map(uid => db.collection('users').doc(uid).set({ status: 'rejected' }, { merge: true })));
     renderOwnerTab();
-  }catch(e){
-    alert('حصل خطأ أثناء المسح: ' + (e && e.message ? e.message : 'غير معروف'));
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
   }
+}
+
+function renounceOwnerRole(){
+  const user = auth.currentUser;
+  if(!user) return;
+  if(!confirm('متأكد إنك عايز تتنازل عن صلاحية "صاحب المكتب" من حسابك؟ هترجع موظف عادي، ومش هتقدر تشوف لوحة صاحب المكتب تاني (إلا لو فعّلتها تاني بالكود).')) return;
+  db.collection('users').doc(user.uid).set({ role: 'employee' }, { merge: true })
+    .then(()=>{ alert('تم — رجعت حساب عادي.'); })
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function openEmployeeLedger(uid, email){
@@ -1733,6 +1931,14 @@ let editingClientId = null;
 function saveClient(){
   const name = document.getElementById('cName').value.trim();
   if(!name){ document.getElementById('cName').focus(); return; }
+  const taxRegNoVal = document.getElementById('cTaxRegNo').value.trim();
+  if(taxRegNoVal && taxRegNoVal.length !== 9){
+    alert('رقم التسجيل الضريبي لازم يكون ٩ أرقام بالظبط');
+    document.getElementById('cTaxRegNo').focus();
+    return;
+  }
+  const col = officeClientsCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   const data = {
     name,
     taxOffice: document.getElementById('cTaxOffice').value.trim(),
@@ -1740,21 +1946,17 @@ function saveClient(){
     crExpiry: document.getElementById('cCrExpiry').value,
     taxCardExpiry: document.getElementById('cTaxCardExpiry').value,
     tokenExpiry: document.getElementById('cTokenExpiry').value,
+    companyType: document.getElementById('cCompanyType').value,
+    vatExpiry: document.getElementById('cVatExpiry').value,
+    crOffice: document.getElementById('cCrOffice').value.trim(),
+    taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
+    crNo: document.getElementById('cCrNo').value.trim(),
   };
-  const clients = loadClients();
-  let newClientId = null;
-  if(editingClientId){
-    const c = clients.find(x=>x.id===editingClientId);
-    Object.assign(c, data);
-  } else {
-    newClientId = uid();
-    clients.push({id: newClientId, ...data});
-  }
-  saveClients(clients);
+  const promise = editingClientId
+    ? col.doc(editingClientId).set(data, { merge: true })
+    : (()=>{ const newId = uid(); openClientDocsId = newId; return col.doc(newId).set(data); })();
+  promise.catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   resetClientForm();
-  populateClientHelpers();
-  if(newClientId){ openClientDocsId = newClientId; }
-  renderClientsTab();
 }
 
 function resetClientForm(){
@@ -1765,6 +1967,11 @@ function resetClientForm(){
   document.getElementById('cCrExpiry').value = '';
   document.getElementById('cTaxCardExpiry').value = '';
   document.getElementById('cTokenExpiry').value = '';
+  document.getElementById('cCompanyType').value = '';
+  document.getElementById('cVatExpiry').value = '';
+  document.getElementById('cCrOffice').value = '';
+  document.getElementById('cTaxRegNo').value = '';
+  document.getElementById('cCrNo').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -1779,6 +1986,11 @@ function editClient(id){
   document.getElementById('cCrExpiry').value = c.crExpiry || '';
   document.getElementById('cTaxCardExpiry').value = c.taxCardExpiry || '';
   document.getElementById('cTokenExpiry').value = c.tokenExpiry || '';
+  document.getElementById('cCompanyType').value = c.companyType || '';
+  document.getElementById('cVatExpiry').value = c.vatExpiry || '';
+  document.getElementById('cCrOffice').value = c.crOffice || '';
+  document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
+  document.getElementById('cCrNo').value = c.crNo || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1786,9 +1998,9 @@ function editClient(id){
 
 function deleteClient(id){
   if(!confirm('تشيل العميل ده؟ (المشاوير المسجلة له هتفضل موجودة في السجل)')) return;
-  saveClients(loadClients().filter(c=>c.id!==id));
-  populateClientHelpers();
-  renderClientsTab();
+  const col = officeClientsCol();
+  if(!col) return;
+  col.doc(id).delete().catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function excelCellToDateStr(val){
@@ -1811,15 +2023,20 @@ async function downloadClientTemplate(){
   ws.views = [{ rightToLeft: true }];
   ws.columns = [
     { header: 'اسم العميل / الشركة', key: 'name', width: 30 },
+    { header: 'نوع الشركة', key: 'companyType', width: 26 },
     { header: 'المأمورية', key: 'taxOffice', width: 26 },
     { header: 'رقم التليفون', key: 'phone', width: 16 },
+    { header: 'رقم السجل التجاري', key: 'crNo', width: 20 },
+    { header: 'مكتب السجل التجاري التابع له', key: 'crOffice', width: 28 },
+    { header: 'رقم التسجيل الضريبي', key: 'taxRegNo', width: 22 },
     { header: 'انتهاء السجل التجاري (YYYY-MM-DD)', key: 'crExpiry', width: 28 },
     { header: 'انتهاء البطاقة الضريبية (YYYY-MM-DD)', key: 'taxCardExpiry', width: 30 },
+    { header: 'انتهاء شهادة القيمة المضافة (YYYY-MM-DD)', key: 'vatExpiry', width: 32 },
     { header: 'انتهاء التوكن (YYYY-MM-DD)', key: 'tokenExpiry', width: 24 },
   ];
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.addRow({ name: 'مثال: شركة النور للتجارة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', tokenExpiry: '2026-12-01' });
+  ws.addRow({ name: 'مثال: شركة النور للتجارة', companyType: 'شركة ذات مسؤولية محدودة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crNo: '123456', crOffice: 'مكتب سجل تجاري الجيزة', taxRegNo: '987654321', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01' });
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
@@ -1836,6 +2053,8 @@ async function downloadClientTemplate(){
 async function importClientsFromExcel(event){
   const file = event.target.files[0];
   if(!file) return;
+  const col = officeClientsCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); event.target.value = ''; return; }
   try{
     const buffer = await file.arrayBuffer();
     const wb = new ExcelJS.Workbook();
@@ -1843,9 +2062,9 @@ async function importClientsFromExcel(event){
     const ws = wb.worksheets[0];
     if(!ws){ alert('الملف فاضي أو مش صيغة إكسيل صحيحة'); event.target.value = ''; return; }
 
-    const clients = loadClients();
-    const existingNames = new Set(clients.map(c => c.name.trim().toLowerCase()));
+    const existingNames = new Set(clientsCache.map(c => c.name.trim().toLowerCase()));
     let added = 0, skipped = 0, invalid = 0;
+    const batch = db.batch();
 
     ws.eachRow((row, rowNumber) => {
       if(rowNumber === 1) return; // header row
@@ -1854,22 +2073,24 @@ async function importClientsFromExcel(event){
       if(!name){ invalid++; return; }
       if(existingNames.has(name.toLowerCase())){ skipped++; return; }
 
-      clients.push({
-        id: uid(),
+      batch.set(col.doc(uid()), {
         name,
-        taxOffice: vals[2] ? String(vals[2]).trim() : '',
-        phone: vals[3] ? String(vals[3]).trim() : '',
-        crExpiry: excelCellToDateStr(vals[4]),
-        taxCardExpiry: excelCellToDateStr(vals[5]),
-        tokenExpiry: excelCellToDateStr(vals[6]),
+        companyType: vals[2] ? String(vals[2]).trim() : '',
+        taxOffice: vals[3] ? String(vals[3]).trim() : '',
+        phone: vals[4] ? String(vals[4]).trim() : '',
+        crNo: vals[5] ? String(vals[5]).trim() : '',
+        crOffice: vals[6] ? String(vals[6]).trim() : '',
+        taxRegNo: vals[7] ? String(vals[7]).trim() : '',
+        crExpiry: excelCellToDateStr(vals[8]),
+        taxCardExpiry: excelCellToDateStr(vals[9]),
+        vatExpiry: excelCellToDateStr(vals[10]),
+        tokenExpiry: excelCellToDateStr(vals[11]),
       });
       existingNames.add(name.toLowerCase());
       added++;
     });
 
-    saveClients(clients);
-    populateClientHelpers();
-    renderClientsTab();
+    await batch.commit();
     alert(`تم الاستيراد ✅\nتمت إضافة: ${added} عميل\nمتخطى (موجود بالفعل): ${skipped}\nصفوف بدون اسم: ${invalid}`);
   }catch(err){
     console.error(err);
@@ -1886,11 +2107,9 @@ function isExpiringSoon(dateStr){
   return diffDays < 30;
 }
 
-let openClientDocsId = null;
-
 async function renderClientsTab(){
   const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
-  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q) || (c.taxRegNo||'').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
   const body = document.getElementById('clientsBody');
   const empty = document.getElementById('clientsEmpty');
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
@@ -1899,55 +2118,85 @@ async function renderClientsTab(){
   const rowsHtml = await Promise.all(clients.map(async c => {
     let count = 0;
     try{ count = (await getFilesForClient(c.id)).length; }catch(e){ count = 0; }
-    const isOpen = openClientDocsId === c.id;
-    let docsCellHtml = '';
-    if(isOpen){
-      let files = [];
-      try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
-      const fileRows = files.map(f => `
-        <div class="attach-row">
-          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
-          <div class="btns" style="display:flex;gap:6px;">
-            <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
-            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}').then(renderClientsTab))">حذف</button>
-          </div>
-        </div>
-      `).join('');
-      docsCellHtml = `
-        <tr>
-          <td colspan="8">
-            <div class="attach-box" style="margin:0;">
-              <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
-              <div class="attach-list">
-                ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
-              </div>
-            </div>
-          </td>
-        </tr>`;
-    }
     return `
     <tr>
       <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.companyType)||'—'}</td>
       <td>${escapeHtml(c.taxOffice)||'—'}</td>
       <td class="num">${escapeHtml(c.phone)||'—'}</td>
+      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
+      <td>${escapeHtml(c.crOffice)||'—'}</td>
+      <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
       <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
+      <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
-      <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
+      <td><button class="act btn-ghost btn-small" onclick="openClientDocsModal('${c.id}')">📎 مستندات (${count})</button></td>
       <td>
         <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
         <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
       </td>
-    </tr>
-    ${docsCellHtml}`;
+    </tr>`;
   }));
 
   body.innerHTML = rowsHtml.join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
 
-function toggleClientDocs(id){
-  openClientDocsId = (openClientDocsId === id) ? null : id;
+
+let docsModalClientId = null;
+
+function fileIconFor(name){
+  const ext = (name||'').split('.').pop().toLowerCase();
+  if(['pdf'].includes(ext)) return '📕';
+  if(['doc','docx'].includes(ext)) return '📘';
+  if(['xls','xlsx'].includes(ext)) return '📗';
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+  return '📄';
+}
+
+async function openClientDocsModal(id){
+  docsModalClientId = id;
+  const c = loadClients().find(x=>x.id===id);
+  document.getElementById('docsModalClientName').textContent = c ? c.name : '';
+  document.getElementById('docsModal').classList.add('show');
+  await renderDocsModalList();
+}
+
+function closeClientDocsModal(){
+  docsModalClientId = null;
+  document.getElementById('docsModal').classList.remove('show');
+}
+
+async function renderDocsModalList(){
+  if(!docsModalClientId) return;
+  const listEl = document.getElementById('docsModalFileList');
+  let files = [];
+  try{ files = await getFilesForClient(docsModalClientId); }catch(e){ files = []; }
+  if(files.length === 0){
+    listEl.innerHTML = '<div class="docs-empty">مفيش ملفات مرفوعة للعميل ده لسه</div>';
+    return;
+  }
+  listEl.innerHTML = files.map(f => `
+    <div class="docs-file-card">
+      <div class="docs-file-icon">${fileIconFor(f.name)}</div>
+      <div class="docs-file-info">
+        <div class="docs-file-name">${escapeHtml(f.name)}</div>
+        <div class="docs-file-meta">${fmtSize(f.size)} — ${f.date}</div>
+      </div>
+      <div class="docs-file-actions">
+        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${docsModalClientId}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${docsModalClientId}').then(renderDocsModalList))">حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function handleFileUploadInDocsModal(inputEl){
+  if(!inputEl.files.length || !docsModalClientId) return;
+  await addFilesToClient(docsModalClientId, inputEl.files);
+  inputEl.value = '';
+  await renderDocsModalList();
   renderClientsTab();
 }
 
@@ -1961,10 +2210,13 @@ function saveTrip(){
   let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
   if(!client){
     if(!confirm(`العميل "${typedName}" مش مسجل، تحب تضيفه دلوقتي؟`)) return;
-    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:''};
-    clients.push(client);
-    saveClients(clients);
-    populateClientHelpers();
+    const col = officeClientsCol();
+    if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
+    col.doc(client.id).set({
+      name: client.name, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
+      companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
+    }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   }
 
   const type = document.getElementById('tripType').value;
@@ -2204,7 +2456,7 @@ function getExpiringDocs(){
   const now = new Date();
   const list = [];
   clients.forEach(c=>{
-    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية'],['tokenExpiry','التوكن']].forEach(([field,label])=>{
+    [['crExpiry','السجل التجاري'],['taxCardExpiry','البطاقة الضريبية'],['vatExpiry','شهادة القيمة المضافة'],['tokenExpiry','التوكن']].forEach(([field,label])=>{
       if(c[field]){
         const d = new Date(c[field]);
         const days = Math.ceil((d-now)/86400000);
@@ -2357,13 +2609,6 @@ function fmtSize(bytes){
   return (bytes/(1024*1024)).toFixed(1) + ' م.ب';
 }
 
-async function handleFileUploadInClientsTab(clientId, inputEl){
-  if(!inputEl.files.length) return;
-  await addFilesToClient(clientId, inputEl.files);
-  inputEl.value = '';
-  renderClientsTab();
-}
-
 async function downloadClientFile(id, clientId){
   const files = await getFilesForClient(clientId);
   const f = files.find(x=>x.id===id);
@@ -2445,26 +2690,26 @@ function addReminder(){
   const date = document.getElementById('reminderDate').value;
   if(!text){ alert('اكتب المهمة أو الأمر المطلوب'); return; }
   if(!date){ alert('اختار تاريخ التنفيذ'); return; }
-  const reminders = loadReminders();
-  reminders.push({id: uid(), text, date, done:false});
-  saveReminders(reminders);
+  const col = officeRemindersCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+  col.doc(uid()).set({ text, date, done:false }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   document.getElementById('reminderText').value = '';
   document.getElementById('reminderDate').value = '';
-  renderAlertsTab();
 }
 
 function toggleReminderDone(id){
-  const reminders = loadReminders();
-  const r = reminders.find(x=>x.id===id);
-  if(r) r.done = !r.done;
-  saveReminders(reminders);
-  renderAlertsTab();
+  const col = officeRemindersCol();
+  if(!col) return;
+  const r = remindersCache.find(x=>x.id===id);
+  if(!r) return;
+  col.doc(id).set({ done: !r.done }, { merge: true }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function deleteReminder(id){
   if(!confirm('تشيل التنبيه ده نهائي؟')) return;
-  saveReminders(loadReminders().filter(r=>r.id!==id));
-  renderAlertsTab();
+  const col = officeRemindersCol();
+  if(!col) return;
+  col.doc(id).delete().catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function renderAlertsTab(){
@@ -2587,6 +2832,8 @@ const OWNER_SETUP_CODE = 'GHARIB-OWNER-2026';
 let chatUnsubOwnRole = null;
 let currentUserRole = 'employee';
 let currentUserStatus = 'pending';
+let currentOfficeId = null;
+let currentOfficeName = '';
 
 function watchOwnRole(){
   const user = auth.currentUser;
@@ -2596,9 +2843,17 @@ function watchOwnRole(){
     const data = docSnap.data() || {};
     currentUserRole = data.role || 'employee';
     currentUserStatus = data.status || 'pending';
+    const newOfficeId = data.officeId || null;
+    const officeChanged = newOfficeId !== currentOfficeId;
+    currentOfficeId = newOfficeId;
+    currentOfficeName = data.officeName || '';
     const btn = document.getElementById('ownerTabBtn');
     if(btn) btn.style.display = (currentUserRole === 'owner') ? 'inline-block' : 'none';
     renderAccountSection();
+    if(officeChanged){
+      watchOfficeClients();
+      watchOfficeReminders();
+    }
   }, ()=>{});
 }
 
@@ -2726,17 +2981,27 @@ function renderChatThreadsList(){
 function renderChatUserList(){
   const user = auth.currentUser;
   const q = (document.getElementById('chatUserSearch').value || '').trim().toLowerCase();
-  if(chatUnsubUsersList) chatUnsubUsersList();
-  chatUnsubUsersList = db.collection('users').onSnapshot(snap=>{
+  const list = document.getElementById('chatUserList');
+  const emptyEl = document.getElementById('chatUserEmpty');
+  if(chatUnsubUsersList){ chatUnsubUsersList(); chatUnsubUsersList = null; }
+  if(!q){
+    list.innerHTML = '';
+    emptyEl.textContent = 'اكتب إيميل حد مسجل في التطبيق عشان تلاقيه وتبدأ تكلمه';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  list.innerHTML = '<div class="empty">بيدور...</div>';
+  db.collection('users').get().then(snap=>{
     const rows = [];
     snap.forEach(doc=>{
       const d = doc.data();
       if(doc.id === user.uid) return;
-      if(q && !(d.email||'').toLowerCase().includes(q)) return;
+      if(!(d.email||'').toLowerCase().includes(q)) return;
       rows.push({ uid: doc.id, email: d.email || doc.id });
     });
-    const list = document.getElementById('chatUserList');
-    document.getElementById('chatUserEmpty').style.display = rows.length ? 'none' : 'block';
+    emptyEl.textContent = 'مفيش حد مسجل بالإيميل ده';
+    emptyEl.style.display = rows.length ? 'none' : 'block';
     list.innerHTML = rows.map(r => `
       <div class="chat-emp-row" onclick="openChatThread('${r.uid}', '${escapeHtml(r.email)}')">
         <div class="left">
@@ -2746,7 +3011,11 @@ function renderChatUserList(){
         <button class="act btn-ghost btn-small">راسله</button>
       </div>
     `).join('');
-  }, ()=>{});
+  }).catch(()=>{
+    list.innerHTML = '';
+    emptyEl.textContent = 'حصل خطأ أثناء البحث، جرب تاني';
+    emptyEl.style.display = 'block';
+  });
 }
 
 function openChatThread(partnerUid, label){
