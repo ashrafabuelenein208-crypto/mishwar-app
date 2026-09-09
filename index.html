@@ -959,6 +959,7 @@
       <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
         <button class="act btn-ghost btn-small" onclick="closeOwnerDetail()">‹ رجوع لكل الموظفين</button>
         <button class="act btn-ghost btn-small" onclick="exportOwnerEmployeeExcel()">📊 تصدير Excel</button>
+        <button class="act btn-danger btn-small" onclick="deleteEmployeeCompletely(currentOwnerViewUid, ownerDetailCache.label)">🗑️ حذف الموظف نهائيًا</button>
       </div>
       <h2 id="ownerDetailTitle" style="margin-top:0;"></h2>
       <div class="cards" id="ownerDetailCards"></div>
@@ -1459,6 +1460,7 @@ async function renderOwnerTab(){
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">✓ قبول</button>
               <button class="act btn-danger btn-small" onclick="event.stopPropagation();rejectEmployee('${u.uid}')">رفض</button>
+              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('') +
@@ -1473,6 +1475,7 @@ async function renderOwnerTab(){
             </div>
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">إعادة نظر: قبول</button>
+              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('');
@@ -1507,7 +1510,10 @@ async function renderOwnerTab(){
             <div class="last">اتصرف <b style="color:#8a6f00;">${r.totalSpent.toFixed(0)} ج.م</b> • عهدة <b style="color:var(--green);">${r.totalReceived.toFixed(0)} ج.م</b></div>
           </div>
         </div>
-        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
+          <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${r.uid}','${escapeHtml(r.email)}')">🗑️</button>
+        </div>
       </div>
     `).join('');
   }catch(e){
@@ -1542,6 +1548,29 @@ async function rejectAllPending(){
     renderOwnerTab();
   }catch(err){
     alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+async function deleteEmployeeCompletely(uid, email){
+  const name = displayNameFromEmail(email);
+  if(!confirm('متأكد إنك عايز تمسح "' + name + '" نهائيًا؟\nهيتمسح كل مشاويره وعُهدته من قاعدة البيانات، والخطوة دي مش هترجع.')) return;
+  try{
+    const [tripsSnap, cashSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('trips').get(),
+      db.collection('users').doc(uid).collection('cash').get()
+    ]);
+    const allDocs = tripsSnap.docs.concat(cashSnap.docs);
+    for(let i=0; i<allDocs.length; i+=450){
+      const batch = db.batch();
+      allDocs.slice(i, i+450).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    await db.collection('users').doc(uid).delete();
+    alert('اتمسح "' + name + '" من قاعدة البيانات.\nمتنساش كمان تمسح إيميله من Firebase Authentication يدويًا عشان الحساب يقفل تمامًا ويقدرش يسجل دخول تاني.');
+    if(currentOwnerViewUid === uid) closeOwnerDetail();
+    renderOwnerTab();
+  }catch(e){
+    alert('حصل خطأ أثناء المسح: ' + (e && e.message ? e.message : 'غير معروف'));
   }
 }
 
