@@ -454,46 +454,17 @@
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
   #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
 
-  #docsModal{
-    display:none; position:fixed; inset:0; z-index:10000;
-    background:rgba(10,14,20,.55);
-    align-items:center; justify-content:center; padding:16px;
+  #newClientModal{
+    display:none; position:fixed; inset:0; z-index:10001;
+    background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
   }
-  #docsModal.show{ display:flex; }
-  .docs-panel{
-    background:#fff; border-radius:20px; width:100%; max-width:640px; max-height:88vh;
-    display:flex; flex-direction:column; overflow:hidden;
-    box-shadow:0 20px 50px rgba(15,23,42,.25);
+  #newClientModal.show{ display:flex; }
+  #newClientModal .ncm-box{
+    background:#fff; border-radius:16px; padding:22px 18px; max-width:380px; width:100%; text-align:center;
   }
-  .docs-panel-head{
-    padding:18px 20px; border-bottom:1px solid var(--line);
-    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-shrink:0;
-  }
-  .docs-panel-head h3{ margin:0; font-size:16px; color:var(--navy); }
-  .docs-panel-head .sub{ font-size:12.5px; color:var(--navy-dim); margin-top:2px; }
-  .docs-close-btn{
-    border:none; background:var(--bronze-soft); color:var(--navy); width:34px; height:34px;
-    border-radius:50%; font-size:16px; cursor:pointer; flex-shrink:0; font-family:inherit;
-  }
-  .docs-panel-body{ padding:18px 20px; overflow-y:auto; flex:1; }
-  .docs-upload-box{
-    border:1.5px dashed var(--line); border-radius:14px; padding:16px; text-align:center; margin-bottom:16px;
-  }
-  .docs-upload-box input[type="file"]{ width:100%; }
-  .docs-file-list{ display:flex; flex-direction:column; gap:10px; }
-  .docs-file-card{
-    display:flex; align-items:center; gap:12px;
-    border:1.5px solid var(--line); border-radius:14px; padding:10px 12px;
-  }
-  .docs-file-icon{
-    width:38px; height:38px; border-radius:10px; background:var(--bronze-soft); color:var(--navy);
-    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
-  }
-  .docs-file-info{ flex:1; min-width:0; }
-  .docs-file-name{ font-weight:800; font-size:13.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .docs-file-meta{ font-size:11.5px; color:var(--navy-dim); margin-top:2px; }
-  .docs-file-actions{ display:flex; gap:6px; flex-shrink:0; }
-  .docs-empty{ text-align:center; color:var(--navy-dim); font-size:13.5px; padding:30px 10px; }
+  #newClientModal .ncm-title{ font-weight:800; font-size:16px; margin-bottom:4px; color:var(--navy); }
+  #newClientModal .ncm-name{ color:var(--bronze); }
+  #newClientModal .ncm-sub{ font-size:13px; color:#666; margin-bottom:16px; }
 </style>
 </head>
 <body>
@@ -508,21 +479,13 @@
   </div>
 </div>
 
-<div id="docsModal">
-  <div class="docs-panel">
-    <div class="docs-panel-head">
-      <div>
-        <h3>مستندات العميل</h3>
-        <div class="sub" id="docsModalClientName"></div>
-      </div>
-      <button class="docs-close-btn" onclick="closeClientDocsModal()">✕</button>
-    </div>
-    <div class="docs-panel-body">
-      <div class="docs-upload-box">
-        <input type="file" multiple id="docsModalFileInput" onchange="handleFileUploadInDocsModal(this)">
-      </div>
-      <div class="docs-file-list" id="docsModalFileList"></div>
-    </div>
+<div id="newClientModal">
+  <div class="ncm-box">
+    <div class="ncm-title">العميل "<span id="ncmName" class="ncm-name"></span>" مش مسجل عندك</div>
+    <div class="ncm-sub">تحب تعمل إيه؟</div>
+    <button class="act btn-primary" style="width:100%;margin-bottom:8px;" onclick="resolveNewClientChoice('add')">ضيفه في قائمة العملاء (يفضل عندي دايمًا)</button>
+    <button class="act btn-ghost" style="width:100%;margin-bottom:8px;" onclick="resolveNewClientChoice('once')">سجّل المشوار بس، من غير ما تضيفه كعميل</button>
+    <button class="act btn-ghost" style="width:100%;" onclick="resolveNewClientChoice('cancel')">إلغاء</button>
   </div>
 </div>
 
@@ -774,7 +737,7 @@
         </div>
         <div class="field">
           <label>رقم التسجيل الضريبي</label>
-          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي (٩ أرقام)" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)">
+          <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي">
         </div>
       </div>
       <div class="grid2">
@@ -808,7 +771,7 @@
     <section>
       <h2>كل العملاء</h2>
       <div class="search-box">
-        <input type="text" id="clientListSearch" placeholder="دور باسم العميل أو رقم التسجيل الضريبي...">
+        <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
       </div>
       <div style="overflow-x:auto;">
         <table>
@@ -959,7 +922,6 @@
       <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
         <button class="act btn-ghost btn-small" onclick="closeOwnerDetail()">‹ رجوع لكل الموظفين</button>
         <button class="act btn-ghost btn-small" onclick="exportOwnerEmployeeExcel()">📊 تصدير Excel</button>
-        <button class="act btn-danger btn-small" onclick="deleteEmployeeCompletely(currentOwnerViewUid, ownerDetailCache.label)">🗑️ حذف الموظف نهائيًا</button>
       </div>
       <h2 id="ownerDetailTitle" style="margin-top:0;"></h2>
       <div class="cards" id="ownerDetailCards"></div>
@@ -1460,7 +1422,6 @@ async function renderOwnerTab(){
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">✓ قبول</button>
               <button class="act btn-danger btn-small" onclick="event.stopPropagation();rejectEmployee('${u.uid}')">رفض</button>
-              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('') +
@@ -1475,7 +1436,6 @@ async function renderOwnerTab(){
             </div>
             <div class="row-actions" style="margin:0;">
               <button class="act btn-small" onclick="event.stopPropagation();approveEmployee('${u.uid}')">إعادة نظر: قبول</button>
-              <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${u.uid}','${escapeHtml(u.email)}')">🗑️ حذف نهائي</button>
             </div>
           </div>
         `).join('');
@@ -1510,10 +1470,7 @@ async function renderOwnerTab(){
             <div class="last">اتصرف <b style="color:#8a6f00;">${r.totalSpent.toFixed(0)} ج.م</b> • عهدة <b style="color:var(--green);">${r.totalReceived.toFixed(0)} ج.م</b></div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
-          <button class="act btn-danger btn-small" onclick="event.stopPropagation();deleteEmployeeCompletely('${r.uid}','${escapeHtml(r.email)}')">🗑️</button>
-        </div>
+        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${r.balance<0?'var(--red)':'var(--green)'};">${r.balance.toFixed(0)} ج.م</div>
       </div>
     `).join('');
   }catch(e){
@@ -1548,29 +1505,6 @@ async function rejectAllPending(){
     renderOwnerTab();
   }catch(err){
     alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
-  }
-}
-
-async function deleteEmployeeCompletely(uid, email){
-  const name = displayNameFromEmail(email);
-  if(!confirm('متأكد إنك عايز تمسح "' + name + '" نهائيًا؟\nهيتمسح كل مشاويره وعُهدته من قاعدة البيانات، والخطوة دي مش هترجع.')) return;
-  try{
-    const [tripsSnap, cashSnap] = await Promise.all([
-      db.collection('users').doc(uid).collection('trips').get(),
-      db.collection('users').doc(uid).collection('cash').get()
-    ]);
-    const allDocs = tripsSnap.docs.concat(cashSnap.docs);
-    for(let i=0; i<allDocs.length; i+=450){
-      const batch = db.batch();
-      allDocs.slice(i, i+450).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-    await db.collection('users').doc(uid).delete();
-    alert('اتمسح "' + name + '" من قاعدة البيانات.\nمتنساش كمان تمسح إيميله من Firebase Authentication يدويًا عشان الحساب يقفل تمامًا ويقدرش يسجل دخول تاني.');
-    if(currentOwnerViewUid === uid) closeOwnerDetail();
-    renderOwnerTab();
-  }catch(e){
-    alert('حصل خطأ أثناء المسح: ' + (e && e.message ? e.message : 'غير معروف'));
   }
 }
 
@@ -1960,12 +1894,6 @@ let editingClientId = null;
 function saveClient(){
   const name = document.getElementById('cName').value.trim();
   if(!name){ document.getElementById('cName').focus(); return; }
-  const taxRegNoVal = document.getElementById('cTaxRegNo').value.trim();
-  if(taxRegNoVal && taxRegNoVal.length !== 9){
-    alert('رقم التسجيل الضريبي لازم يكون ٩ أرقام بالظبط');
-    document.getElementById('cTaxRegNo').focus();
-    return;
-  }
   const col = officeClientsCol();
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   const data = {
@@ -2136,9 +2064,11 @@ function isExpiringSoon(dateStr){
   return diffDays < 30;
 }
 
+let openClientDocsId = null;
+
 async function renderClientsTab(){
   const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
-  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q) || (c.taxRegNo||'').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
   const body = document.getElementById('clientsBody');
   const empty = document.getElementById('clientsEmpty');
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
@@ -2147,6 +2077,32 @@ async function renderClientsTab(){
   const rowsHtml = await Promise.all(clients.map(async c => {
     let count = 0;
     try{ count = (await getFilesForClient(c.id)).length; }catch(e){ count = 0; }
+    const isOpen = openClientDocsId === c.id;
+    let docsCellHtml = '';
+    if(isOpen){
+      let files = [];
+      try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
+      const fileRows = files.map(f => `
+        <div class="attach-row">
+          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+          <div class="btns" style="display:flex;gap:6px;">
+            <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
+            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}').then(renderClientsTab))">حذف</button>
+          </div>
+        </div>
+      `).join('');
+      docsCellHtml = `
+        <tr>
+          <td colspan="13">
+            <div class="attach-box" style="margin:0;">
+              <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
+              <div class="attach-list">
+                ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
+              </div>
+            </div>
+          </td>
+        </tr>`;
+    }
     return `
     <tr>
       <td>${escapeHtml(c.name)}</td>
@@ -2160,92 +2116,58 @@ async function renderClientsTab(){
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
-      <td><button class="act btn-ghost btn-small" onclick="openClientDocsModal('${c.id}')">📎 مستندات (${count})</button></td>
+      <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
       <td>
         <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
         <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
       </td>
-    </tr>`;
+    </tr>
+    ${docsCellHtml}`;
   }));
 
   body.innerHTML = rowsHtml.join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
 
-
-let docsModalClientId = null;
-
-function fileIconFor(name){
-  const ext = (name||'').split('.').pop().toLowerCase();
-  if(['pdf'].includes(ext)) return '📕';
-  if(['doc','docx'].includes(ext)) return '📘';
-  if(['xls','xlsx'].includes(ext)) return '📗';
-  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
-  return '📄';
-}
-
-async function openClientDocsModal(id){
-  docsModalClientId = id;
-  const c = loadClients().find(x=>x.id===id);
-  document.getElementById('docsModalClientName').textContent = c ? c.name : '';
-  document.getElementById('docsModal').classList.add('show');
-  await renderDocsModalList();
-}
-
-function closeClientDocsModal(){
-  docsModalClientId = null;
-  document.getElementById('docsModal').classList.remove('show');
-}
-
-async function renderDocsModalList(){
-  if(!docsModalClientId) return;
-  const listEl = document.getElementById('docsModalFileList');
-  let files = [];
-  try{ files = await getFilesForClient(docsModalClientId); }catch(e){ files = []; }
-  if(files.length === 0){
-    listEl.innerHTML = '<div class="docs-empty">مفيش ملفات مرفوعة للعميل ده لسه</div>';
-    return;
-  }
-  listEl.innerHTML = files.map(f => `
-    <div class="docs-file-card">
-      <div class="docs-file-icon">${fileIconFor(f.name)}</div>
-      <div class="docs-file-info">
-        <div class="docs-file-name">${escapeHtml(f.name)}</div>
-        <div class="docs-file-meta">${fmtSize(f.size)} — ${f.date}</div>
-      </div>
-      <div class="docs-file-actions">
-        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${docsModalClientId}')">تحميل</button>
-        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${docsModalClientId}').then(renderDocsModalList))">حذف</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function handleFileUploadInDocsModal(inputEl){
-  if(!inputEl.files.length || !docsModalClientId) return;
-  await addFilesToClient(docsModalClientId, inputEl.files);
-  inputEl.value = '';
-  await renderDocsModalList();
+function toggleClientDocs(id){
+  openClientDocsId = (openClientDocsId === id) ? null : id;
   renderClientsTab();
 }
 
 /* ---------- TRIPS ---------- */
 let editingTripId = null;
 
-function saveTrip(){
+let _newClientResolve = null;
+function askNewClientChoice(name){
+  document.getElementById('ncmName').textContent = name;
+  document.getElementById('newClientModal').classList.add('show');
+  return new Promise(resolve=>{ _newClientResolve = resolve; });
+}
+function resolveNewClientChoice(choice){
+  document.getElementById('newClientModal').classList.remove('show');
+  if(_newClientResolve){ _newClientResolve(choice); _newClientResolve = null; }
+}
+
+async function saveTrip(){
   const typedName = document.getElementById('tripClientName').value.trim();
   if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
   let clients = loadClients();
   let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
   if(!client){
-    if(!confirm(`العميل "${typedName}" مش مسجل، تحب تضيفه دلوقتي؟`)) return;
-    const col = officeClientsCol();
-    if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
-    client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
-    col.doc(client.id).set({
-      name: client.name, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
-      companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
-    }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+    const choice = await askNewClientChoice(typedName);
+    if(choice === 'cancel' || !choice) return;
+    if(choice === 'add'){
+      const col = officeClientsCol();
+      if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+      client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
+      col.doc(client.id).set({
+        name: client.name, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
+        companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
+      }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+    } else {
+      // 'once': just use this name for this one trip only, don't save it to the shared client list
+      client = {id: uid(), name: typedName};
+    }
   }
 
   const type = document.getElementById('tripType').value;
@@ -2271,7 +2193,7 @@ function startEditTrip(id){
   const t = loadTrips().find(x=>x.id===id);
   if(!t) return;
   editingTripId = id;
-  document.getElementById('tripClientName').value = clientName(t.clientId);
+  document.getElementById('tripClientName').value = t.clientName || clientName(t.clientId);
   document.getElementById('tripType').value = t.type;
   document.getElementById('tripPlace').value = t.place || '';
   document.getElementById('tripDate').value = t.date;
@@ -2324,7 +2246,7 @@ function renderLogTab(){
   body.innerHTML = trips.map(t => `
     <tr>
       <td class="num">${t.date}</td>
-      <td>${escapeHtml(clientName(t.clientId))}</td>
+      <td>${escapeHtml(t.clientName || clientName(t.clientId))}</td>
       <td><span class="tag">${escapeHtml(t.type)}</span></td>
       <td>${escapeHtml(t.place) || '—'}</td>
       <td class="num">${t.cost.toFixed(2)}</td>
@@ -2406,7 +2328,7 @@ async function exportExcel(){
   trips.forEach((t, idx) => {
     const row = ws.getRow(rowIndex);
     row.getCell(1).value = t.date;
-    row.getCell(2).value = clientName(t.clientId);
+    row.getCell(2).value = t.clientName || clientName(t.clientId);
     row.getCell(3).value = t.type;
     row.getCell(4).value = t.place || '';
     row.getCell(5).value = t.cost;
@@ -2636,6 +2558,13 @@ function fmtSize(bytes){
   if(bytes < 1024) return bytes + ' بايت';
   if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' ك.ب';
   return (bytes/(1024*1024)).toFixed(1) + ' م.ب';
+}
+
+async function handleFileUploadInClientsTab(clientId, inputEl){
+  if(!inputEl.files.length) return;
+  await addFilesToClient(clientId, inputEl.files);
+  inputEl.value = '';
+  renderClientsTab();
 }
 
 async function downloadClientFile(id, clientId){
