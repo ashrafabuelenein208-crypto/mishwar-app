@@ -682,32 +682,12 @@
       <h2>إضافة / تعديل عميل</h2>
       <div class="grid2">
         <div class="field">
-          <label>اسم العميل / الشركة</label>
+          <label>اسم الشركة</label>
           <input type="text" id="cName" placeholder="اسم الشركة">
         </div>
         <div class="field">
-          <label>المأمورية</label>
-          <input type="text" id="cTaxOffice" placeholder="مثال: مأمورية ضرائب الجيزة">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>رقم التليفون</label>
-          <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
-        </div>
-        <div class="field">
-          <label>تاريخ انتهاء السجل التجاري</label>
-          <input type="date" id="cCrExpiry">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>تاريخ انتهاء البطاقة الضريبية</label>
-          <input type="date" id="cTaxCardExpiry">
-        </div>
-        <div class="field">
-          <label>تاريخ انتهاء التوكن</label>
-          <input type="date" id="cTokenExpiry">
+          <label>السمة التجارية</label>
+          <input type="text" id="cTradeName" placeholder="الاسم التجاري / البراند">
         </div>
       </div>
       <div class="grid2">
@@ -726,24 +706,48 @@
           </select>
         </div>
         <div class="field">
-          <label>تاريخ انتهاء شهادة القيمة المضافة</label>
-          <input type="date" id="cVatExpiry">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>مكتب السجل التجاري التابع له</label>
-          <input type="text" id="cCrOffice" placeholder="مثال: مكتب سجل تجاري الجيزة">
-        </div>
-        <div class="field">
           <label>رقم التسجيل الضريبي</label>
           <input type="text" id="cTaxRegNo" placeholder="رقم التسجيل الضريبي">
         </div>
       </div>
       <div class="grid2">
         <div class="field">
+          <label>المأمورية</label>
+          <input type="text" id="cTaxOffice" placeholder="مثال: مأمورية ضرائب الجيزة">
+        </div>
+        <div class="field">
+          <label>مكتب السجل التجاري التابع له</label>
+          <input type="text" id="cCrOffice" placeholder="مثال: مكتب سجل تجاري الجيزة">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
           <label>رقم السجل التجاري</label>
           <input type="text" id="cCrNo" placeholder="رقم السجل التجاري">
+        </div>
+        <div class="field">
+          <label>تاريخ انتهاء السجل التجاري</label>
+          <input type="date" id="cCrExpiry">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>تاريخ انتهاء البطاقة الضريبية</label>
+          <input type="date" id="cTaxCardExpiry">
+        </div>
+        <div class="field">
+          <label>تاريخ انتهاء شهادة القيمة المضافة</label>
+          <input type="date" id="cVatExpiry">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>تاريخ انتهاء التوكن</label>
+          <input type="date" id="cTokenExpiry">
+        </div>
+        <div class="field">
+          <label>رقم الهاتف</label>
+          <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
         </div>
       </div>
       <div class="grid2">
@@ -776,7 +780,7 @@
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>نوع الشركة</th><th>المأمورية</th><th>التليفون</th><th>رقم السجل التجاري</th><th>مكتب السجل التجاري</th><th>رقم التسجيل الضريبي</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>المستندات</th><th></th></tr>
+            <tr><th>الاسم</th><th>السمة التجارية</th><th>نوع الشركة</th><th>رقم التسجيل الضريبي</th><th>المأمورية</th><th>مكتب السجل التجاري</th><th>رقم السجل التجاري</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>التليفون</th><th>المستندات</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -1927,6 +1931,7 @@ function saveClient(){
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   const data = {
     name,
+    tradeName: document.getElementById('cTradeName').value.trim(),
     taxOffice: document.getElementById('cTaxOffice').value.trim(),
     phone: document.getElementById('cPhone').value.trim(),
     crExpiry: document.getElementById('cCrExpiry').value,
@@ -1948,6 +1953,7 @@ function saveClient(){
 function resetClientForm(){
   editingClientId = null;
   document.getElementById('cName').value = '';
+  document.getElementById('cTradeName').value = '';
   document.getElementById('cTaxOffice').value = '';
   document.getElementById('cPhone').value = '';
   document.getElementById('cCrExpiry').value = '';
@@ -1967,6 +1973,7 @@ function editClient(id){
   if(!c) return;
   editingClientId = id;
   document.getElementById('cName').value = c.name;
+  document.getElementById('cTradeName').value = c.tradeName || '';
   document.getElementById('cTaxOffice').value = c.taxOffice || '';
   document.getElementById('cPhone').value = c.phone || '';
   document.getElementById('cCrExpiry').value = c.crExpiry || '';
@@ -2008,21 +2015,22 @@ async function downloadClientTemplate(){
   const ws = wb.addWorksheet('عملاء');
   ws.views = [{ rightToLeft: true }];
   ws.columns = [
-    { header: 'اسم العميل / الشركة', key: 'name', width: 30 },
+    { header: 'اسم الشركة', key: 'name', width: 30 },
+    { header: 'السمة التجارية', key: 'tradeName', width: 26 },
     { header: 'نوع الشركة', key: 'companyType', width: 26 },
-    { header: 'المأمورية', key: 'taxOffice', width: 26 },
-    { header: 'رقم التليفون', key: 'phone', width: 16 },
-    { header: 'رقم السجل التجاري', key: 'crNo', width: 20 },
-    { header: 'مكتب السجل التجاري التابع له', key: 'crOffice', width: 28 },
     { header: 'رقم التسجيل الضريبي', key: 'taxRegNo', width: 22 },
+    { header: 'المأمورية', key: 'taxOffice', width: 26 },
+    { header: 'مكتب السجل التجاري التابع له', key: 'crOffice', width: 28 },
+    { header: 'رقم السجل التجاري', key: 'crNo', width: 20 },
     { header: 'انتهاء السجل التجاري (YYYY-MM-DD)', key: 'crExpiry', width: 28 },
     { header: 'انتهاء البطاقة الضريبية (YYYY-MM-DD)', key: 'taxCardExpiry', width: 30 },
     { header: 'انتهاء شهادة القيمة المضافة (YYYY-MM-DD)', key: 'vatExpiry', width: 32 },
     { header: 'انتهاء التوكن (YYYY-MM-DD)', key: 'tokenExpiry', width: 24 },
+    { header: 'رقم الهاتف', key: 'phone', width: 16 },
   ];
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.addRow({ name: 'مثال: شركة النور للتجارة', companyType: 'شركة ذات مسؤولية محدودة', taxOffice: 'مأمورية ضرائب الجيزة', phone: '01012345678', crNo: '123456', crOffice: 'مكتب سجل تجاري الجيزة', taxRegNo: '987654321', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01' });
+  ws.addRow({ name: 'مثال: شركة النور للتجارة', tradeName: 'النور', companyType: 'شركة ذات مسؤولية محدودة', taxRegNo: '987654321', taxOffice: 'مأمورية ضرائب الجيزة', crOffice: 'مكتب سجل تجاري الجيزة', crNo: '123456', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01', phone: '01012345678' });
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
@@ -2061,16 +2069,17 @@ async function importClientsFromExcel(event){
 
       batch.set(col.doc(uid()), {
         name,
-        companyType: vals[2] ? String(vals[2]).trim() : '',
-        taxOffice: vals[3] ? String(vals[3]).trim() : '',
-        phone: vals[4] ? String(vals[4]).trim() : '',
-        crNo: vals[5] ? String(vals[5]).trim() : '',
+        tradeName: vals[2] ? String(vals[2]).trim() : '',
+        companyType: vals[3] ? String(vals[3]).trim() : '',
+        taxRegNo: vals[4] ? String(vals[4]).trim() : '',
+        taxOffice: vals[5] ? String(vals[5]).trim() : '',
         crOffice: vals[6] ? String(vals[6]).trim() : '',
-        taxRegNo: vals[7] ? String(vals[7]).trim() : '',
+        crNo: vals[7] ? String(vals[7]).trim() : '',
         crExpiry: excelCellToDateStr(vals[8]),
         taxCardExpiry: excelCellToDateStr(vals[9]),
         vatExpiry: excelCellToDateStr(vals[10]),
         tokenExpiry: excelCellToDateStr(vals[11]),
+        phone: vals[12] ? String(vals[12]).trim() : '',
       });
       existingNames.add(name.toLowerCase());
       added++;
@@ -2122,7 +2131,7 @@ async function renderClientsTab(){
       `).join('');
       docsCellHtml = `
         <tr>
-          <td colspan="13">
+          <td colspan="14">
             <div class="attach-box" style="margin:0;">
               <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
               <div class="attach-list">
@@ -2135,16 +2144,17 @@ async function renderClientsTab(){
     return `
     <tr>
       <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.tradeName)||'—'}</td>
       <td>${escapeHtml(c.companyType)||'—'}</td>
-      <td>${escapeHtml(c.taxOffice)||'—'}</td>
-      <td class="num">${escapeHtml(c.phone)||'—'}</td>
-      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
-      <td>${escapeHtml(c.crOffice)||'—'}</td>
       <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
+      <td>${escapeHtml(c.taxOffice)||'—'}</td>
+      <td>${escapeHtml(c.crOffice)||'—'}</td>
+      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
       <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
       <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
+      <td class="num">${escapeHtml(c.phone)||'—'}</td>
       <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
       <td>
         <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
@@ -2188,9 +2198,9 @@ async function saveTrip(){
     if(choice === 'add'){
       const col = officeClientsCol();
       if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
-      client = {id: uid(), name: typedName, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
+      client = {id: uid(), name: typedName, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
       col.doc(client.id).set({
-        name: client.name, taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
+        name: client.name, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
         companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
       }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
     } else {
