@@ -1303,13 +1303,13 @@ let tripsCache = [];
 let receiptsCache = [];
 let tripsUnsub = null;
 let receiptsUnsub = null;
-function loadTrips(){ return tripsCache; }
+function loadTrips(){ return tripsCache.map(x => Object.assign({}, x)); }
 function saveTrips(t){
   const prev = tripsCache;
   tripsCache = t;
   syncLedgerToFirestore('trips', prev, t);
 }
-function loadReceipts(){ return receiptsCache; }
+function loadReceipts(){ return receiptsCache.map(x => Object.assign({}, x)); }
 function saveReceipts(r){
   const prev = receiptsCache;
   receiptsCache = r;
