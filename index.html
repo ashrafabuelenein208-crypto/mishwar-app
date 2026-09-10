@@ -1115,6 +1115,8 @@ function unlockApp(){
   syncUserProfile(auth.currentUser);
   startChatUnreadWatcher();
   watchOwnRole();
+  watchUserLedger();
+  watchUserReminders();
   ensureLedgerMigrated();
 }
 
@@ -1260,9 +1262,10 @@ function officeClientsCol(){
   if(!currentOfficeId) return null;
   return db.collection('offices').doc(currentOfficeId).collection('clients');
 }
-function officeRemindersCol(){
-  if(!currentOfficeId) return null;
-  return db.collection('offices').doc(currentOfficeId).collection('reminders');
+function userRemindersCol(){
+  const user = auth.currentUser;
+  if(!user) return null;
+  return db.collection('users').doc(user.uid).collection('reminders');
 }
 
 let clientsCache = [];
@@ -1285,9 +1288,9 @@ function watchOfficeClients(){
 let remindersCache = [];
 let remindersUnsub = null;
 function loadReminders(){ return remindersCache; }
-function watchOfficeReminders(){
+function watchUserReminders(){
   if(remindersUnsub){ remindersUnsub(); remindersUnsub = null; }
-  const col = officeRemindersCol();
+  const col = userRemindersCol();
   if(!col){ remindersCache = []; return; }
   remindersUnsub = col.onSnapshot(snap=>{
     remindersCache = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
@@ -1296,17 +1299,43 @@ function watchOfficeReminders(){
   }, ()=>{});
 }
 
-function loadTrips(){ return JSON.parse(localStorage.getItem(TKEY()) || '[]'); }
+let tripsCache = [];
+let receiptsCache = [];
+let tripsUnsub = null;
+let receiptsUnsub = null;
+function loadTrips(){ return tripsCache; }
 function saveTrips(t){
-  const prev = loadTrips();
-  localStorage.setItem(TKEY(), JSON.stringify(t));
+  const prev = tripsCache;
+  tripsCache = t;
   syncLedgerToFirestore('trips', prev, t);
 }
-function loadReceipts(){ return JSON.parse(localStorage.getItem(RKEY()) || '[]'); }
+function loadReceipts(){ return receiptsCache; }
 function saveReceipts(r){
-  const prev = loadReceipts();
-  localStorage.setItem(RKEY(), JSON.stringify(r));
+  const prev = receiptsCache;
+  receiptsCache = r;
   syncLedgerToFirestore('cash', prev, r);
+}
+/* Live sync: keeps trips/cash identical across every device signed into the
+   same account, instead of each phone only knowing its own local copy. */
+function watchUserLedger(){
+  if(tripsUnsub){ tripsUnsub(); tripsUnsub = null; }
+  if(receiptsUnsub){ receiptsUnsub(); receiptsUnsub = null; }
+  const user = auth.currentUser;
+  if(!user){ tripsCache = []; receiptsCache = []; return; }
+  tripsUnsub = ledgerColRef('trips').onSnapshot(snap=>{
+    tripsCache = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+    const homePanel = document.getElementById('panel-home');
+    if(homePanel && homePanel.classList.contains('active')) renderHomeTab();
+    const logPanel = document.getElementById('panel-log');
+    if(logPanel && logPanel.classList.contains('active')) renderLogTab();
+  }, ()=>{});
+  receiptsUnsub = ledgerColRef('cash').onSnapshot(snap=>{
+    receiptsCache = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+    const cashPanel = document.getElementById('panel-cash');
+    if(cashPanel && cashPanel.classList.contains('active')) renderCashTab();
+    const homePanel = document.getElementById('panel-home');
+    if(homePanel && homePanel.classList.contains('active')) renderHomeTab();
+  }, ()=>{});
 }
 
 /* ---------- Ledger mirror on Firestore (per-user subcollections) ----------
@@ -1344,8 +1373,8 @@ async function ensureLedgerMigrated(){
   const flagKey = 'mishwar_ledger_migrated_v1_' + user.uid;
   if(localStorage.getItem(flagKey)) return;
   try{
-    const trips = loadTrips();
-    const receipts = loadReceipts();
+    const trips = JSON.parse(localStorage.getItem(TKEY()) || '[]');
+    const receipts = JSON.parse(localStorage.getItem(RKEY()) || '[]');
     const jobs = [];
     trips.forEach(t=>{
       jobs.push(db.collection('users').doc(user.uid).collection('trips').doc(t.id)
@@ -2648,7 +2677,7 @@ function addReminder(){
   const date = document.getElementById('reminderDate').value;
   if(!text){ alert('اكتب المهمة أو الأمر المطلوب'); return; }
   if(!date){ alert('اختار تاريخ التنفيذ'); return; }
-  const col = officeRemindersCol();
+  const col = userRemindersCol();
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   col.doc(uid()).set({ text, date, done:false }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   document.getElementById('reminderText').value = '';
@@ -2656,7 +2685,7 @@ function addReminder(){
 }
 
 function toggleReminderDone(id){
-  const col = officeRemindersCol();
+  const col = userRemindersCol();
   if(!col) return;
   const r = remindersCache.find(x=>x.id===id);
   if(!r) return;
@@ -2665,7 +2694,7 @@ function toggleReminderDone(id){
 
 function deleteReminder(id){
   if(!confirm('تشيل التنبيه ده نهائي؟')) return;
-  const col = officeRemindersCol();
+  const col = userRemindersCol();
   if(!col) return;
   col.doc(id).delete().catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
@@ -2810,7 +2839,6 @@ function watchOwnRole(){
     renderAccountSection();
     if(officeChanged){
       watchOfficeClients();
-      watchOfficeReminders();
     }
   }, ()=>{});
 }
@@ -2950,7 +2978,7 @@ function renderChatUserList(){
   }
   emptyEl.style.display = 'none';
   list.innerHTML = '<div class="empty">بيدور...</div>';
-  db.collection('users').get().then(snap=>{
+  db.collection('users').where('officeId','==', currentOfficeId).get().then(snap=>{
     const rows = [];
     snap.forEach(doc=>{
       const d = doc.data();
