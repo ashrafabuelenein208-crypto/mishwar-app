@@ -875,13 +875,13 @@
     </section>
 
     <section id="chatNewSection">
-      <h2>ابدأ محادثة جديدة</h2>
+      <h2>زمايل المكتب</h2>
       <div class="search-box" style="display:flex; gap:8px; align-items:center;">
-        <input type="text" id="chatUserSearch" placeholder="دور بإيميل حد مسجل في التطبيق..." oninput="renderChatUserList()" onkeydown="if(event.key==='Enter'){renderChatUserList();}" style="flex:1;">
+        <input type="text" id="chatUserSearch" placeholder="دور بإيميل حد... (اختياري)" oninput="renderChatUserList()" onkeydown="if(event.key==='Enter'){renderChatUserList();}" style="flex:1;">
         <button class="act btn-primary btn-small" onclick="renderChatUserList()" style="white-space:nowrap;">بحث</button>
       </div>
       <div id="chatUserList"></div>
-      <div class="empty" id="chatUserEmpty" style="display:none;">مفيش حد تاني مسجل في التطبيق لسه</div>
+      <div class="empty" id="chatUserEmpty" style="display:none;">مفيش زمايل تانيين مسجلين في نفس المكتب لسه</div>
     </section>
 
     <section id="chatThreadSection" style="display:none; padding:0; overflow:hidden;">
@@ -2979,39 +2979,45 @@ function renderChatUserList(){
   const q = (document.getElementById('chatUserSearch').value || '').trim().toLowerCase();
   const list = document.getElementById('chatUserList');
   const emptyEl = document.getElementById('chatUserEmpty');
-  if(chatUnsubUsersList){ chatUnsubUsersList(); chatUnsubUsersList = null; }
-  if(!q){
-    list.innerHTML = '';
-    emptyEl.textContent = 'اكتب إيميل حد مسجل في التطبيق عشان تلاقيه وتبدأ تكلمه';
-    emptyEl.style.display = 'block';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  list.innerHTML = '<div class="empty">بيدور...</div>';
-  db.collection('users').where('officeId','==', currentOfficeId).get().then(snap=>{
-    const rows = [];
-    snap.forEach(doc=>{
-      const d = doc.data();
-      if(doc.id === user.uid) return;
-      if(!(d.email||'').toLowerCase().includes(q)) return;
-      rows.push({ uid: doc.id, email: d.email || doc.id });
-    });
-    emptyEl.textContent = 'مفيش حد مسجل بالإيميل ده';
-    emptyEl.style.display = rows.length ? 'none' : 'block';
-    list.innerHTML = rows.map(r => `
-      <div class="chat-emp-row" onclick="openChatThread('${r.uid}', '${escapeHtml(r.email)}')">
-        <div class="left">
-          <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
-          <div class="info"><div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div></div>
+  if(!currentOfficeId) return;
+
+  if(chatUnsubUsersList) chatUnsubUsersList();
+  chatUnsubUsersList = db.collection('users').where('officeId','==', currentOfficeId)
+    .onSnapshot(snap=>{
+      const rows = [];
+      snap.forEach(doc=>{
+        const d = doc.data();
+        if(doc.id === user.uid) return;
+        if((d.status||'pending') !== 'approved') return;
+        if(q && !(d.email||'').toLowerCase().includes(q)) return;
+        rows.push({ uid: doc.id, email: d.email || doc.id });
+      });
+      rows.sort((a,b)=> displayNameFromEmail(a.email).localeCompare(displayNameFromEmail(b.email),'ar'));
+      emptyEl.style.display = rows.length ? 'none' : 'block';
+      list.innerHTML = rows.map(r => `
+        <div class="chat-emp-row" onclick="openChatThread('${r.uid}', '${escapeHtml(r.email)}')">
+          <div class="left">
+            <div class="chat-emp-avatar">${initialFromEmail(r.email)}</div>
+            <div class="info"><div class="name">${escapeHtml(displayNameFromEmail(r.email))}</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${currentUserRole === 'owner' ? `<button class="act btn-danger btn-small" onclick="event.stopPropagation();removeOfficeMember('${r.uid}','${escapeHtml(displayNameFromEmail(r.email))}')">حذف</button>` : ''}
+            <button class="act btn-ghost btn-small">راسله</button>
+          </div>
         </div>
-        <button class="act btn-ghost btn-small">راسله</button>
-      </div>
-    `).join('');
-  }).catch(()=>{
-    list.innerHTML = '';
-    emptyEl.textContent = 'حصل خطأ أثناء البحث، جرب تاني';
-    emptyEl.style.display = 'block';
-  });
+      `).join('');
+    }, ()=>{
+      list.innerHTML = '';
+      emptyEl.textContent = 'حصل خطأ أثناء عرض الزمايل، جرب تاني';
+      emptyEl.style.display = 'block';
+    });
+}
+
+function removeOfficeMember(uid, name){
+  if(!confirm(`متأكد إنك عايز تشيل "${name}" من قائمة زمايل المكتب؟ الحساب هيتحذف نهائيًا ومش هيقدر يستخدم التطبيق تاني بنفس الإيميل.`)) return;
+  db.collection('users').doc(uid).delete()
+    .then(()=>{})
+    .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
 function openChatThread(partnerUid, label){
