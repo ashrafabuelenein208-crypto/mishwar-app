@@ -354,7 +354,35 @@
     font-size:12.5px;
     font-weight:800;
     text-decoration:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
   }
+
+  .wa-contacts-list{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
+  .wa-contact-row{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--paper);border-radius:12px;padding:9px 14px;font-size:13.5px;
+  }
+  .wa-contact-row .wcr-name{font-weight:700;color:var(--navy);}
+  .wa-contact-row .wcr-phone{color:var(--navy-dim);font-size:12.5px;direction:ltr;display:inline-block;}
+
+  #waPickerModal{
+    display:none; position:fixed; inset:0; z-index:10002;
+    background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
+  }
+  #waPickerModal.show{ display:flex; }
+  #waPickerModal .wpm-box{
+    background:#fff; border-radius:16px; padding:22px 18px; max-width:380px; width:100%;
+  }
+  #waPickerModal .wpm-title{ font-weight:800; font-size:16px; margin-bottom:14px; color:var(--navy); text-align:center; }
+  #waPickerModal .wpm-contact-btn{
+    display:block; width:100%; text-align:right; border:none; border-radius:12px;
+    background:var(--paper); color:var(--navy); font-weight:800; font-size:14.5px;
+    padding:12px 16px; margin-bottom:8px; cursor:pointer; font-family:inherit;
+  }
+  #waPickerModal .wpm-contact-btn .wpm-phone{ display:block; font-weight:400; color:var(--navy-dim); font-size:12px; direction:ltr; text-align:right; margin-top:2px; }
+  #waPickerModal .wpm-empty{ text-align:center; color:var(--navy-dim); font-size:13.5px; margin-bottom:14px; }
 
   .attach-box{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .attach-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
@@ -489,6 +517,14 @@
   </div>
 </div>
 
+<div id="waPickerModal">
+  <div class="wpm-box">
+    <div class="wpm-title">ابعت التنبيه لمين؟</div>
+    <div id="waPickerList"></div>
+    <button class="act btn-ghost" style="width:100%;" onclick="closeWaPicker()">إلغاء</button>
+  </div>
+</div>
+
 <div id="loginOverlay">
   <div class="login-box">
     <h2>سجل مشاوير العملاء</h2>
@@ -574,19 +610,22 @@
       <div id="accountSectionBox"></div>
     </section>
     <section>
-      <h2>إعدادات التنبيهات</h2>
+      <h2>جهات اتصال الواتساب</h2>
+      <div id="waContactsList_home" class="wa-contacts-list"></div>
       <div class="grid2">
         <div class="field">
-          <label>رقم الواتساب لإرسال التنبيهات (بالصيغة الدولية، مثال: 201012345678)</label>
-          <input type="text" id="waNumberInput" placeholder="201xxxxxxxxx">
+          <label>اسم الشخص</label>
+          <input type="text" id="waContactNameInput_home" placeholder="مثال: أستاذ أيمن">
         </div>
-        <div class="field" style="display:flex;align-items:end;">
-          <div class="row-actions" style="margin-top:0;">
-            <button class="act btn-ghost btn-small" onclick="saveWaNumber()">حفظ الرقم</button>
-          </div>
+        <div class="field">
+          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
+          <input type="text" id="waContactPhoneInput_home" placeholder="201xxxxxxxxx">
         </div>
       </div>
-      <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك.</p>
+      <div class="row-actions" style="margin-top:8px;">
+        <button class="act btn-ghost btn-small" onclick="addWaContact('home')">إضافة جهة اتصال</button>
+      </div>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:8px 0 0;">لما تدوس على زرار "واتساب" جنب أي تنبيه، هيوريك أسماء اللي ضفتهم هنا تختار منهم بدل ما تفتكر الرقم. التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك.</p>
     </section>
   </div>
 
@@ -825,19 +864,22 @@
   <!-- ALERTS / REMINDERS -->
   <div class="panel" id="panel-alerts">
     <section>
-      <h2>رقم الواتساب لإرسال التنبيهات عليه</h2>
+      <h2>جهات اتصال الواتساب</h2>
+      <div id="waContactsList_alerts" class="wa-contacts-list"></div>
       <div class="grid2">
         <div class="field">
-          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
-          <input type="text" id="reminderWaNumberInput" placeholder="201xxxxxxxxx">
+          <label>اسم الشخص</label>
+          <input type="text" id="waContactNameInput_alerts" placeholder="مثال: أستاذ أيمن">
         </div>
-        <div class="field" style="display:flex;align-items:end;">
-          <div class="row-actions" style="margin-top:0;">
-            <button class="act btn-ghost btn-small" onclick="saveReminderWaNumber()">حفظ الرقم</button>
-          </div>
+        <div class="field">
+          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
+          <input type="text" id="waContactPhoneInput_alerts" placeholder="201xxxxxxxxx">
         </div>
       </div>
-      <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">بعد حفظ الرقم، زرار "واتساب" جنب كل تنبيه هيفتح المحادثة معاه على طول من غير ما يوريك قائمة الأسماء.</p>
+      <div class="row-actions" style="margin-top:8px;">
+        <button class="act btn-ghost btn-small" onclick="addWaContact('alerts')">إضافة جهة اتصال</button>
+      </div>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:8px 0 0;">بعد ما تضيف الأسماء، زرار "واتساب" جنب كل تنبيه هيوريك قائمة بالأسماء دي تختار منها اللي عايزه.</p>
     </section>
     <section>
       <h2>إضافة تنبيه جديد</h2>
@@ -963,6 +1005,90 @@ function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'
 function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
 function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
 function WAKEY(){ return 'mishwar_wa_number_' + authUid(); }
+function CONTACTSKEY(){ return 'mishwar_wa_contacts_' + authUid(); }
+
+function loadWaContacts(){
+  try{ return JSON.parse(localStorage.getItem(CONTACTSKEY()) || '[]'); }
+  catch(e){ return []; }
+}
+
+function saveWaContactsList(list){
+  localStorage.setItem(CONTACTSKEY(), JSON.stringify(list));
+}
+
+function addWaContact(prefix){
+  const nameInput = document.getElementById('waContactNameInput_' + prefix);
+  const phoneInput = document.getElementById('waContactPhoneInput_' + prefix);
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim().replace(/[^0-9]/g,'');
+  if(!name){ alert('اكتب اسم الشخص'); return; }
+  if(!phone){ alert('اكتب رقم الواتساب'); return; }
+  const list = loadWaContacts();
+  list.push({ id: uid(), name, phone });
+  saveWaContactsList(list);
+  nameInput.value = '';
+  phoneInput.value = '';
+  renderWaContactsLists();
+}
+
+function deleteWaContact(id){
+  if(!confirm('تشيل جهة الاتصال دي؟')) return;
+  const list = loadWaContacts().filter(c=>c.id!==id);
+  saveWaContactsList(list);
+  renderWaContactsLists();
+}
+
+function renderWaContactsLists(){
+  const list = loadWaContacts();
+  const html = list.length===0
+    ? '<p style="font-size:12.5px;color:var(--navy-dim);margin:0;">لسه مفيش جهات اتصال متضافة</p>'
+    : list.map(c => `
+        <div class="wa-contact-row">
+          <div><span class="wcr-name">${escapeHtml(c.name)}</span> — <span class="wcr-phone">${escapeHtml(c.phone)}</span></div>
+          <button class="act btn-danger btn-small" onclick="deleteWaContact('${c.id}')">حذف</button>
+        </div>
+      `).join('');
+  ['home','alerts'].forEach(prefix=>{
+    const el = document.getElementById('waContactsList_' + prefix);
+    if(el) el.innerHTML = html;
+  });
+}
+
+/* ---------- WHATSAPP CONTACT PICKER ---------- */
+let waMsgStore = {};
+let pendingWaMsgKey = '';
+
+function registerWaMsg(key, msg){
+  waMsgStore[key] = msg;
+}
+
+function openWaPicker(key){
+  pendingWaMsgKey = key;
+  const contacts = loadWaContacts();
+  const listEl = document.getElementById('waPickerList');
+  if(contacts.length===0){
+    listEl.innerHTML = '<p class="wpm-empty">لسه مفيش جهات اتصال متضافة. ضيف الأسماء والأرقام من صفحة "الرئيسية" أو "التنبيهات" الأول.</p>';
+  } else {
+    listEl.innerHTML = contacts.map(c => `
+      <button class="wpm-contact-btn" onclick="chooseWaContact('${c.phone}')">
+        ${escapeHtml(c.name)}
+        <span class="wpm-phone">${escapeHtml(c.phone)}</span>
+      </button>
+    `).join('');
+  }
+  document.getElementById('waPickerModal').classList.add('show');
+}
+
+function closeWaPicker(){
+  document.getElementById('waPickerModal').classList.remove('show');
+  pendingWaMsgKey = '';
+}
+
+function chooseWaContact(phone){
+  const msg = waMsgStore[pendingWaMsgKey] || '';
+  closeWaPicker();
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
 
 const EDIT_PIN = '9697';
 
@@ -2435,12 +2561,6 @@ async function exportExcel(){
 }
 
 /* ---------- EXPIRY ALERTS ---------- */
-function saveWaNumber(){
-  const val = document.getElementById('waNumberInput').value.trim().replace(/[^0-9]/g,'');
-  localStorage.setItem(WAKEY(), val);
-  alert('اتحفظ الرقم');
-}
-
 function getExpiringDocs(){
   const clients = loadClients();
   const now = new Date();
@@ -2463,20 +2583,20 @@ function renderExpiryAlerts(){
   const box = document.getElementById('expiryAlertsBox');
   const items = getExpiringDocs();
   if(items.length===0){ box.innerHTML=''; return; }
-  const waNumber = localStorage.getItem(WAKEY()) || '';
 
   box.innerHTML = `
     <div class="alert-banner">
       <h3>⚠ مستندات قربت تنتهي (خلال 15 يوم أو منتهية)</h3>
-      ${items.map(it => {
+      ${items.map((it, idx) => {
         const statusTxt = it.days < 0 ? `منتهي من ${Math.abs(it.days)} يوم` : `متبقي ${it.days} يوم`;
         const msg = `تنبيه: ${it.docLabel} الخاص بـ "${it.clientName}" ${it.days<0 ? 'منتهي بتاريخ' : 'هينتهي بتاريخ'} ${it.date} (${statusTxt}).`;
-        const wa = waNumber ? `<a class="wa-link" target="_blank" href="https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}">واتساب</a>` : '';
+        const key = 'exp_' + idx;
+        registerWaMsg(key, msg);
         return `
           <div class="alert-item">
             <div class="txt"><b>${escapeHtml(it.clientName)}</b> — ${it.docLabel} — ${it.date} (${statusTxt})</div>
             <div class="btns">
-              ${wa}
+              <button class="wa-link" onclick="openWaPicker('${key}')">واتساب</button>
               <button class="act btn-ghost btn-small" onclick="copyAlertText('${escapeHtml(msg).replace(/'/g,"\\'")}')">نسخ للإيميل</button>
             </div>
           </div>
@@ -2493,8 +2613,7 @@ function copyAlertText(msg){
 /* ---------- HOME ---------- */
 function renderHomeTab(){
   renderExpiryAlerts();
-  const waSaved = localStorage.getItem(WAKEY());
-  if(waSaved && document.getElementById('waNumberInput')) document.getElementById('waNumberInput').value = waSaved;
+  renderWaContactsLists();
   const trips = loadTrips();
   const receipts = loadReceipts();
   const thisMonth = todayStr().slice(0,7);
@@ -2667,18 +2786,11 @@ function renderCashTab(){
   `).join('');
 }
 
-function reminderWaLink(r){
+function reminderWaKey(r){
   const msg = `تنبيه: ${r.text} — التاريخ المطلوب: ${r.date}`;
-  const waNumber = localStorage.getItem(WAKEY()) || '';
-  return waNumber
-    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`
-    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-}
-
-function saveReminderWaNumber(){
-  const val = document.getElementById('reminderWaNumberInput').value.trim().replace(/[^0-9]/g,'');
-  localStorage.setItem(WAKEY(), val);
-  alert('اتحفظ الرقم');
+  const key = 'rem_' + r.id;
+  registerWaMsg(key, msg);
+  return key;
 }
 
 /* ---------- REMINDERS ---------- */
@@ -2710,8 +2822,7 @@ function deleteReminder(id){
 }
 
 function renderAlertsTab(){
-  const waSaved = localStorage.getItem(WAKEY());
-  if(waSaved && document.getElementById('reminderWaNumberInput')) document.getElementById('reminderWaNumberInput').value = waSaved;
+  renderWaContactsLists();
 
   const reminders = loadReminders();
   const today = todayStr();
@@ -2735,7 +2846,7 @@ function renderAlertsTab(){
             <div class="reminder-text">${escapeHtml(r.text)}</div>
             <div class="reminder-date">${isDue?'مطلوب تنفيذه: ':'التاريخ: '}${r.date}</div>
           </div>
-          <a class="wa-link" target="_blank" href="${reminderWaLink(r)}">واتساب</a>
+          <button class="wa-link" onclick="openWaPicker('${reminderWaKey(r)}')">واتساب</button>
           <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
         </div>
       `;
@@ -2756,7 +2867,7 @@ function renderAlertsTab(){
           <div class="reminder-text">${escapeHtml(r.text)}</div>
           <div class="reminder-date">التاريخ: ${r.date}</div>
         </div>
-        <a class="wa-link" target="_blank" href="${reminderWaLink(r)}">واتساب</a>
+        <button class="wa-link" onclick="openWaPicker('${reminderWaKey(r)}')">واتساب</button>
         <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
       </div>
     `).join('');
