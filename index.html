@@ -359,31 +359,6 @@
     font-family:inherit;
   }
 
-  .wa-contacts-list{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
-  .wa-contact-row{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;
-    background:var(--paper);border-radius:12px;padding:9px 14px;font-size:13.5px;
-  }
-  .wa-contact-row .wcr-name{font-weight:700;color:var(--navy);}
-  .wa-contact-row .wcr-phone{color:var(--navy-dim);font-size:12.5px;direction:ltr;display:inline-block;}
-
-  #waPickerModal{
-    display:none; position:fixed; inset:0; z-index:10002;
-    background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
-  }
-  #waPickerModal.show{ display:flex; }
-  #waPickerModal .wpm-box{
-    background:#fff; border-radius:16px; padding:22px 18px; max-width:380px; width:100%;
-  }
-  #waPickerModal .wpm-title{ font-weight:800; font-size:16px; margin-bottom:14px; color:var(--navy); text-align:center; }
-  #waPickerModal .wpm-contact-btn{
-    display:block; width:100%; text-align:right; border:none; border-radius:12px;
-    background:var(--paper); color:var(--navy); font-weight:800; font-size:14.5px;
-    padding:12px 16px; margin-bottom:8px; cursor:pointer; font-family:inherit;
-  }
-  #waPickerModal .wpm-contact-btn .wpm-phone{ display:block; font-weight:400; color:var(--navy-dim); font-size:12px; direction:ltr; text-align:right; margin-top:2px; }
-  #waPickerModal .wpm-empty{ text-align:center; color:var(--navy-dim); font-size:13.5px; margin-bottom:14px; }
-
   .attach-box{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .attach-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
   .attach-row{
@@ -482,6 +457,23 @@
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
   #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
 
+  #waPickerModal{
+    display:none; position:fixed; inset:0; z-index:10001;
+    background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
+  }
+  #waPickerModal.show{ display:flex; }
+  #waPickerModal .wa-picker-box{
+    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    max-height:80vh; overflow-y:auto;
+  }
+  #waPickerModal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
+  #waPickerModal .wa-contact-btn{
+    display:block; width:100%; text-align:right; background:var(--paper); border:1.5px solid var(--line);
+    border-radius:12px; padding:12px 14px; margin-bottom:8px; font-weight:800; font-size:14.5px;
+    color:var(--navy); cursor:pointer; font-family:inherit;
+  }
+  #waPickerModal .wa-contact-btn:hover{ border-color:var(--bronze); }
+
   #newClientModal{
     display:none; position:fixed; inset:0; z-index:10001;
     background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
@@ -507,6 +499,14 @@
   </div>
 </div>
 
+<div id="waPickerModal">
+  <div class="wa-picker-box">
+    <h3>ابعت لمين؟</h3>
+    <div id="waPickerList"></div>
+    <button class="act btn-ghost" onclick="closeWaPicker()">إلغاء</button>
+  </div>
+</div>
+
 <div id="newClientModal">
   <div class="ncm-box">
     <div class="ncm-title">العميل "<span id="ncmName" class="ncm-name"></span>" مش مسجل عندك</div>
@@ -514,14 +514,6 @@
     <button class="act btn-primary" style="width:100%;margin-bottom:8px;" onclick="resolveNewClientChoice('add')">ضيفه في قائمة العملاء (يفضل عندي دايمًا)</button>
     <button class="act btn-ghost" style="width:100%;margin-bottom:8px;" onclick="resolveNewClientChoice('once')">سجّل المشوار بس، من غير ما تضيفه كعميل</button>
     <button class="act btn-ghost" style="width:100%;" onclick="resolveNewClientChoice('cancel')">إلغاء</button>
-  </div>
-</div>
-
-<div id="waPickerModal">
-  <div class="wpm-box">
-    <div class="wpm-title">ابعت التنبيه لمين؟</div>
-    <div id="waPickerList"></div>
-    <button class="act btn-ghost" style="width:100%;" onclick="closeWaPicker()">إلغاء</button>
   </div>
 </div>
 
@@ -610,22 +602,8 @@
       <div id="accountSectionBox"></div>
     </section>
     <section>
-      <h2>جهات اتصال الواتساب</h2>
-      <div id="waContactsList_home" class="wa-contacts-list"></div>
-      <div class="grid2">
-        <div class="field">
-          <label>اسم الشخص</label>
-          <input type="text" id="waContactNameInput_home" placeholder="مثال: أستاذ أيمن">
-        </div>
-        <div class="field">
-          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
-          <input type="text" id="waContactPhoneInput_home" placeholder="201xxxxxxxxx">
-        </div>
-      </div>
-      <div class="row-actions" style="margin-top:8px;">
-        <button class="act btn-ghost btn-small" onclick="addWaContact('home')">إضافة جهة اتصال</button>
-      </div>
-      <p style="font-size:12.5px;color:var(--navy-dim);margin:8px 0 0;">لما تدوس على زرار "واتساب" جنب أي تنبيه، هيوريك أسماء اللي ضفتهم هنا تختار منهم بدل ما تفتكر الرقم. التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك.</p>
+      <h2>إعدادات التنبيهات</h2>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك. جهات اتصال الواتساب بتتظبط من تاب "التنبيهات".</p>
     </section>
   </div>
 
@@ -702,6 +680,7 @@
               <th>النوع</th>
               <th>الجهة</th>
               <th>التكلفة</th>
+              <th>الإيصالات</th>
               <th colspan="2"></th>
             </tr>
           </thead>
@@ -865,21 +844,22 @@
   <div class="panel" id="panel-alerts">
     <section>
       <h2>جهات اتصال الواتساب</h2>
-      <div id="waContactsList_alerts" class="wa-contacts-list"></div>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">ضيف كل الأسماء اللي بتبعتلهم تنبيهات مرة واحدة بس (محمد، أستاذ أيمن، أشرف، باسم...)، وبعدين وقت الإرسال هتختار الاسم بس من غير ما تفتكر أو تكتب رقم.</p>
       <div class="grid2">
         <div class="field">
-          <label>اسم الشخص</label>
-          <input type="text" id="waContactNameInput_alerts" placeholder="مثال: أستاذ أيمن">
+          <label>الاسم</label>
+          <input type="text" id="waContactName" placeholder="مثال: محمد">
         </div>
         <div class="field">
-          <label>الرقم (بالصيغة الدولية، مثال: 201012345678)</label>
-          <input type="text" id="waContactPhoneInput_alerts" placeholder="201xxxxxxxxx">
+          <label>الرقم (بالصيغة الدولية)</label>
+          <input type="text" id="waContactPhone" placeholder="201xxxxxxxxx">
         </div>
       </div>
-      <div class="row-actions" style="margin-top:8px;">
-        <button class="act btn-ghost btn-small" onclick="addWaContact('alerts')">إضافة جهة اتصال</button>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-primary btn-small" onclick="addWaContact()">إضافة جهة اتصال</button>
       </div>
-      <p style="font-size:12.5px;color:var(--navy-dim);margin:8px 0 0;">بعد ما تضيف الأسماء، زرار "واتساب" جنب كل تنبيه هيوريك قائمة بالأسماء دي تختار منها اللي عايزه.</p>
+      <div id="waContactsList" style="margin-top:12px;"></div>
+      <div class="empty" id="waContactsEmpty" style="display:none;">لسه مفيش جهات اتصال محفوظة</div>
     </section>
     <section>
       <h2>إضافة تنبيه جديد</h2>
@@ -1004,90 +984,66 @@
 function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'; }
 function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
 function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
-function WAKEY(){ return 'mishwar_wa_number_' + authUid(); }
-function CONTACTSKEY(){ return 'mishwar_wa_contacts_' + authUid(); }
+function WA_CONTACTS_KEY(){ return 'mishwar_wa_contacts_v1_' + authUid(); }
+function loadWaContacts(){ return JSON.parse(localStorage.getItem(WA_CONTACTS_KEY()) || '[]'); }
+function saveWaContacts(list){ localStorage.setItem(WA_CONTACTS_KEY(), JSON.stringify(list)); }
 
-function loadWaContacts(){
-  try{ return JSON.parse(localStorage.getItem(CONTACTSKEY()) || '[]'); }
-  catch(e){ return []; }
-}
-
-function saveWaContactsList(list){
-  localStorage.setItem(CONTACTSKEY(), JSON.stringify(list));
-}
-
-function addWaContact(prefix){
-  const nameInput = document.getElementById('waContactNameInput_' + prefix);
-  const phoneInput = document.getElementById('waContactPhoneInput_' + prefix);
-  const name = nameInput.value.trim();
-  const phone = phoneInput.value.trim().replace(/[^0-9]/g,'');
-  if(!name){ alert('اكتب اسم الشخص'); return; }
-  if(!phone){ alert('اكتب رقم الواتساب'); return; }
-  const list = loadWaContacts();
-  list.push({ id: uid(), name, phone });
-  saveWaContactsList(list);
-  nameInput.value = '';
-  phoneInput.value = '';
-  renderWaContactsLists();
+function addWaContact(){
+  const name = document.getElementById('waContactName').value.trim();
+  const phone = document.getElementById('waContactPhone').value.trim().replace(/[^0-9]/g,'');
+  if(!name || !phone){ alert('اكتب الاسم والرقم الاتنين'); return; }
+  const contacts = loadWaContacts();
+  contacts.push({ id: uid(), name, phone });
+  saveWaContacts(contacts);
+  document.getElementById('waContactName').value = '';
+  document.getElementById('waContactPhone').value = '';
+  renderWaContactsList();
 }
 
 function deleteWaContact(id){
   if(!confirm('تشيل جهة الاتصال دي؟')) return;
-  const list = loadWaContacts().filter(c=>c.id!==id);
-  saveWaContactsList(list);
-  renderWaContactsLists();
+  saveWaContacts(loadWaContacts().filter(c=>c.id!==id));
+  renderWaContactsList();
 }
 
-function renderWaContactsLists(){
-  const list = loadWaContacts();
-  const html = list.length===0
-    ? '<p style="font-size:12.5px;color:var(--navy-dim);margin:0;">لسه مفيش جهات اتصال متضافة</p>'
-    : list.map(c => `
-        <div class="wa-contact-row">
-          <div><span class="wcr-name">${escapeHtml(c.name)}</span> — <span class="wcr-phone">${escapeHtml(c.phone)}</span></div>
-          <button class="act btn-danger btn-small" onclick="deleteWaContact('${c.id}')">حذف</button>
-        </div>
-      `).join('');
-  ['home','alerts'].forEach(prefix=>{
-    const el = document.getElementById('waContactsList_' + prefix);
-    if(el) el.innerHTML = html;
-  });
-}
-
-/* ---------- WHATSAPP CONTACT PICKER ---------- */
-let waMsgStore = {};
-let pendingWaMsgKey = '';
-
-function registerWaMsg(key, msg){
-  waMsgStore[key] = msg;
-}
-
-function openWaPicker(key){
-  pendingWaMsgKey = key;
+function renderWaContactsList(){
+  const listEl = document.getElementById('waContactsList');
+  const emptyEl = document.getElementById('waContactsEmpty');
+  if(!listEl) return;
   const contacts = loadWaContacts();
-  const listEl = document.getElementById('waPickerList');
-  if(contacts.length===0){
-    listEl.innerHTML = '<p class="wpm-empty">لسه مفيش جهات اتصال متضافة. ضيف الأسماء والأرقام من صفحة "الرئيسية" أو "التنبيهات" الأول.</p>';
+  emptyEl.style.display = contacts.length ? 'none' : 'block';
+  listEl.innerHTML = contacts.map(c => `
+    <div class="chat-emp-row" style="cursor:default;">
+      <div class="left">
+        <div class="chat-emp-avatar">${escapeHtml(c.name.charAt(0).toUpperCase())}</div>
+        <div class="info"><div class="name">${escapeHtml(c.name)}</div><div class="last">${escapeHtml(c.phone)}</div></div>
+      </div>
+      <button class="act btn-danger btn-small" onclick="deleteWaContact('${c.id}')">حذف</button>
+    </div>
+  `).join('');
+}
+
+let pendingWaMessage = '';
+function openWaPicker(message){
+  pendingWaMessage = message;
+  const contacts = loadWaContacts();
+  const list = document.getElementById('waPickerList');
+  if(contacts.length === 0){
+    list.innerHTML = '<div class="empty" style="padding:10px 0;">مفيش جهات اتصال محفوظة. ضيف واحدة الأول من تاب "التنبيهات".</div>';
   } else {
-    listEl.innerHTML = contacts.map(c => `
-      <button class="wpm-contact-btn" onclick="chooseWaContact('${c.phone}')">
-        ${escapeHtml(c.name)}
-        <span class="wpm-phone">${escapeHtml(c.phone)}</span>
-      </button>
+    list.innerHTML = contacts.map(c => `
+      <button class="wa-contact-btn" onclick="sendWaTo('${c.phone}')">${escapeHtml(c.name)}</button>
     `).join('');
   }
   document.getElementById('waPickerModal').classList.add('show');
 }
-
+function sendWaTo(phone){
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(pendingWaMessage)}`;
+  window.open(url, '_blank');
+  closeWaPicker();
+}
 function closeWaPicker(){
   document.getElementById('waPickerModal').classList.remove('show');
-  pendingWaMsgKey = '';
-}
-
-function chooseWaContact(phone){
-  const msg = waMsgStore[pendingWaMsgKey] || '';
-  closeWaPicker();
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 const EDIT_PIN = '9697';
@@ -2402,23 +2358,57 @@ function getFilteredTrips(){
   }).sort((a,b) => b.date.localeCompare(a.date));
 }
 
-function renderLogTab(){
+async function renderLogTab(){
   const trips = getFilteredTrips();
   const body = document.getElementById('tripsBody');
   const empty = document.getElementById('emptyMsg');
   if(trips.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  body.innerHTML = trips.map(t => `
+
+  const rowsHtml = await Promise.all(trips.map(async t => {
+    let count = 0;
+    try{ count = (await getFilesForTrip(t.id)).length; }catch(e){ count = 0; }
+    const isOpen = openTripReceiptsId === t.id;
+    let receiptsRowHtml = '';
+    if(isOpen){
+      let files = [];
+      try{ files = await getFilesForTrip(t.id); }catch(e){ files = []; }
+      const fileRows = files.map(f => `
+        <div class="attach-row">
+          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+          <div class="btns" style="display:flex;gap:6px;">
+            <button class="act btn-ghost btn-small" onclick="downloadTripFile('${f.id}','${t.id}')">عرض</button>
+            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteTripFile('${f.id}','${t.id}'))">حذف</button>
+          </div>
+        </div>
+      `).join('');
+      receiptsRowHtml = `
+        <tr>
+          <td colspan="8">
+            <div class="attach-box" style="margin:0;">
+              <input type="file" accept="image/*" capture="environment" multiple onchange="handleTripFileUpload('${t.id}', this)">
+              <div class="attach-list">
+                ${fileRows || '<div class="empty" style="padding:14px;">مفيش إيصالات مرفوعة للمشوار ده لسه</div>'}
+              </div>
+            </div>
+          </td>
+        </tr>`;
+    }
+    return `
     <tr>
       <td class="num">${t.date}</td>
       <td>${escapeHtml(t.clientName || clientName(t.clientId))}</td>
       <td><span class="tag">${escapeHtml(t.type)}</span></td>
       <td>${escapeHtml(t.place) || '—'}</td>
       <td class="num">${t.cost.toFixed(2)}</td>
+      <td><button class="act btn-ghost btn-small" onclick="toggleTripReceipts('${t.id}')">🧾 إيصالات (${count})</button></td>
       <td><button class="act btn-ghost btn-small" onclick="editTrip('${t.id}')">تعديل</button></td>
       <td><button class="act btn-danger btn-small" onclick="deleteTrip('${t.id}')">حذف</button></td>
     </tr>
-  `).join('');
+    ${receiptsRowHtml}`;
+  }));
+
+  body.innerHTML = rowsHtml.join('');
 }
 document.getElementById('filterClient').addEventListener('change', renderLogTab);
 document.getElementById('filterMonth').addEventListener('change', renderLogTab);
@@ -2579,9 +2569,11 @@ function getExpiringDocs(){
   return list.sort((a,b)=>a.days-b.days);
 }
 
+let currentExpiryAlertItems = [];
 function renderExpiryAlerts(){
   const box = document.getElementById('expiryAlertsBox');
   const items = getExpiringDocs();
+  currentExpiryAlertItems = items;
   if(items.length===0){ box.innerHTML=''; return; }
 
   box.innerHTML = `
@@ -2590,13 +2582,11 @@ function renderExpiryAlerts(){
       ${items.map((it, idx) => {
         const statusTxt = it.days < 0 ? `منتهي من ${Math.abs(it.days)} يوم` : `متبقي ${it.days} يوم`;
         const msg = `تنبيه: ${it.docLabel} الخاص بـ "${it.clientName}" ${it.days<0 ? 'منتهي بتاريخ' : 'هينتهي بتاريخ'} ${it.date} (${statusTxt}).`;
-        const key = 'exp_' + idx;
-        registerWaMsg(key, msg);
         return `
           <div class="alert-item">
             <div class="txt"><b>${escapeHtml(it.clientName)}</b> — ${it.docLabel} — ${it.date} (${statusTxt})</div>
             <div class="btns">
-              <button class="wa-link" onclick="openWaPicker('${key}')">واتساب</button>
+              <button class="wa-link" onclick="openWaPickerForExpiry(${idx})">واتساب</button>
               <button class="act btn-ghost btn-small" onclick="copyAlertText('${escapeHtml(msg).replace(/'/g,"\\'")}')">نسخ للإيميل</button>
             </div>
           </div>
@@ -2606,6 +2596,14 @@ function renderExpiryAlerts(){
   `;
 }
 
+function openWaPickerForExpiry(idx){
+  const it = currentExpiryAlertItems[idx];
+  if(!it) return;
+  const statusTxt = it.days < 0 ? `منتهي من ${Math.abs(it.days)} يوم` : `متبقي ${it.days} يوم`;
+  const msg = `تنبيه: ${it.docLabel} الخاص بـ "${it.clientName}" ${it.days<0 ? 'منتهي بتاريخ' : 'هينتهي بتاريخ'} ${it.date} (${statusTxt}).`;
+  openWaPicker(msg);
+}
+
 function copyAlertText(msg){
   navigator.clipboard.writeText(msg).then(()=>alert('اتنسخ النص، الصقه في إيميل أو واتساب')).catch(()=>alert('حصل خطأ في النسخ'));
 }
@@ -2613,7 +2611,6 @@ function copyAlertText(msg){
 /* ---------- HOME ---------- */
 function renderHomeTab(){
   renderExpiryAlerts();
-  renderWaContactsLists();
   const trips = loadTrips();
   const receipts = loadReceipts();
   const thisMonth = todayStr().slice(0,7);
@@ -2665,12 +2662,16 @@ function renderHomeTab(){
 const FILES_DB_NAME = 'mishwar_files_db';
 function openFilesDB(){
   return new Promise((resolve,reject)=>{
-    const req = indexedDB.open(FILES_DB_NAME, 1);
+    const req = indexedDB.open(FILES_DB_NAME, 2);
     req.onupgradeneeded = (e)=>{
       const d = e.target.result;
       if(!d.objectStoreNames.contains('files')){
         const store = d.createObjectStore('files',{keyPath:'id'});
         store.createIndex('clientId','clientId',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('tripFiles')){
+        const tripStore = d.createObjectStore('tripFiles',{keyPath:'id'});
+        tripStore.createIndex('tripId','tripId',{unique:false});
       }
     };
     req.onsuccess = ()=>resolve(req.result);
@@ -2735,6 +2736,68 @@ async function downloadClientFile(id, clientId){
   URL.revokeObjectURL(url);
 }
 
+/* ---------- TRIP RECEIPT ATTACHMENTS (IndexedDB) ---------- */
+async function addFilesToTrip(tripId, fileList){
+  const db = await openFilesDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('tripFiles','readwrite');
+    const store = tx.objectStore('tripFiles');
+    Array.from(fileList).forEach(file => {
+      store.put({ id: uid(), tripId, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
+    });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getFilesForTrip(tripId){
+  const db = await openFilesDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('tripFiles','readonly');
+    const req = tx.objectStore('tripFiles').index('tripId').getAll(tripId);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+
+async function deleteTripFile(id, tripId){
+  const db = await openFilesDB();
+  await new Promise((resolve,reject)=>{
+    const tx = db.transaction('tripFiles','readwrite');
+    tx.objectStore('tripFiles').delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  renderLogTab();
+}
+
+async function downloadTripFile(id, tripId){
+  const files = await getFilesForTrip(tripId);
+  const f = files.find(x=>x.id===id);
+  if(!f) return;
+  if((f.type||'').startsWith('image/')){
+    openImgLightbox(URL.createObjectURL(f.blob));
+    return;
+  }
+  const url = URL.createObjectURL(f.blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = f.name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+let openTripReceiptsId = null;
+function toggleTripReceipts(id){
+  openTripReceiptsId = (openTripReceiptsId === id) ? null : id;
+  renderLogTab();
+}
+
+async function handleTripFileUpload(tripId, inputEl){
+  if(!inputEl.files.length) return;
+  await addFilesToTrip(tripId, inputEl.files);
+  inputEl.value = '';
+  renderLogTab();
+}
+
 /* ---------- CASH WITH OFFICE OWNER ---------- */
 function addCashReceipt(){
   const date = document.getElementById('cashDate').value || todayStr();
@@ -2786,11 +2849,11 @@ function renderCashTab(){
   `).join('');
 }
 
-function reminderWaKey(r){
+function openWaPickerForReminder(id){
+  const r = remindersCache.find(x=>x.id===id);
+  if(!r) return;
   const msg = `تنبيه: ${r.text} — التاريخ المطلوب: ${r.date}`;
-  const key = 'rem_' + r.id;
-  registerWaMsg(key, msg);
-  return key;
+  openWaPicker(msg);
 }
 
 /* ---------- REMINDERS ---------- */
@@ -2822,7 +2885,7 @@ function deleteReminder(id){
 }
 
 function renderAlertsTab(){
-  renderWaContactsLists();
+  renderWaContactsList();
 
   const reminders = loadReminders();
   const today = todayStr();
@@ -2846,7 +2909,7 @@ function renderAlertsTab(){
             <div class="reminder-text">${escapeHtml(r.text)}</div>
             <div class="reminder-date">${isDue?'مطلوب تنفيذه: ':'التاريخ: '}${r.date}</div>
           </div>
-          <button class="wa-link" onclick="openWaPicker('${reminderWaKey(r)}')">واتساب</button>
+          <button class="wa-link" onclick="openWaPickerForReminder('${r.id}')">واتساب</button>
           <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
         </div>
       `;
@@ -2867,7 +2930,7 @@ function renderAlertsTab(){
           <div class="reminder-text">${escapeHtml(r.text)}</div>
           <div class="reminder-date">التاريخ: ${r.date}</div>
         </div>
-        <button class="wa-link" onclick="openWaPicker('${reminderWaKey(r)}')">واتساب</button>
+        <button class="wa-link" onclick="openWaPickerForReminder('${r.id}')">واتساب</button>
         <button class="act btn-danger btn-small" onclick="deleteReminder('${r.id}')">حذف</button>
       </div>
     `).join('');
