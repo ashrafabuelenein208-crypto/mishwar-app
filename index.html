@@ -2386,7 +2386,7 @@ async function renderLogTab(){
         <tr>
           <td colspan="8">
             <div class="attach-box" style="margin:0;">
-              <input type="file" accept="image/*" capture="environment" multiple onchange="handleTripFileUpload('${t.id}', this)">
+              <input type="file" accept="image/*" multiple onchange="handleTripFileUpload('${t.id}', this)">
               <div class="attach-list">
                 ${fileRows || '<div class="empty" style="padding:14px;">مفيش إيصالات مرفوعة للمشوار ده لسه</div>'}
               </div>
@@ -2736,38 +2736,45 @@ async function downloadClientFile(id, clientId){
   URL.revokeObjectURL(url);
 }
 
-/* ---------- TRIP RECEIPT ATTACHMENTS (IndexedDB) ---------- */
-async function addFilesToTrip(tripId, fileList){
-  const db = await openFilesDB();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('tripFiles','readwrite');
-    const store = tx.objectStore('tripFiles');
-    Array.from(fileList).forEach(file => {
-      store.put({ id: uid(), tripId, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
-    });
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+/* ---------- TRIP RECEIPT ATTACHMENTS (synced via Firestore, so the office owner and other devices can see them) ---------- */
+function tripReceiptsCol(tripId){
+  const user = auth.currentUser;
+  if(!user) return null;
+  return db.collection('users').doc(user.uid).collection('trips').doc(tripId).collection('receipts');
 }
 
 async function getFilesForTrip(tripId){
-  const db = await openFilesDB();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('tripFiles','readonly');
-    const req = tx.objectStore('tripFiles').index('tripId').getAll(tripId);
-    req.onsuccess = ()=>resolve(req.result);
-    req.onerror = ()=>reject(req.error);
-  });
+  const col = tripReceiptsCol(tripId);
+  if(!col) return [];
+  const snap = await col.get();
+  return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+}
+
+async function addFilesToTrip(tripId, fileList){
+  const col = tripReceiptsCol(tripId);
+  if(!col) return;
+  for(const file of Array.from(fileList)){
+    let dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+      alert(`الصورة "${file.name}" كبيرة جدًا حتى بعد الضغط. جرب صورة تانية أصغر.`);
+      continue;
+    }
+    await col.add({
+      name: file.name,
+      size: dataUrl.length,
+      date: todayStr(),
+      dataUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 }
 
 async function deleteTripFile(id, tripId){
-  const db = await openFilesDB();
-  await new Promise((resolve,reject)=>{
-    const tx = db.transaction('tripFiles','readwrite');
-    tx.objectStore('tripFiles').delete(id);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+  const col = tripReceiptsCol(tripId);
+  if(!col) return;
+  await col.doc(id).delete();
   renderLogTab();
 }
 
@@ -2775,14 +2782,7 @@ async function downloadTripFile(id, tripId){
   const files = await getFilesForTrip(tripId);
   const f = files.find(x=>x.id===id);
   if(!f) return;
-  if((f.type||'').startsWith('image/')){
-    openImgLightbox(URL.createObjectURL(f.blob));
-    return;
-  }
-  const url = URL.createObjectURL(f.blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = f.name; a.click();
-  URL.revokeObjectURL(url);
+  openImgLightbox(f.dataUrl);
 }
 
 let openTripReceiptsId = null;
@@ -2793,7 +2793,13 @@ function toggleTripReceipts(id){
 
 async function handleTripFileUpload(tripId, inputEl){
   if(!inputEl.files.length) return;
-  await addFilesToTrip(tripId, inputEl.files);
+  const statusLabel = inputEl.parentElement.querySelector('.upload-status');
+  if(statusLabel) statusLabel.textContent = 'جارٍ رفع الصور...';
+  try{
+    await addFilesToTrip(tripId, inputEl.files);
+  }catch(err){
+    alert('حصل خطأ في رفع الإيصال: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
   inputEl.value = '';
   renderLogTab();
 }
