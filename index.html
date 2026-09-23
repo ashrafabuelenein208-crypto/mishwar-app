@@ -474,6 +474,24 @@
   }
   #waPickerModal .wa-contact-btn:hover{ border-color:var(--bronze); }
 
+  .picker-modal{
+    display:none; position:fixed; inset:0; z-index:10001;
+    background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
+  }
+  .picker-modal.show{ display:flex; }
+  .picker-modal .picker-box{
+    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    max-height:80vh; overflow-y:auto;
+  }
+  .picker-modal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
+  .picker-modal .picker-btn{
+    display:block; width:100%; text-align:right; background:var(--paper); border:1.5px solid var(--line);
+    border-radius:12px; padding:12px 14px; margin-bottom:8px; font-weight:800; font-size:14.5px;
+    color:var(--navy); cursor:pointer; font-family:inherit;
+  }
+  .picker-modal .picker-btn:hover{ border-color:var(--bronze); }
+  .picker-modal .picker-sub{ font-size:12px; color:var(--navy-dim); font-weight:600; margin-top:2px; }
+
   #newClientModal{
     display:none; position:fixed; inset:0; z-index:10001;
     background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
@@ -485,6 +503,7 @@
   #newClientModal .ncm-title{ font-weight:800; font-size:16px; margin-bottom:4px; color:var(--navy); }
   #newClientModal .ncm-name{ color:var(--bronze); }
   #newClientModal .ncm-sub{ font-size:13px; color:#666; margin-bottom:16px; }
+
 </style>
 </head>
 <body>
@@ -584,6 +603,7 @@
     <button data-tab="alerts">التنبيهات</button>
     <button data-tab="chat">الشات <span id="chatUnreadDot" style="display:none;"></span></button>
     <button data-tab="owner" id="ownerTabBtn" style="display:none;">لوحة صاحب المكتب</button>
+    <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;">عُهد العملاء</button>
   </nav>
 </header>
 
@@ -956,7 +976,7 @@
         <h3>المشاوير</h3>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th><th></th></tr></thead>
             <tbody id="ownerDetailTripsBody"></tbody>
           </table>
           <div class="empty" id="ownerDetailTripsEmpty" style="display:none;">مفيش مشاوير مسجلة لهذا الموظف</div>
@@ -974,6 +994,74 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- OWNER-ONLY: CLIENT LEDGERS (separate from employee tracking) -->
+  <div class="panel" id="panel-ownerclients">
+    <section id="ownerClientsListSection">
+      <h2>عهدة العملاء (لصاحب المكتب فقط)</h2>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">سجّل هنا الشركات اللي بتحوّلك فلوس أو بتشتغل معاها بشكل شخصي، وسجّل قد إيه صرفت عليها وقد إيه استلمت منها، عشان تعرف الحساب بينكم في أي وقت. الميزة دي منفصلة تمامًا عن سجل مشاوير الموظفين.</p>
+
+      <div class="grid2">
+        <div class="field">
+          <label>اسم الشركة/العميل</label>
+          <input type="text" id="ownerClientNameInput" placeholder="مثال: شركة النور للتجارة">
+        </div>
+        <div class="field" style="display:flex;align-items:end;">
+          <div class="row-actions" style="margin-top:0;">
+            <button class="act btn-primary btn-small" onclick="addOwnerClient()">إضافة شركة</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards" id="ownerClientsTotalsCards" style="margin-top:14px;"></div>
+      <div id="ownerClientsList" style="margin-top:10px;"></div>
+      <div class="empty" id="ownerClientsEmpty" style="display:none;">لسه مسجلتش أي شركة هنا</div>
+    </section>
+
+    <section id="ownerClientDetailSection" style="display:none;">
+      <div class="row-actions" style="margin-top:0;margin-bottom:6px;">
+        <button class="act btn-ghost btn-small" onclick="closeOwnerClientDetail()">‹ رجوع لكل الشركات</button>
+        <button class="act btn-danger btn-small" onclick="deleteOwnerClient()">حذف الشركة دي نهائي</button>
+      </div>
+      <h2 id="ownerClientDetailTitle" style="margin-top:0;"></h2>
+      <div class="cards" id="ownerClientDetailCards"></div>
+
+      <div class="grid3">
+        <div class="field">
+          <label>التاريخ</label>
+          <input type="date" id="ocEntryDate">
+        </div>
+        <div class="field">
+          <label>المبلغ</label>
+          <input type="number" id="ocEntryAmount" min="0" step="1" placeholder="0">
+        </div>
+        <div class="field">
+          <label>ملاحظة (اختياري)</label>
+          <input type="text" id="ocEntryNote" placeholder="مثال: رسوم سجل تجاري">
+        </div>
+      </div>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-ghost btn-small" onclick="addOwnerClientEntry('expense')">تسجيل مصروف (أنا صرفت)</button>
+        <button class="act btn-primary btn-small" onclick="addOwnerClientEntry('payment')">تسجيل تحصيل (هو دفعلي)</button>
+      </div>
+
+      <div style="overflow-x:auto;margin-top:14px;">
+        <table>
+          <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr></thead>
+          <tbody id="ownerClientEntriesBody"></tbody>
+        </table>
+        <div class="empty" id="ownerClientEntriesEmpty" style="display:none;">لسه مفيش حركات مسجلة للشركة دي</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="ownerClientPickerModal" class="picker-modal">
+    <div class="picker-box">
+      <h3>ضيف المشوار ده لحساب أي شركة؟</h3>
+      <div id="ownerClientPickerList"></div>
+      <button class="act btn-ghost" onclick="closeOwnerClientPicker()">إلغاء</button>
+    </div>
   </div>
 
   <footer class="note">البيانات محفوظة على جهازك (localStorage) ومتزامنة كمان لحظيًا مع Firestore (المشاوير، العُهدة، والشات) عشان صاحب المكتب يقدر يشوفها</footer>
@@ -1488,8 +1576,8 @@ async function fetchLedgerData(uid){
     db.collection('users').doc(uid).collection('trips').get(),
     db.collection('users').doc(uid).collection('cash').get()
   ]);
-  const trips = tripsSnap.docs.map(d=>d.data());
-  const cash = cashSnap.docs.map(d=>d.data());
+  const trips = tripsSnap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+  const cash = cashSnap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
   const totalSpent = trips.reduce((s,t)=> s + (Number(t.cost)||0), 0);
   const totalReceived = cash.reduce((s,c)=> s + (Number(c.amount)||0), 0);
   return { trips, cash, totalSpent, totalReceived, balance: totalReceived - totalSpent };
@@ -1672,7 +1760,7 @@ async function renderOwnerDetail(){
       <div class="card ${balance<0?'warn':'good'}"><div class="label">المتبقي</div><div class="value num">${balance.toFixed(0)} ج.م</div></div>
     `;
     if(trips.length){
-      tripsBody.innerHTML = trips.map(t => `
+      tripsBody.innerHTML = trips.map((t, idx) => `
         <tr>
           <td class="num">${escapeHtml(t.date)||'—'}</td>
           <td>${escapeHtml(t.clientName)||'—'}</td>
@@ -1680,6 +1768,7 @@ async function renderOwnerDetail(){
           <td>${escapeHtml(t.place)||'—'}</td>
           <td class="num" style="color:#8a6f00;font-weight:800;">${(Number(t.cost)||0).toFixed(2)}</td>
           <td>${escapeHtml(t.note)||'—'}</td>
+          <td><button class="act btn-ghost btn-small" onclick="openOwnerClientPickerForTrip(${idx})">➕ لعميل</button></td>
         </tr>
       `).join('');
     } else { tripsEmpty.style.display='block'; }
@@ -1695,6 +1784,234 @@ async function renderOwnerDetail(){
   }catch(e){
     cardsBox.innerHTML = '<div class="empty">محصلش تحميل بيانات الموظف ده</div>';
   }
+}
+
+/* ---------- OWNER-ONLY: CLIENT LEDGERS (separate from employee trip tracking) ---------- */
+function ownerClientsCol(){
+  const user = auth.currentUser;
+  if(!user || currentUserRole !== 'owner') return null;
+  return db.collection('users').doc(user.uid).collection('ownerClients');
+}
+function ownerClientEntriesCol(clientId){
+  const col = ownerClientsCol();
+  if(!col) return null;
+  return col.doc(clientId).collection('entries');
+}
+
+let ownerClientsCache = [];
+let currentOwnerClientId = null;
+let currentOwnerClientEntriesCache = [];
+let pendingLinkTripIdx = null;
+
+async function addOwnerClient(){
+  const col = ownerClientsCol();
+  if(!col) return;
+  const name = document.getElementById('ownerClientNameInput').value.trim();
+  if(!name){ alert('اكتب اسم الشركة'); return; }
+  try{
+    await col.add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('ownerClientNameInput').value = '';
+    renderOwnerClientsTab();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+async function fetchOwnerClientBalance(clientId){
+  const col = ownerClientEntriesCol(clientId);
+  if(!col) return { totalSpent: 0, totalReceived: 0, balance: 0 };
+  const snap = await col.get();
+  const entries = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+  const totalSpent = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const totalReceived = entries.filter(e=>e.type==='payment').reduce((s,e)=>s+(Number(e.amount)||0),0);
+  return { entries, totalSpent, totalReceived, balance: totalReceived - totalSpent };
+}
+
+async function renderOwnerClientsTab(){
+  if(currentUserRole !== 'owner') return;
+  document.getElementById('ownerClientsListSection').style.display = 'block';
+  document.getElementById('ownerClientDetailSection').style.display = 'none';
+  currentOwnerClientId = null;
+  const col = ownerClientsCol();
+  const list = document.getElementById('ownerClientsList');
+  const emptyEl = document.getElementById('ownerClientsEmpty');
+  const cardsBox = document.getElementById('ownerClientsTotalsCards');
+  if(!col) return;
+  list.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  try{
+    const snap = await col.orderBy('createdAt','desc').get();
+    const clients = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+    if(!clients.length){
+      ownerClientsCache = [];
+      list.innerHTML=''; emptyEl.style.display='block'; cardsBox.innerHTML=''; return;
+    }
+    emptyEl.style.display='none';
+    const withTotals = await Promise.all(clients.map(async c => Object.assign({}, c, await fetchOwnerClientBalance(c.id))));
+    ownerClientsCache = withTotals;
+    const grandSpent = withTotals.reduce((s,c)=>s+c.totalSpent,0);
+    const grandReceived = withTotals.reduce((s,c)=>s+c.totalReceived,0);
+    const grandBalance = grandReceived - grandSpent;
+    cardsBox.innerHTML = `
+      <div class="card"><div class="label">إجمالي المصروف على كل الشركات</div><div class="value num" style="color:#8a6f00;">${grandSpent.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">إجمالي المحصّل من كل الشركات</div><div class="value num" style="color:var(--green);">${grandReceived.toFixed(0)} ج.م</div></div>
+      <div class="card ${grandBalance<0?'warn':'good'}"><div class="label">الإجمالي (لي / عليّ)</div><div class="value num">${grandBalance.toFixed(0)} ج.م</div></div>
+    `;
+    list.innerHTML = withTotals.map(c => `
+      <div class="chat-emp-row" onclick="openOwnerClientDetail('${c.id}')">
+        <div class="left">
+          <div class="chat-emp-avatar">${escapeHtml((c.name||'؟').charAt(0).toUpperCase())}</div>
+          <div class="info">
+            <div class="name">${escapeHtml(c.name)}</div>
+            <div class="last">صرفت <b style="color:#8a6f00;">${c.totalSpent.toFixed(0)} ج.م</b> • حصّلت <b style="color:var(--green);">${c.totalReceived.toFixed(0)} ج.م</b></div>
+          </div>
+        </div>
+        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${c.balance<0?'var(--red)':'var(--green)'};">${c.balance.toFixed(0)} ج.م</div>
+      </div>
+    `).join('');
+  }catch(err){
+    list.innerHTML = '<div class="empty">محصلش تحميل البيانات، جرب تاني</div>';
+  }
+}
+
+async function openOwnerClientDetail(clientId){
+  currentOwnerClientId = clientId;
+  document.getElementById('ownerClientsListSection').style.display = 'none';
+  document.getElementById('ownerClientDetailSection').style.display = 'block';
+  const c = ownerClientsCache.find(x=>x.id===clientId);
+  document.getElementById('ownerClientDetailTitle').textContent = c ? c.name : '';
+  document.getElementById('ocEntryDate').value = todayStr();
+  await renderOwnerClientDetail();
+}
+
+function closeOwnerClientDetail(){
+  currentOwnerClientId = null;
+  document.getElementById('ownerClientDetailSection').style.display = 'none';
+  document.getElementById('ownerClientsListSection').style.display = 'block';
+  renderOwnerClientsTab();
+}
+
+async function renderOwnerClientDetail(){
+  if(!currentOwnerClientId) return;
+  const clientId = currentOwnerClientId;
+  const cardsBox = document.getElementById('ownerClientDetailCards');
+  const body = document.getElementById('ownerClientEntriesBody');
+  const emptyEl = document.getElementById('ownerClientEntriesEmpty');
+  cardsBox.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  body.innerHTML = ''; emptyEl.style.display = 'none';
+  try{
+    const data = await fetchOwnerClientBalance(clientId);
+    if(currentOwnerClientId !== clientId) return;
+    currentOwnerClientEntriesCache = data.entries.slice().sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    cardsBox.innerHTML = `
+      <div class="card"><div class="label">صرفت عليها</div><div class="value num" style="color:#8a6f00;">${data.totalSpent.toFixed(0)} ج.م</div></div>
+      <div class="card"><div class="label">حصّلت منها</div><div class="value num" style="color:var(--green);">${data.totalReceived.toFixed(0)} ج.م</div></div>
+      <div class="card ${data.balance<0?'warn':'good'}"><div class="label">${data.balance<0?'متبقي ليها عندي':'متبقي ليا عندها'}</div><div class="value num">${Math.abs(data.balance).toFixed(0)} ج.م</div></div>
+    `;
+    if(currentOwnerClientEntriesCache.length){
+      body.innerHTML = currentOwnerClientEntriesCache.map(e => `
+        <tr>
+          <td class="num">${escapeHtml(e.date)||'—'}</td>
+          <td><span class="tag" style="${e.type==='payment'?'color:var(--green);':'color:#8a6f00;'}">${e.type==='payment'?'تحصيل':'مصروف'}</span></td>
+          <td class="num" style="font-weight:800;${e.type==='payment'?'color:var(--green);':'color:#8a6f00;'}">${(Number(e.amount)||0).toFixed(2)}</td>
+          <td>${escapeHtml(e.note)||'—'}</td>
+          <td><button class="act btn-danger btn-small" onclick="deleteOwnerClientEntry('${e.id}')">حذف</button></td>
+        </tr>
+      `).join('');
+    } else {
+      emptyEl.style.display = 'block';
+    }
+  }catch(err){
+    cardsBox.innerHTML = '<div class="empty">محصلش تحميل بيانات الشركة دي</div>';
+  }
+}
+
+async function addOwnerClientEntry(type, opts){
+  opts = opts || {};
+  const col = ownerClientEntriesCol(currentOwnerClientId);
+  if(!col) return;
+  const date = opts.date || document.getElementById('ocEntryDate').value || todayStr();
+  const amount = opts.amount != null ? opts.amount : parseFloat(document.getElementById('ocEntryAmount').value);
+  const note = opts.note != null ? opts.note : document.getElementById('ocEntryNote').value.trim();
+  if(!amount || amount <= 0){ alert('اكتب مبلغ صحيح أكبر من صفر'); return; }
+  try{
+    await col.add({
+      type, date, amount, note,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(!opts.silent){
+      document.getElementById('ocEntryAmount').value = '';
+      document.getElementById('ocEntryNote').value = '';
+      renderOwnerClientDetail();
+    }
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+async function deleteOwnerClientEntry(entryId){
+  if(!confirm('تشيل الحركة دي؟')) return;
+  const col = ownerClientEntriesCol(currentOwnerClientId);
+  if(!col) return;
+  await col.doc(entryId).delete();
+  renderOwnerClientDetail();
+}
+
+async function deleteOwnerClient(){
+  if(!currentOwnerClientId) return;
+  const c = ownerClientsCache.find(x=>x.id===currentOwnerClientId);
+  if(!confirm(`متأكد إنك عايز تشيل "${c?c.name:''}" وكل حركاتها المسجلة نهائي؟`)) return;
+  const col = ownerClientsCol();
+  if(!col) return;
+  try{
+    const entriesCol = ownerClientEntriesCol(currentOwnerClientId);
+    const entriesSnap = await entriesCol.get();
+    await Promise.all(entriesSnap.docs.map(d=>d.ref.delete()));
+    await col.doc(currentOwnerClientId).delete();
+    closeOwnerClientDetail();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+/* Link a specific employee trip (viewed by the owner) into one of the owner's own client ledgers, as an expense entry */
+async function openOwnerClientPickerForTrip(idx){
+  if(currentUserRole !== 'owner') return;
+  pendingLinkTripIdx = idx;
+  if(!ownerClientsCache.length){
+    try{ await renderOwnerClientsCacheOnly(); }catch(e){}
+  }
+  const list = document.getElementById('ownerClientPickerList');
+  if(!ownerClientsCache.length){
+    list.innerHTML = '<div class="empty" style="padding:10px 0;">لسه مسجلتش أي شركة في "عهد العملاء". سجّل واحدة الأول من التاب ده.</div>';
+  } else {
+    list.innerHTML = ownerClientsCache.map(c => `
+      <button class="picker-btn" onclick="linkTripToOwnerClient('${c.id}')">${escapeHtml(c.name)}</button>
+    `).join('');
+  }
+  document.getElementById('ownerClientPickerModal').classList.add('show');
+}
+
+async function renderOwnerClientsCacheOnly(){
+  const col = ownerClientsCol();
+  if(!col) return;
+  const snap = await col.orderBy('createdAt','desc').get();
+  const clients = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+  ownerClientsCache = await Promise.all(clients.map(async c => Object.assign({}, c, await fetchOwnerClientBalance(c.id))));
+}
+
+function closeOwnerClientPicker(){
+  document.getElementById('ownerClientPickerModal').classList.remove('show');
+  pendingLinkTripIdx = null;
+}
+
+async function linkTripToOwnerClient(clientId){
+  const trip = ownerDetailCache && ownerDetailCache.trips ? ownerDetailCache.trips[pendingLinkTripIdx] : null;
+  closeOwnerClientPicker();
+  if(!trip) return;
+  const employeeLabel = ownerDetailCache.label || '';
+  const note = `مشوار ${trip.type||''} — ${trip.place||''} (${employeeLabel}، ${trip.date||''})`.trim();
+  await addOwnerClientEntry('expense', { date: trip.date || todayStr(), amount: Number(trip.cost)||0, note, silent: true });
+  alert('اتضاف المصروف لحساب الشركة ✅');
 }
 
 /* ---------- Owner dashboard Excel export (same visual style as exportExcel) ---------- */
@@ -1977,6 +2294,7 @@ function activateTab(tabName){
   if(tabName === 'home') renderHomeTab();
   if(tabName === 'chat') renderChatTab();
   if(tabName === 'owner') renderOwnerTab();
+  if(tabName === 'ownerclients') renderOwnerClientsTab();
 }
 document.getElementById('tabsNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-tab]');
@@ -2207,7 +2525,7 @@ async function renderClientsTab(){
           <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
           <div class="btns" style="display:flex;gap:6px;">
             <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
-            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}').then(renderClientsTab))">حذف</button>
+            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}'))">حذف</button>
           </div>
         </div>
       `).join('');
@@ -2658,58 +2976,51 @@ function renderHomeTab(){
   `).join('');
 }
 
-/* ---------- CLIENT FILE ATTACHMENTS (IndexedDB) ---------- */
-const FILES_DB_NAME = 'mishwar_files_db';
-function openFilesDB(){
-  return new Promise((resolve,reject)=>{
-    const req = indexedDB.open(FILES_DB_NAME, 2);
-    req.onupgradeneeded = (e)=>{
-      const d = e.target.result;
-      if(!d.objectStoreNames.contains('files')){
-        const store = d.createObjectStore('files',{keyPath:'id'});
-        store.createIndex('clientId','clientId',{unique:false});
-      }
-      if(!d.objectStoreNames.contains('tripFiles')){
-        const tripStore = d.createObjectStore('tripFiles',{keyPath:'id'});
-        tripStore.createIndex('tripId','tripId',{unique:false});
-      }
-    };
-    req.onsuccess = ()=>resolve(req.result);
-    req.onerror = ()=>reject(req.error);
-  });
-}
-
-async function addFilesToClient(clientId, fileList){
-  const db = await openFilesDB();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('files','readwrite');
-    const store = tx.objectStore('files');
-    Array.from(fileList).forEach(file => {
-      store.put({ id: uid(), clientId, name: file.name, type: file.type, size: file.size, date: todayStr(), blob: file });
-    });
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+/* ---------- CLIENT DOCUMENT ATTACHMENTS (synced via Firestore, office-shared) ---------- */
+function clientDocsCol(clientId){
+  const col = officeClientsCol();
+  if(!col) return null;
+  return col.doc(clientId).collection('documents');
 }
 
 async function getFilesForClient(clientId){
-  const db = await openFilesDB();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('files','readonly');
-    const req = tx.objectStore('files').index('clientId').getAll(clientId);
-    req.onsuccess = ()=>resolve(req.result);
-    req.onerror = ()=>reject(req.error);
-  });
+  const col = clientDocsCol(clientId);
+  if(!col) return [];
+  const snap = await col.get();
+  return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+}
+
+async function addFilesToClient(clientId, fileList){
+  const col = clientDocsCol(clientId);
+  if(!col) return;
+  for(const file of Array.from(fileList)){
+    let dataUrl;
+    if(file.type && file.type.startsWith('image/')){
+      dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+      if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+      if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+    } else {
+      dataUrl = await fileToDataUrl(file);
+    }
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+      alert(`الملف "${file.name}" كبير جدًا (لازم يبقى أصغر من حوالي 700 كيلوبايت). جرب ملف أصغر، أو لو صورة قلل جودتها.`);
+      continue;
+    }
+    await col.add({
+      name: file.name,
+      type: file.type || '',
+      size: dataUrl.length,
+      date: todayStr(),
+      dataUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 }
 
 async function deleteClientFile(id, clientId){
-  const db = await openFilesDB();
-  await new Promise((resolve,reject)=>{
-    const tx = db.transaction('files','readwrite');
-    tx.objectStore('files').delete(id);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+  const col = clientDocsCol(clientId);
+  if(!col) return;
+  await col.doc(id).delete();
   renderClientsTab();
 }
 
@@ -2721,7 +3032,11 @@ function fmtSize(bytes){
 
 async function handleFileUploadInClientsTab(clientId, inputEl){
   if(!inputEl.files.length) return;
-  await addFilesToClient(clientId, inputEl.files);
+  try{
+    await addFilesToClient(clientId, inputEl.files);
+  }catch(err){
+    alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
   inputEl.value = '';
   renderClientsTab();
 }
@@ -2730,10 +3045,13 @@ async function downloadClientFile(id, clientId){
   const files = await getFilesForClient(clientId);
   const f = files.find(x=>x.id===id);
   if(!f) return;
-  const url = URL.createObjectURL(f.blob);
+  if((f.type||'').startsWith('image/')){
+    openImgLightbox(f.dataUrl);
+    return;
+  }
   const a = document.createElement('a');
-  a.href = url; a.download = f.name; a.click();
-  URL.revokeObjectURL(url);
+  a.href = f.dataUrl; a.download = f.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 /* ---------- TRIP RECEIPT ATTACHMENTS (synced via Firestore, so the office owner and other devices can see them) ---------- */
@@ -3026,6 +3344,8 @@ function watchOwnRole(){
     currentOfficeName = data.officeName || '';
     const btn = document.getElementById('ownerTabBtn');
     if(btn) btn.style.display = (currentUserRole === 'owner') ? 'inline-block' : 'none';
+    const btn2 = document.getElementById('ownerClientsTabBtn');
+    if(btn2) btn2.style.display = (currentUserRole === 'owner') ? 'inline-block' : 'none';
     renderAccountSection();
     if(officeChanged){
       watchOfficeClients();
@@ -3483,6 +3803,7 @@ async function uploadVoiceNote(blob){
 /* ---------- INIT ---------- */
 renderTodayBadge();
 populateClientHelpers();
+
 
 
 </script>
