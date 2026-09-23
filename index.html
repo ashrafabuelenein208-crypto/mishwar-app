@@ -79,22 +79,25 @@
     max-width:1120px;
     margin:0 auto;
     display:flex;
-    gap:6px;
-    overflow-x:auto;
-    padding:0 20px;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+    padding:14px 20px 20px;
   }
   nav.tabs button{
     background:rgba(255,255,255,.12);
     border:none;
     color:#e5f3fa;
-    padding:11px 18px;
+    padding:12px 20px;
     font-family:inherit;
     font-size:14px;
     font-weight:700;
     cursor:pointer;
-    border-radius:16px 16px 0 0;
+    border-radius:12px;
     white-space:nowrap;
-    margin-top:6px;
+    width:100%;
+    max-width:340px;
+    text-align:right;
   }
   nav.tabs button.active{
     color:var(--navy);
@@ -1213,7 +1216,7 @@ function handleAuthSubmit(){
       return;
     }
     auth.createUserWithEmailAndPassword(email, pass).then((cred)=>{
-      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+      localStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
       return db.collection('users').doc(cred.user.uid).set({
         uid: cred.user.uid,
         email: cred.user.email,
@@ -1227,7 +1230,7 @@ function handleAuthSubmit(){
     });
   } else {
     auth.signInWithEmailAndPassword(email, pass).then((cred)=>{
-      sessionStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
+      localStorage.setItem('mishwar_unlocked_uid', cred.user.uid);
     }).catch(err => {
       document.getElementById('loginErr').textContent = translateAuthError(err);
     });
@@ -1278,7 +1281,7 @@ async function handleLockUnlock(){
   try{
     const cred = firebase.auth.EmailAuthProvider.credential(user.email, pass);
     await user.reauthenticateWithCredential(cred);
-    sessionStorage.setItem('mishwar_unlocked_uid', user.uid);
+    localStorage.setItem('mishwar_unlocked_uid', user.uid);
     unlockApp();
   }catch(e){
     document.getElementById('lockErr').textContent = translateAuthError(e);
@@ -1288,7 +1291,7 @@ async function handleLockUnlock(){
 function handleSwitchAccount(){
   if(!confirm('تسجيل الخروج والدخول بحساب تاني؟')) return;
   auth.signOut().then(()=>{
-    sessionStorage.removeItem('mishwar_unlocked_uid');
+    localStorage.removeItem('mishwar_unlocked_uid');
     showAuthForms();
   });
 }
@@ -1356,7 +1359,7 @@ async function tryBiometricUnlock(){
       publicKey: { challenge, allowCredentials: [{ type: 'public-key', id: rawId }], userVerification: 'required', timeout: 60000 }
     });
     if(assertion){
-      sessionStorage.setItem('mishwar_unlocked_uid', user.uid);
+      localStorage.setItem('mishwar_unlocked_uid', user.uid);
       unlockApp();
     }
   }catch(e){
@@ -1367,14 +1370,14 @@ async function tryBiometricUnlock(){
 /* ---- Auth state listener ---- */
 auth.onAuthStateChanged((user) => {
   if(user){
-    const unlockedUid = sessionStorage.getItem('mishwar_unlocked_uid');
+    const unlockedUid = localStorage.getItem('mishwar_unlocked_uid');
     if(unlockedUid === user.uid){
       unlockApp();
     } else {
       showLockGate(user);
     }
   } else {
-    sessionStorage.removeItem('mishwar_unlocked_uid');
+    localStorage.removeItem('mishwar_unlocked_uid');
     showAuthForms();
   }
 });
