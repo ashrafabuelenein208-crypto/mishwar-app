@@ -407,10 +407,19 @@
     cursor:default;
   }
   .attach-row{
-    display:flex;justify-content:space-between;align-items:center;
-    background:var(--paper);border-radius:12px;padding:9px 14px;font-size:13.5px;
+    display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
+    gap:10px 12px;
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;font-size:13.5px;
   }
-  .attach-row .meta{color:var(--navy-dim);font-size:12px;}
+  .attach-row .info{flex:1 1 180px;min-width:0;}
+  .attach-row .fname{
+    font-weight:700;color:var(--navy);line-height:1.5;
+    overflow-wrap:anywhere;word-break:break-word;
+  }
+  .attach-row .fname bdi{unicode-bidi:isolate;}
+  .attach-row .meta{display:block;margin-top:3px;color:var(--navy-dim);font-size:12px;font-weight:400;}
+  .attach-row .btns{flex:0 0 auto;margin-inline-start:auto;}
 
   .reminder-row{
     display:flex;align-items:center;gap:12px;
@@ -2200,7 +2209,7 @@ async function renderOwnerClientDetail(){
           try{ files = await getFilesForOwnerEntry(clientId, e.id); }catch(err){ files = []; }
           const fileRows = files.map(f => `
             <div class="attach-row">
-              <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+              <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
               <div class="btns" style="display:flex;gap:6px;">
                 <button class="act btn-ghost btn-small" onclick="downloadOwnerEntryFile('${f.id}','${clientId}','${e.id}')">عرض</button>
                 <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteOwnerEntryFile('${f.id}','${clientId}','${e.id}'))">حذف</button>
@@ -2850,7 +2859,7 @@ async function renderClientsTab(){
       try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
       const fileRows = files.map(f => `
         <div class="attach-row">
-          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+          <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
           <div class="btns" style="display:flex;gap:6px;">
             <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
             <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}'))">حذف</button>
@@ -3064,7 +3073,7 @@ async function renderPoaFilesList(){
   }
   listEl.innerHTML = files.map(f => `
     <div class="attach-row">
-      <div>${f.fileType==='pdf'?'📕':'🖼️'} ${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+      <div class="info"><div class="fname">${f.fileType==='pdf'?'📕':'🖼️'} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
       <div class="btns" style="display:flex;gap:6px;">
         <button class="act btn-ghost btn-small" onclick="viewPoaFile('${f.id}')">عرض</button>
         <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaFile('${f.id}'))">حذف</button>
@@ -3244,7 +3253,7 @@ async function renderLogTab(){
       try{ files = await getFilesForTrip(t.id); }catch(e){ files = []; }
       const fileRows = files.map(f => `
         <div class="attach-row">
-          <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+          <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
           <div class="btns" style="display:flex;gap:6px;">
             <button class="act btn-ghost btn-small" onclick="downloadTripFile('${f.id}','${t.id}')">عرض</button>
             <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteTripFile('${f.id}','${t.id}'))">حذف</button>
