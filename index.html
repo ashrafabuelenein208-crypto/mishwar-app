@@ -1014,6 +1014,18 @@
         </div>
       </div>
 
+      <div class="grid2" style="margin-top:10px;">
+        <div class="field">
+          <label>بحث باسم الشركة</label>
+          <input type="text" id="ownerClientSearch" placeholder="دور باسم الشركة..." oninput="renderOwnerClientsList()">
+        </div>
+        <div class="field" style="display:flex;align-items:end;">
+          <div class="row-actions" style="margin-top:0;">
+            <button class="act btn-ghost btn-small" onclick="downloadOwnerClientsExcel()">📥 تنزيل شيت إكسيل منظم</button>
+          </div>
+        </div>
+      </div>
+
       <div class="cards" id="ownerClientsTotalsCards" style="margin-top:14px;"></div>
       <div id="ownerClientsList" style="margin-top:10px;"></div>
       <div class="empty" id="ownerClientsEmpty" style="display:none;">لسه مسجلتش أي شركة هنا</div>
@@ -1843,9 +1855,8 @@ async function renderOwnerClientsTab(){
     const clients = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
     if(!clients.length){
       ownerClientsCache = [];
-      list.innerHTML=''; emptyEl.style.display='block'; cardsBox.innerHTML=''; return;
+      list.innerHTML=''; emptyEl.textContent = 'لسه مسجلتش أي شركة هنا'; emptyEl.style.display='block'; cardsBox.innerHTML=''; return;
     }
-    emptyEl.style.display='none';
     const withTotals = await Promise.all(clients.map(async c => Object.assign({}, c, await fetchOwnerClientBalance(c.id))));
     ownerClientsCache = withTotals;
     const grandSpent = withTotals.reduce((s,c)=>s+c.totalSpent,0);
@@ -1856,21 +1867,189 @@ async function renderOwnerClientsTab(){
       <div class="card"><div class="label">إجمالي المحصّل من كل الشركات</div><div class="value num" style="color:var(--green);">${grandReceived.toFixed(0)} ج.م</div></div>
       <div class="card ${grandBalance<0?'warn':'good'}"><div class="label">الإجمالي (لي / عليّ)</div><div class="value num">${grandBalance.toFixed(0)} ج.م</div></div>
     `;
-    list.innerHTML = withTotals.map(c => `
-      <div class="chat-emp-row" onclick="openOwnerClientDetail('${c.id}')">
-        <div class="left">
-          <div class="chat-emp-avatar">${escapeHtml((c.name||'؟').charAt(0).toUpperCase())}</div>
-          <div class="info">
-            <div class="name">${escapeHtml(c.name)}</div>
-            <div class="last">صرفت <b style="color:#8a6f00;">${c.totalSpent.toFixed(0)} ج.م</b> • حصّلت <b style="color:var(--green);">${c.totalReceived.toFixed(0)} ج.م</b></div>
-          </div>
-        </div>
-        <div style="text-align:left;font-weight:900;white-space:nowrap;color:${c.balance<0?'var(--red)':'var(--green)'};">${c.balance.toFixed(0)} ج.م</div>
-      </div>
-    `).join('');
+    renderOwnerClientsList();
   }catch(err){
     list.innerHTML = '<div class="empty">محصلش تحميل البيانات، جرب تاني</div>';
   }
+}
+
+function renderOwnerClientsList(){
+  const list = document.getElementById('ownerClientsList');
+  const emptyEl = document.getElementById('ownerClientsEmpty');
+  if(!ownerClientsCache.length){
+    list.innerHTML = '';
+    emptyEl.textContent = 'لسه مسجلتش أي شركة هنا';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  const q = (document.getElementById('ownerClientSearch').value || '').trim().toLowerCase();
+  const filtered = q ? ownerClientsCache.filter(c => (c.name||'').toLowerCase().includes(q)) : ownerClientsCache;
+  if(!filtered.length){
+    list.innerHTML = '';
+    emptyEl.textContent = 'مفيش شركة باسم كده';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  list.innerHTML = filtered.map(c => `
+    <div class="chat-emp-row" onclick="openOwnerClientDetail('${c.id}')">
+      <div class="left">
+        <div class="chat-emp-avatar">${escapeHtml((c.name||'؟').charAt(0).toUpperCase())}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(c.name)}</div>
+          <div class="last">صرفت <b style="color:#8a6f00;">${c.totalSpent.toFixed(0)} ج.م</b> • حصّلت <b style="color:var(--green);">${c.totalReceived.toFixed(0)} ج.م</b></div>
+        </div>
+      </div>
+      <div style="text-align:left;font-weight:900;white-space:nowrap;color:${c.balance<0?'var(--red)':'var(--green)'};">${c.balance.toFixed(0)} ج.م</div>
+    </div>
+  `).join('');
+}
+
+function sanitizeExcelSheetName(name){
+  let s = (name || 'شركة').toString().replace(/[\\/*?:\[\]]/g, ' ').trim();
+  if(!s) s = 'شركة';
+  return s.slice(0, 31);
+}
+
+async function downloadOwnerClientsExcel(){
+  if(!ownerClientsCache.length){
+    alert('لسه مفيش شركات مسجلة عشان تنزل شيت بيها');
+    return;
+  }
+  const wb = new ExcelJS.Workbook();
+  const NAVY = 'FF00699C';
+  const BRONZE_SOFT = 'FFFFF6CC';
+  const GREEN = 'FF1F9D6C';
+  const GREEN_SOFT = 'FFE0F5EC';
+  const RED = 'FFE0483A';
+  const RED_SOFT = 'FFFCE4E1';
+  const AMBER = 'FF8A6F00';
+  const STRIPE = 'FFF7F9FA';
+
+  /* -------- summary sheet -------- */
+  const summary = wb.addWorksheet('ملخص عام');
+  summary.views = [{ rightToLeft: true }];
+  summary.columns = [
+    { key: 'name', width: 32 },
+    { key: 'spent', width: 20 },
+    { key: 'received', width: 20 },
+    { key: 'balance', width: 22 },
+  ];
+  const summaryHeader = summary.addRow(['اسم الشركة', 'إجمالي المصروف', 'إجمالي المحصّل', 'الرصيد (لي / عليّ)']);
+  summaryHeader.eachCell(cell=>{
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+  summaryHeader.height = 22;
+
+  let grandSpent = 0, grandReceived = 0;
+  const sortedClients = ownerClientsCache.slice().sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ar'));
+  sortedClients.forEach((c, idx)=>{
+    grandSpent += c.totalSpent; grandReceived += c.totalReceived;
+    const row = summary.addRow([c.name, c.totalSpent, c.totalReceived, c.balance]);
+    row.getCell(2).numFmt = '#,##0';
+    row.getCell(3).numFmt = '#,##0';
+    row.getCell(4).numFmt = '#,##0';
+    row.getCell(1).alignment = { horizontal: 'right' };
+    row.getCell(2).font = { color: { argb: AMBER } };
+    row.getCell(3).font = { color: { argb: GREEN } };
+    row.getCell(4).font = { bold: true, color: { argb: c.balance < 0 ? RED : GREEN } };
+    row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c.balance < 0 ? RED_SOFT : GREEN_SOFT } };
+    if(idx % 2 === 1){
+      [1,2,3].forEach(ci => { row.getCell(ci).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: STRIPE } }; });
+    }
+  });
+  const totalRow = summary.addRow(['الإجمالي', grandSpent, grandReceived, grandReceived - grandSpent]);
+  totalRow.eachCell(cell=>{
+    cell.font = { bold: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRONZE_SOFT } };
+    cell.border = { top: { style: 'thin', color: { argb: NAVY } } };
+  });
+  totalRow.getCell(2).numFmt = '#,##0';
+  totalRow.getCell(3).numFmt = '#,##0';
+  totalRow.getCell(4).numFmt = '#,##0';
+
+  /* -------- one sheet per company -------- */
+  const usedNames = new Set(['ملخص عام']);
+  sortedClients.forEach(c=>{
+    let base = sanitizeExcelSheetName(c.name);
+    let finalName = base, n = 2;
+    while(usedNames.has(finalName)){ finalName = base.slice(0, 28) + ' ' + n; n++; }
+    usedNames.add(finalName);
+
+    const ws = wb.addWorksheet(finalName);
+    ws.views = [{ rightToLeft: true }];
+    ws.columns = [
+      { key: 'date', width: 14 },
+      { key: 'type', width: 14 },
+      { key: 'amount', width: 16 },
+      { key: 'note', width: 36 },
+    ];
+
+    ws.mergeCells('A1:D1');
+    const titleCell = ws.getCell('A1');
+    titleCell.value = c.name;
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    ws.getRow(1).height = 26;
+
+    const headerRow = ws.addRow(['التاريخ', 'النوع', 'المبلغ', 'ملاحظة']);
+    headerRow.eachCell(cell=>{
+      cell.font = { bold: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRONZE_SOFT } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    headerRow.height = 20;
+
+    const entries = (c.entries||[]).slice().sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')));
+    entries.forEach((e, idx)=>{
+      const isPayment = e.type === 'payment';
+      const row = ws.addRow([e.date || '', isPayment ? 'تحصيل' : 'مصروف', Number(e.amount)||0, e.note || '']);
+      row.getCell(3).numFmt = '#,##0.00';
+      row.getCell(2).font = { bold: true, color: { argb: isPayment ? GREEN : AMBER } };
+      row.getCell(3).font = { bold: true, color: { argb: isPayment ? GREEN : AMBER } };
+      row.getCell(4).alignment = { horizontal: 'right', wrapText: true };
+      if(idx % 2 === 1){
+        [1,2,3,4].forEach(ci=>{
+          if(!row.getCell(ci).fill){
+            row.getCell(ci).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: STRIPE } };
+          }
+        });
+      }
+    });
+
+    const netBalance = c.totalReceived - c.totalSpent;
+    const totalsRow = ws.addRow(['', 'الإجمالي', netBalance, `صرفت: ${c.totalSpent.toFixed(0)}  •  حصّلت: ${c.totalReceived.toFixed(0)}`]);
+    totalsRow.eachCell(cell=>{
+      cell.font = { bold: true };
+      cell.border = { top: { style: 'thin', color: { argb: NAVY } } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRONZE_SOFT } };
+    });
+    totalsRow.getCell(3).numFmt = '#,##0.00';
+    totalsRow.getCell(3).font = { bold: true, color: { argb: netBalance < 0 ? RED : GREEN } };
+    totalsRow.getCell(4).alignment = { horizontal: 'right' };
+
+    if(!entries.length){
+      ws.mergeCells('A4:D4');
+      const emptyCell = ws.getCell('A4');
+      emptyCell.value = 'لسه مفيش حركات مسجلة للشركة دي';
+      emptyCell.alignment = { horizontal: 'center' };
+      emptyCell.font = { italic: true, color: { argb: 'FF5C7D90' } };
+    }
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'عهدة_العملاء.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function openOwnerClientDetail(clientId){
