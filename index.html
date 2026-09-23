@@ -2187,10 +2187,23 @@ async function linkTripToOwnerClient(clientId){
   const trip = ownerDetailCache && ownerDetailCache.trips ? ownerDetailCache.trips[pendingLinkTripIdx] : null;
   closeOwnerClientPicker();
   if(!trip) return;
+  const col = ownerClientEntriesCol(clientId);
+  if(!col){ alert('حصل خطأ: مقدرتش أوصل لحساب الشركة دي'); return; }
   const employeeLabel = ownerDetailCache.label || '';
   const note = `مشوار ${trip.type||''} — ${trip.place||''} (${employeeLabel}، ${trip.date||''})`.trim();
-  await addOwnerClientEntry('expense', { date: trip.date || todayStr(), amount: Number(trip.cost)||0, note, silent: true });
-  alert('اتضاف المصروف لحساب الشركة ✅');
+  try{
+    await col.add({
+      type: 'expense',
+      date: trip.date || todayStr(),
+      amount: Number(trip.cost)||0,
+      note,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('اتضاف المصروف لحساب الشركة ✅');
+    if(currentOwnerClientId === clientId){ renderOwnerClientDetail(); }
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
 }
 
 /* ---------- Owner dashboard Excel export (same visual style as exportExcel) ---------- */
