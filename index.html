@@ -1060,7 +1060,7 @@
 
       <div style="overflow-x:auto;margin-top:14px;">
         <table>
-          <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr></thead>
+          <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظة</th><th>الإيصالات</th><th></th></tr></thead>
           <tbody id="ownerClientEntriesBody"></tbody>
         </table>
         <div class="empty" id="ownerClientEntriesEmpty" style="display:none;">لسه مفيش حركات مسجلة للشركة دي</div>
@@ -2069,6 +2069,8 @@ function closeOwnerClientDetail(){
   renderOwnerClientsTab();
 }
 
+let openOwnerEntryReceiptsId = null;
+
 async function renderOwnerClientDetail(){
   if(!currentOwnerClientId) return;
   const clientId = currentOwnerClientId;
@@ -2087,15 +2089,47 @@ async function renderOwnerClientDetail(){
       <div class="card ${data.balance<0?'warn':'good'}"><div class="label">${data.balance<0?'متبقي ليها عندي':'متبقي ليا عندها'}</div><div class="value num">${Math.abs(data.balance).toFixed(0)} ج.م</div></div>
     `;
     if(currentOwnerClientEntriesCache.length){
-      body.innerHTML = currentOwnerClientEntriesCache.map(e => `
+      const rowsHtml = await Promise.all(currentOwnerClientEntriesCache.map(async e => {
+        let count = 0;
+        try{ count = (await getFilesForOwnerEntry(clientId, e.id)).length; }catch(err){ count = 0; }
+        const isOpen = openOwnerEntryReceiptsId === e.id;
+        let receiptsRowHtml = '';
+        if(isOpen){
+          let files = [];
+          try{ files = await getFilesForOwnerEntry(clientId, e.id); }catch(err){ files = []; }
+          const fileRows = files.map(f => `
+            <div class="attach-row">
+              <div>${escapeHtml(f.name)} <span class="meta">(${fmtSize(f.size)} — ${f.date})</span></div>
+              <div class="btns" style="display:flex;gap:6px;">
+                <button class="act btn-ghost btn-small" onclick="downloadOwnerEntryFile('${f.id}','${clientId}','${e.id}')">عرض</button>
+                <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteOwnerEntryFile('${f.id}','${clientId}','${e.id}'))">حذف</button>
+              </div>
+            </div>
+          `).join('');
+          receiptsRowHtml = `
+            <tr>
+              <td colspan="6">
+                <div class="attach-box" style="margin:0;">
+                  <input type="file" accept="image/*" multiple onchange="handleOwnerEntryFileUpload('${clientId}','${e.id}', this)">
+                  <div class="attach-list">
+                    ${fileRows || '<div class="empty" style="padding:14px;">مفيش إيصالات مرفوعة للحركة دي لسه</div>'}
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+        }
+        return `
         <tr>
           <td class="num">${escapeHtml(e.date)||'—'}</td>
           <td><span class="tag" style="${e.type==='payment'?'color:var(--green);':'color:#8a6f00;'}">${e.type==='payment'?'تحصيل':'مصروف'}</span></td>
           <td class="num" style="font-weight:800;${e.type==='payment'?'color:var(--green);':'color:#8a6f00;'}">${(Number(e.amount)||0).toFixed(2)}</td>
           <td>${escapeHtml(e.note)||'—'}</td>
+          <td><button class="act btn-ghost btn-small" onclick="toggleOwnerEntryReceipts('${e.id}')">🧾 إيصالات (${count})</button></td>
           <td><button class="act btn-danger btn-small" onclick="deleteOwnerClientEntry('${e.id}')">حذف</button></td>
         </tr>
-      `).join('');
+        ${receiptsRowHtml}`;
+      }));
+      body.innerHTML = rowsHtml.join('');
     } else {
       emptyEl.style.display = 'block';
     }
@@ -3312,6 +3346,73 @@ async function handleTripFileUpload(tripId, inputEl){
   }
   inputEl.value = '';
   renderLogTab();
+}
+
+/* ---------- OWNER CLIENT ENTRY RECEIPT ATTACHMENTS (same pattern as trip receipts) ---------- */
+function ownerEntryReceiptsCol(clientId, entryId){
+  const col = ownerClientEntriesCol(clientId);
+  if(!col) return null;
+  return col.doc(entryId).collection('receipts');
+}
+
+async function getFilesForOwnerEntry(clientId, entryId){
+  const col = ownerEntryReceiptsCol(clientId, entryId);
+  if(!col) return [];
+  const snap = await col.get();
+  return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+}
+
+async function addFilesToOwnerEntry(clientId, entryId, fileList){
+  const col = ownerEntryReceiptsCol(clientId, entryId);
+  if(!col) return;
+  for(const file of Array.from(fileList)){
+    let dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+    if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+      alert(`الصورة "${file.name}" كبيرة جدًا حتى بعد الضغط. جرب صورة تانية أصغر.`);
+      continue;
+    }
+    await col.add({
+      name: file.name,
+      size: dataUrl.length,
+      date: todayStr(),
+      dataUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
+async function deleteOwnerEntryFile(id, clientId, entryId){
+  const col = ownerEntryReceiptsCol(clientId, entryId);
+  if(!col) return;
+  await col.doc(id).delete();
+  renderOwnerClientDetail();
+}
+
+async function downloadOwnerEntryFile(id, clientId, entryId){
+  const files = await getFilesForOwnerEntry(clientId, entryId);
+  const f = files.find(x=>x.id===id);
+  if(!f) return;
+  openImgLightbox(f.dataUrl);
+}
+
+function toggleOwnerEntryReceipts(id){
+  openOwnerEntryReceiptsId = (openOwnerEntryReceiptsId === id) ? null : id;
+  renderOwnerClientDetail();
+}
+
+async function handleOwnerEntryFileUpload(clientId, entryId, inputEl){
+  if(!inputEl.files.length) return;
+  const statusLabel = inputEl.parentElement.querySelector('.upload-status');
+  if(statusLabel) statusLabel.textContent = 'جارٍ رفع الصور...';
+  try{
+    await addFilesToOwnerEntry(clientId, entryId, inputEl.files);
+  }catch(err){
+    alert('حصل خطأ في رفع الإيصال: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+  inputEl.value = '';
+  renderOwnerClientDetail();
 }
 
 /* ---------- CASH WITH OFFICE OWNER ---------- */
