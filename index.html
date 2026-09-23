@@ -364,6 +364,21 @@
 
   .attach-box{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .attach-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .file-upload-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--bronze-soft);
+    color:var(--navy);
+    font-weight:800;
+    font-size:14px;
+    padding:12px 20px;
+    border-radius:12px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .file-upload-btn:hover{background:var(--bronze);}
+  .file-upload-btn:active{opacity:.85;}
   .poa-letters{
     display:grid;
     grid-template-columns:repeat(6,1fr);
@@ -1074,10 +1089,9 @@
       <h2 id="poaDetailTitle" style="margin-top:0;"></h2>
 
       <div class="attach-box" style="margin-top:0;padding-top:0;border-top:none;">
-        <label style="display:block;margin-bottom:6px;font-size:13px;color:var(--navy-dim);">ارفع صورة أو PDF للتوكيل</label>
-        <input type="file" accept="image/*,application/pdf" multiple onchange="handlePoaFileUpload(this)">
-        <label style="display:block;margin:12px 0 6px;font-size:13px;color:var(--navy-dim);">أو صوّر بالكاميرا مباشرة</label>
-        <input type="file" accept="image/*" capture="environment" onchange="handlePoaFileUpload(this)">
+        <label style="display:block;margin-bottom:8px;font-size:13px;color:var(--navy-dim);">ارفع صورة أو PDF للتوكيل</label>
+        <label class="file-upload-btn" for="poaFileInput">📎 اختيار صورة أو PDF</label>
+        <input type="file" id="poaFileInput" accept="image/*,application/pdf" multiple onchange="handlePoaFileUpload(this)" style="display:none;">
         <div class="attach-list" id="poaFilesList"></div>
       </div>
     </section>
