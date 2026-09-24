@@ -456,6 +456,12 @@
   .poa-card-name{flex:1;min-width:0;font-weight:800;font-size:15px;color:var(--navy);overflow-wrap:anywhere;cursor:pointer;}
   .poa-mini{padding:7px 12px !important;font-size:12.5px !important;white-space:nowrap;}
   .poa-nofile{font-size:12.5px;color:var(--navy-dim);padding:4px 2px;}
+  @media (max-width:640px){
+    .poa-row{flex-wrap:wrap;gap:8px;padding:12px;}
+    .poa-row .poa-card-name{flex:1 1 100%;overflow-wrap:break-word;word-break:normal;}
+    .poa-row .act{flex:1 1 0;min-width:0;padding-left:8px;padding-right:8px;white-space:nowrap;}
+    .poa-row .poa-nofile{flex:1 1 0;text-align:center;}
+  }
   .poa-card .attach-list{margin-top:0;}
   .poa-import{background:#fff8dc;border:1.5px dashed #e6c84a;border-radius:16px;padding:12px;margin-bottom:12px;}
   .poa-import .ttl{font-weight:800;color:var(--navy);margin-bottom:8px;}
