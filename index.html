@@ -3166,9 +3166,9 @@ async function handlePoaFileUpload(inputEl, poaIdArg){
     const isPdf = file.type === 'application/pdf';
     try{
       if(isPdf){
-        const dataUrl = await fileToDataUrl(file);
+        const dataUrl = await pdfToSafeDataUrl(file);
         if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
-          alert(`ملف "${file.name}" كبير جدًا (أكتر من حوالي 700 كيلوبايت). جرب تضغطه، أو صوّره كصورة بدل ملف PDF كبير.`);
+          alert(`ملف "${file.name}" كبير جدًا حتى بعد الضغط التلقائي (صفحاته كتير). قسّمه لملفين أو أكتر وارفعهم.`);
           continue;
         }
         await col.add({ name: file.name, size: dataUrl.length, date: todayStr(), dataUrl, fileType: 'pdf', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -3635,6 +3635,8 @@ async function addFilesToClient(clientId, fileList){
       dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
       if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
       if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+    } else if(file.type === 'application/pdf'){
+      dataUrl = await pdfToSafeDataUrl(file);
     } else {
       dataUrl = await fileToDataUrl(file);
     }
@@ -4403,6 +4405,76 @@ function compressImageToDataUrl(file, maxDim, quality){
     img.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+
+/* ---------- PDF AUTO-COMPRESSION (client-side) ---------- */
+function loadScriptOnce(src){
+  return new Promise((resolve, reject)=>{
+    if(document.querySelector('script[data-lib="'+src+'"]')) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.dataset.lib = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('تعذر تحميل مكتبة الضغط، اتأكد من النت'));
+    document.head.appendChild(s);
+  });
+}
+function showBusyToast(msg){
+  let el = document.getElementById('busyToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'busyToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f2a44;color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:700;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.25);';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideBusyToast(){
+  const el = document.getElementById('busyToast');
+  if(el) el.style.display = 'none';
+}
+// Re-renders every PDF page as a JPEG and rebuilds a smaller PDF; retries with lower quality until it fits.
+async function compressPdfToDataUrl(file, limit){
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const { jsPDF } = window.jspdf;
+  const attempts = [ {dim:1400,q:0.7}, {dim:1100,q:0.6}, {dim:900,q:0.5}, {dim:750,q:0.42}, {dim:600,q:0.35} ];
+  let last = null;
+  for(const a of attempts){
+    let doc = null;
+    for(let i=1; i<=pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const vp0 = page.getViewport({ scale: 1 });
+      const scale = a.dim / Math.max(vp0.width, vp0.height);
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const img = canvas.toDataURL('image/jpeg', a.q);
+      const orient = canvas.width > canvas.height ? 'l' : 'p';
+      if(!doc) doc = new jsPDF({ orientation: orient, unit: 'px', format: [canvas.width, canvas.height], compress: true });
+      else doc.addPage([canvas.width, canvas.height], orient);
+      doc.addImage(img, 'JPEG', 0, 0, canvas.width, canvas.height);
+    }
+    last = doc.output('datauristring');
+    if(last.length <= limit) return last;
+  }
+  return last;
+}
+async function pdfToSafeDataUrl(file){
+  const dataUrl = await fileToDataUrl(file);
+  if(dataUrl.length <= FIRESTORE_SAFE_MEDIA_BYTES) return dataUrl;
+  showBusyToast('⏳ جارٍ ضغط الملف "' + file.name + '"...');
+  try{
+    return await compressPdfToDataUrl(file, FIRESTORE_SAFE_MEDIA_BYTES);
+  } finally {
+    hideBusyToast();
+  }
 }
 
 async function sendChatImage(inputEl){
