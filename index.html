@@ -446,6 +446,8 @@
   .attach-row .meta{display:block;margin-top:3px;color:var(--navy-dim);font-size:12px;font-weight:400;}
   .attach-row .btns{flex:0 0 auto;margin-inline-start:auto;}
 
+  .poa-letters button.on{background:var(--navy);color:#fff;}
+  .poa-letters button.on .count{color:#dff1fa;}
   .poa-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
   .poa-bar input[type=text]{flex:1 1 220px;min-width:0;}
   .poa-row{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
@@ -1098,6 +1100,7 @@
         <label class="file-upload-btn" for="poaImportFile">＋ استيراد توكيل</label>
         <input type="file" id="poaImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="importPoa(this)">
       </div>
+      <div id="poaLetterBar" class="poa-letters" style="margin-bottom:12px;"></div>
       <div id="poaList"></div>
     </section>
 
@@ -2949,6 +2952,7 @@ function normalizePoaLetter(name){
 
 async function renderPoaTab(){
   currentPoaId = null;
+  currentPoaLetter = null;
   const q = document.getElementById('poaSearch'); if(q) q.value = '';
   await refreshPoaLetterView();
 }
@@ -2967,10 +2971,22 @@ async function refreshPoaLetterView(){
   }
 }
 
+function setPoaLetter(l){
+  currentPoaLetter = (!l || currentPoaLetter===l) ? null : l;
+  document.getElementById('poaSearch').value = '';
+  renderPoaList();
+}
+
 function renderPoaList(){
   const list = document.getElementById('poaList');
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
-  const items = poasCache.filter(p=>!q || (p.name||'').toLowerCase().includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  document.getElementById('poaLetterBar').innerHTML =
+    `<button class="${!currentPoaLetter?'on':''}" onclick="setPoaLetter('')">الكل<span class="count">${poasCache.length}</span></button>` +
+    POA_LETTERS.map(l=>{
+      const c = poasCache.filter(p=>normalizePoaLetter(p.name)===l).length;
+      return `<button class="${currentPoaLetter===l?'on':''}" ${c===0?'disabled':''} onclick="setPoaLetter('${l}')">${l}<span class="count">${c}</span></button>`;
+    }).join('');
+  const items = poasCache.filter(p=> q ? (p.name||'').toLowerCase().includes(q) : (!currentPoaLetter || normalizePoaLetter(p.name)===currentPoaLetter)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
   document.getElementById('poaCount').textContent = poasCache.length ? '(' + items.length + ')' : '';
   if(!items.length){ list.innerHTML = '<div class="empty">' + (q ? 'مفيش توكيل باسم كده' : 'لسه مفيش توكيلات') + '</div>'; return; }
   list.innerHTML = items.map(p => {
