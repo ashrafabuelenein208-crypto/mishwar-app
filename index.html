@@ -1094,14 +1094,23 @@
   <!-- CLIENT POWERS OF ATTORNEY (TOKALAT) -->
   <div class="panel" id="panel-poas">
     <section id="poaListSection">
-      <h2>توكيلات العملاء <span id="poaCount" style="font-size:13px;color:var(--navy-dim);font-weight:600;"></span></h2>
-      <div class="poa-bar">
-        <input type="text" id="poaSearch" placeholder="🔍 ابحث باسم التوكيل..." oninput="renderPoaList()">
-        <label class="file-upload-btn" for="poaImportFile">＋ استيراد توكيل</label>
-        <input type="file" id="poaImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="importPoa(this)">
+      <div id="poaHome">
+        <h2>توكيلات العملاء</h2>
+        <div class="poa-bar">
+          <input type="text" id="poaSearch" placeholder="🔍 ابحث باسم التوكيل..." oninput="renderPoaHome()">
+        </div>
+        <div id="poaLetterBar" class="poa-letters"></div>
+        <div id="poaSearchList" style="display:none;"></div>
       </div>
-      <div id="poaLetterBar" class="poa-letters" style="margin-bottom:12px;"></div>
-      <div id="poaList"></div>
+      <div id="poaLetterPage" style="display:none;">
+        <div class="poa-bar">
+          <button class="act btn-ghost btn-small" onclick="showPoaHome()">‹ رجوع للحروف</button>
+          <label class="file-upload-btn" for="poaImportFile">＋ استيراد</label>
+          <input type="file" id="poaImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="importPoa(this)">
+        </div>
+        <h2 id="poaLetterTitle"></h2>
+        <div id="poaList"></div>
+      </div>
     </section>
 
     <section id="poaDetailSection" style="display:none;">
@@ -2950,46 +2959,11 @@ function normalizePoaLetter(name){
   return alefMap[ch] || ch;
 }
 
-async function renderPoaTab(){
-  currentPoaId = null;
-  currentPoaLetter = null;
-  const q = document.getElementById('poaSearch'); if(q) q.value = '';
-  await refreshPoaLetterView();
-}
+function poaLetterOf(p){ return p.letter || normalizePoaLetter(p.name); }
 
-async function refreshPoaLetterView(){
-  const list = document.getElementById('poaList');
-  const col = poasCol();
-  if(!col){ list.innerHTML = '<div class="empty">لسه بيتحمّل بيانات المكتب...</div>'; return; }
-  try{
-    const snap = await col.orderBy('name').get();
-    poasCache = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
-    await Promise.all(poasCache.map(async p => { poaFilesCache[p.id] = await getFilesForPoa(p.id).catch(()=>[]); }));
-    renderPoaList();
-  }catch(err){
-    list.innerHTML = '<div class="empty">محصلش تحميل التوكيلات</div>';
-  }
-}
-
-function setPoaLetter(l){
-  currentPoaLetter = (!l || currentPoaLetter===l) ? null : l;
-  document.getElementById('poaSearch').value = '';
-  renderPoaList();
-}
-
-function renderPoaList(){
-  const list = document.getElementById('poaList');
-  const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
-  document.getElementById('poaLetterBar').innerHTML =
-    `<button class="${!currentPoaLetter?'on':''}" onclick="setPoaLetter('')">الكل<span class="count">${poasCache.length}</span></button>` +
-    POA_LETTERS.map(l=>{
-      const c = poasCache.filter(p=>normalizePoaLetter(p.name)===l).length;
-      return `<button class="${currentPoaLetter===l?'on':''}" ${c===0?'disabled':''} onclick="setPoaLetter('${l}')">${l}<span class="count">${c}</span></button>`;
-    }).join('');
-  const items = poasCache.filter(p=> q ? (p.name||'').toLowerCase().includes(q) : (!currentPoaLetter || normalizePoaLetter(p.name)===currentPoaLetter)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
-  document.getElementById('poaCount').textContent = poasCache.length ? '(' + items.length + ')' : '';
-  if(!items.length){ list.innerHTML = '<div class="empty">' + (q ? 'مفيش توكيل باسم كده' : 'لسه مفيش توكيلات') + '</div>'; return; }
-  list.innerHTML = items.map(p => {
+function poaRowsHtml(items, emptyMsg){
+  if(!items.length) return '<div class="empty">' + emptyMsg + '</div>';
+  return items.map(p => {
     const n = (poaFilesCache[p.id]||[]).length;
     return `<div class="poa-row">
       <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}</div>
@@ -2997,6 +2971,64 @@ function renderPoaList(){
       <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaById('${p.id}'))">حذف</button>
     </div>`;
   }).join('');
+}
+
+async function renderPoaTab(){
+  currentPoaId = null;
+  document.getElementById('poaSearch').value = '';
+  showPoaHome();
+  await refreshPoaLetterView();
+}
+
+function showPoaHome(){
+  currentPoaLetter = null;
+  document.getElementById('poaHome').style.display = 'block';
+  document.getElementById('poaLetterPage').style.display = 'none';
+  renderPoaHome();
+}
+
+async function refreshPoaLetterView(){
+  const col = poasCol();
+  if(!col) return;
+  try{
+    const snap = await col.orderBy('name').get();
+    poasCache = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+    await Promise.all(poasCache.map(async p => { poaFilesCache[p.id] = await getFilesForPoa(p.id).catch(()=>[]); }));
+  }catch(err){
+    document.getElementById('poaLetterBar').innerHTML = '<div class="empty">محصلش تحميل التوكيلات</div>';
+    return;
+  }
+  if(currentPoaLetter) renderPoaLetterPage(); else renderPoaHome();
+}
+
+function renderPoaHome(){
+  const bar = document.getElementById('poaLetterBar');
+  const sl = document.getElementById('poaSearchList');
+  const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
+  if(q){
+    bar.style.display = 'none'; sl.style.display = 'block';
+    const items = poasCache.filter(p=>(p.name||'').toLowerCase().includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    sl.innerHTML = poaRowsHtml(items, 'مفيش توكيل باسم كده');
+    return;
+  }
+  sl.style.display = 'none'; bar.style.display = 'grid';
+  bar.innerHTML = POA_LETTERS.map(l=>{
+    const c = poasCache.filter(p=>poaLetterOf(p)===l).length;
+    return `<button onclick="openPoaLetter('${l}')">${l}<span class="count">${c}</span></button>`;
+  }).join('');
+}
+
+function openPoaLetter(l){
+  currentPoaLetter = l;
+  document.getElementById('poaHome').style.display = 'none';
+  document.getElementById('poaLetterPage').style.display = 'block';
+  renderPoaLetterPage();
+}
+
+function renderPoaLetterPage(){
+  const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  document.getElementById('poaLetterTitle').textContent = 'حرف "' + currentPoaLetter + '"' + (items.length ? ' (' + items.length + ')' : '');
+  document.getElementById('poaList').innerHTML = poaRowsHtml(items, 'لسه مفيش توكيلات في الحرف ده — دوس استيراد وارفع التوكيلات');
 }
 
 function downloadPoaFile(poaId, fileId){
@@ -3021,8 +3053,8 @@ async function importPoa(inputEl){
   try{
     for(const f of files){
       const name = f.name.replace(/\.[^.]+$/, '').trim() || 'توكيل';
-      const ex = poasCache.find(p=>(p.name||'').trim() === name);
-      const id = ex ? ex.id : (await col.add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
+      const ex = poasCache.find(p=>(p.name||'').trim() === name && poaLetterOf(p) === currentPoaLetter);
+      const id = ex ? ex.id : (await col.add({ name, letter: currentPoaLetter, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
       await handlePoaFileUpload({ files:[f], value:'' }, id);
     }
     inputEl.value = '';
