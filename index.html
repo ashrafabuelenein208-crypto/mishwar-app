@@ -1096,6 +1096,7 @@
     <section id="poaListSection">
       <div id="poaHome">
         <h2>توكيلات العملاء</h2>
+        <div id="poaOutBox"></div>
         <div class="poa-bar">
           <input type="text" id="poaSearch" placeholder="🔍 ابحث باسم التوكيل..." oninput="renderPoaHome()">
         </div>
@@ -2965,8 +2966,12 @@ function poaRowsHtml(items, emptyMsg){
   if(!items.length) return '<div class="empty">' + emptyMsg + '</div>';
   return items.map(p => {
     const n = (poaFilesCache[p.id]||[]).length;
+    const custodyBtn = p.holder
+      ? `<button class="act btn-ghost btn-small" onclick="returnPoa('${p.id}')">✅ تم الرجوع</button>`
+      : `<button class="act btn-ghost btn-small" onclick="takePoa('${p.id}')">📤 سحب</button>`;
     return `<div class="poa-row">
-      <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}</div>
+      <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}${poaHolderLine(p)}</div>
+      ${custodyBtn}
       ${n ? `<button class="act btn-primary btn-small" onclick="downloadPoaAll('${p.id}')">تحميل</button>` : '<span class="poa-nofile">بدون ملف</span>'}
       <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaById('${p.id}'))">حذف</button>
     </div>`;
@@ -3002,6 +3007,7 @@ async function refreshPoaLetterView(){
 }
 
 function renderPoaHome(){
+  renderPoaOutBox();
   const bar = document.getElementById('poaLetterBar');
   const sl = document.getElementById('poaSearchList');
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
@@ -3029,6 +3035,70 @@ function renderPoaLetterPage(){
   const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
   document.getElementById('poaLetterTitle').textContent = 'حرف "' + currentPoaLetter + '"' + (items.length ? ' (' + items.length + ')' : '');
   document.getElementById('poaList').innerHTML = poaRowsHtml(items, 'لسه مفيش توكيلات في الحرف ده — دوس استيراد وارفع التوكيلات');
+}
+
+
+/* ---------- POA CUSTODY (who has which توكيل right now) ---------- */
+function poaIsOverdue(h){
+  if(!h || !h.since) return false;
+  const d = new Date(h.since), now = new Date();
+  return d.toDateString() !== now.toDateString() || now.getHours() >= 17;
+}
+function poaSinceText(h){
+  const d = new Date(h.since);
+  const t = d.toLocaleTimeString('ar-EG', { hour:'numeric', minute:'2-digit' });
+  return d.toDateString() === new Date().toDateString() ? 'النهاردة ' + t : d.toLocaleDateString('ar-EG') + ' ' + t;
+}
+function poaHolderLine(p){
+  if(!p.holder) return '';
+  const od = poaIsOverdue(p.holder);
+  const color = od ? 'var(--red)' : '#8a6f00';
+  return `<div style="font-size:12px;font-weight:700;color:${color};margin-top:3px;">${od ? '🔴' : '🟠'} مع ${escapeHtml(p.holder.name || '')} — من ${poaSinceText(p.holder)}${p.holder.purpose ? ' — ' + escapeHtml(p.holder.purpose) : ''}</div>`;
+}
+function renderPoaOutBox(){
+  const box = document.getElementById('poaOutBox');
+  if(!box) return;
+  const out = poasCache.filter(p => p.holder).sort((a,b) => (a.holder.since||0) - (b.holder.since||0));
+  if(!out.length){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div style="background:var(--bronze-soft);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+    <div style="font-weight:900;margin-bottom:6px;">📤 توكيلات برّه المكتب (${out.length})</div>
+    ${out.map(p => `<div class="poa-row" style="margin:6px 0;">
+      <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}${poaHolderLine(p)}</div>
+      <button class="act btn-ghost btn-small" onclick="returnPoa('${p.id}')">✅ تم الرجوع</button>
+    </div>`).join('')}
+  </div>`;
+}
+async function takePoa(poaId){
+  const col = poasCol(), u = auth.currentUser;
+  if(!col || !u) return;
+  const p = poasCache.find(x => x.id === poaId);
+  const purpose = prompt('سحب توكيل "' + (p ? p.name : '') + '"\nالغرض / الجهة (اختياري):');
+  if(purpose === null) return;
+  try{
+    const ref = col.doc(poaId);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const h = snap.exists && snap.data().holder;
+      if(h) throw new Error('التوكيل ده مع ' + (h.name || 'زميل تاني') + ' حاليًا');
+      tx.update(ref, { holder: { uid: u.uid, email: u.email, name: displayNameFromEmail(u.email), since: Date.now(), purpose: purpose.trim() } });
+    });
+    await refreshPoaLetterView();
+  }catch(err){
+    alert(err && err.message ? err.message : 'حصل خطأ');
+    await refreshPoaLetterView();
+  }
+}
+async function returnPoa(poaId){
+  const col = poasCol();
+  if(!col) return;
+  const p = poasCache.find(x => x.id === poaId);
+  if(!confirm('تأكد إن توكيل "' + (p ? p.name : '') + '" رجع المكتب فعلًا؟')) return;
+  try{
+    await col.doc(poaId).update({ holder: firebase.firestore.FieldValue.delete() });
+    await refreshPoaLetterView();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
 }
 
 function downloadPoaFile(poaId, fileId){
