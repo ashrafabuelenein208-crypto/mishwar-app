@@ -122,6 +122,21 @@
     padding:22px 20px 60px;
   }
 
+  @media (min-width:900px){
+    body{padding-right:260px;}
+    header.top .wrap{max-width:none;padding-bottom:22px;}
+    main{max-width:none;padding:24px 32px 60px;}
+    nav.tabs{
+      position:fixed;top:0;right:0;bottom:0;width:260px;max-width:none;margin:0;
+      padding:18px 14px;gap:6px;align-items:stretch;
+      background:#0b3f5f;overflow-y:auto;z-index:50;
+      box-shadow:-4px 0 18px rgba(0,0,0,.18);
+    }
+    nav.tabs button{max-width:none;background:transparent;}
+    nav.tabs button:hover{background:rgba(255,255,255,.12);}
+    nav.tabs button.active,nav.tabs button.active:hover{background:#fff;}
+  }
+
   .panel{display:none;}
   .panel.active{display:block;}
 
