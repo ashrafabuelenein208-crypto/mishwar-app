@@ -85,10 +85,11 @@
     padding:14px 20px 20px;
   }
   nav.tabs button{
-    background:rgba(255,255,255,.12);
+    display:flex;align-items:center;gap:12px;
+    background:rgba(255,255,255,.10);
     border:none;
     color:#e5f3fa;
-    padding:12px 20px;
+    padding:8px 12px;
     font-family:inherit;
     font-size:14px;
     font-weight:700;
@@ -99,10 +100,19 @@
     max-width:340px;
     text-align:right;
   }
+  nav.tabs button .ic-wrap{
+    width:34px;height:34px;flex:none;border-radius:10px;
+    background:rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;
+  }
+  nav.tabs button .ic{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  nav.tabs button .lbl{flex:1;text-align:right;}
+  nav.tabs button::after{content:"\2039";opacity:.55;font-size:20px;line-height:1;flex:none;}
   nav.tabs button.active{
     color:var(--navy);
     background:#fff;
   }
+  nav.tabs button.active .ic-wrap{background:rgba(0,105,156,.12);}
   nav.tabs button:hover{background:rgba(255,255,255,.22);}
   nav.tabs button.active:hover{background:#fff;}
 
@@ -421,6 +431,16 @@
   .attach-row .meta{display:block;margin-top:3px;color:var(--navy-dim);font-size:12px;font-weight:400;}
   .attach-row .btns{flex:0 0 auto;margin-inline-start:auto;}
 
+  .poa-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;}
+  .poa-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .poa-card-name{flex:1;min-width:0;font-weight:800;font-size:15px;color:var(--navy);overflow-wrap:anywhere;cursor:pointer;}
+  .poa-mini{padding:7px 12px !important;font-size:12.5px !important;white-space:nowrap;}
+  .poa-nofile{font-size:12.5px;color:var(--navy-dim);padding:4px 2px;}
+  .poa-card .attach-list{margin-top:0;}
+  .poa-import{background:#fff8dc;border:1.5px dashed #e6c84a;border-radius:16px;padding:12px;margin-bottom:12px;}
+  .poa-import .ttl{font-weight:800;color:var(--navy);margin-bottom:8px;}
+  .poa-import input[type=text]{width:100%;margin-bottom:8px;}
+
   .reminder-row{
     display:flex;align-items:center;gap:12px;
     background:#fff;border:1.5px solid var(--line);border-radius:16px;
@@ -649,16 +669,16 @@
     <div class="today-badge" id="todayBadge"></div>
   </div>
   <nav class="tabs" id="tabsNav">
-    <button data-tab="home" class="active">الرئيسية</button>
-    <button data-tab="trip">تسجيل مشوار</button>
-    <button data-tab="log">سجل المشاوير</button>
-    <button data-tab="clients">العملاء</button>
-    <button data-tab="poas">التوكيلات</button>
-    <button data-tab="cash">الحساب مع صاحب المكتب</button>
-    <button data-tab="alerts">التنبيهات</button>
-    <button data-tab="chat">الشات <span id="chatUnreadDot" style="display:none;"></span></button>
-    <button data-tab="owner" id="ownerTabBtn" style="display:none;">لوحة صاحب المكتب</button>
-    <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;">عُهد العملاء</button>
+    <button data-tab="home" class="active"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="lbl">الرئيسية</span></button>
+    <button data-tab="trip"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span class="lbl">تسجيل مشوار</span></button>
+    <button data-tab="log"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><span class="lbl">سجل المشاوير</span></button>
+    <button data-tab="clients"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.6 3-6 7-6s7 2.4 7 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.8 0 5 1.8 5 4.5"/></svg></span><span class="lbl">العملاء</span></button>
+    <button data-tab="poas"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">التوكيلات</span></button>
+    <button data-tab="cash"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></svg></span><span class="lbl">الحساب مع صاحب المكتب</span></button>
+    <button data-tab="alerts"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="lbl">التنبيهات</span></button>
+    <button data-tab="chat"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span><span class="lbl">الشات <span id="chatUnreadDot" style="display:none;"></span></span></button>
+    <button data-tab="owner" id="ownerTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span><span class="lbl">لوحة صاحب المكتب</span></button>
+    <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg></span><span class="lbl">عُهد العملاء</span></button>
   </nav>
 </header>
 
@@ -1080,6 +1100,7 @@
         <div class="row-actions" style="margin-top:0;margin-bottom:8px;">
           <button class="act btn-ghost btn-small" onclick="showPoaLetters()">‹ رجوع للحروف</button>
         </div>
+        <div id="poaLetterImport"></div>
         <div id="poaLetterResultsList"></div>
       </div>
 
@@ -2914,6 +2935,8 @@ function toggleClientDocs(id){
 const POA_LETTERS = ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
 let poasCache = [];
 let currentPoaId = null;
+let currentPoaLetter = null;
+const poaFilesCache = {};
 
 function poasCol(){
   if(!currentOfficeId) return null;
@@ -2969,40 +2992,103 @@ function renderPoaLettersGrid(){
 }
 
 function showPoaLetters(){
+  currentPoaLetter = null;
   document.getElementById('poaLettersGrid').style.display = 'grid';
   document.getElementById('poaLetterResults').style.display = 'none';
   document.getElementById('poaSearchResults').style.display = 'none';
   document.getElementById('poaSearch').value = '';
 }
 
-function poaListRowsHtml(items, emptyMsg){
-  if(!items.length) return `<div class="empty">${emptyMsg}</div>`;
-  return items.map(p => `
-    <div class="chat-emp-row" onclick="openPoaDetail('${p.id}')">
-      <div class="left">
-        <div class="chat-emp-avatar">${escapeHtml((p.name||'؟').charAt(0).toUpperCase())}</div>
-        <div class="info"><div class="name">${escapeHtml(p.name)}</div></div>
-      </div>
-    </div>
-  `).join('');
+async function renderPoaCards(items, emptyMsg, targetEl){
+  if(!items.length){ targetEl.innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
+  targetEl.innerHTML = '<div class="empty" style="padding:14px;">جارٍ التحميل...</div>';
+  const all = await Promise.all(items.map(p => getFilesForPoa(p.id).catch(()=>[])));
+  targetEl.innerHTML = items.map((p,i) => {
+    const files = all[i]; poaFilesCache[p.id] = files;
+    const rows = files.length ? files.map(f => `
+      <div class="attach-row">
+        <div class="info"><div class="fname">${f.fileType==='pdf'?'📕':'🖼️'} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+        <div class="btns" style="display:flex;gap:6px;">
+          <button class="act btn-primary btn-small" onclick="downloadPoaFile('${p.id}','${f.id}')">تحميل</button>
+          <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaFile('${f.id}','${p.id}'))">حذف</button>
+        </div>
+      </div>`).join('') : '<div class="poa-nofile">لسه مفيش ملف للتوكيل ده</div>';
+    return `
+      <div class="poa-card">
+        <div class="poa-card-head">
+          <div class="poa-card-name" onclick="openPoaDetail('${p.id}')">${escapeHtml(p.name)}</div>
+          <label class="file-upload-btn poa-mini" for="poaImp_${p.id}">＋ استيراد</label>
+          <input type="file" id="poaImp_${p.id}" accept="image/*,application/pdf" multiple style="display:none;" onchange="handlePoaFileUpload(this,'${p.id}')">
+        </div>
+        <div class="attach-list">${rows}</div>
+      </div>`;
+  }).join('');
 }
 
-function openPoaLetter(letter){
+function downloadPoaFile(poaId, fileId){
+  const f = (poaFilesCache[poaId]||[]).find(x=>x.id===fileId);
+  if(!f) return;
+  let n = f.name || 'file';
+  if(!/\.[a-z0-9]{2,4}$/i.test(n)) n += (f.fileType==='pdf' ? '.pdf' : '.jpg');
+  const a = document.createElement('a');
+  a.href = f.dataUrl; a.download = n;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function openPoaLetter(letter){
+  currentPoaLetter = letter;
   const items = poasCache.filter(p=>normalizePoaLetter(p.name)===letter).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
   document.getElementById('poaLettersGrid').style.display = 'none';
   document.getElementById('poaSearchResults').style.display = 'none';
   document.getElementById('poaLetterResults').style.display = 'block';
-  document.getElementById('poaLetterResultsList').innerHTML = poaListRowsHtml(items, `مفيش توكيلات بحرف "${letter}"`);
+  document.getElementById('poaLetterImport').innerHTML = `
+    <div class="poa-import">
+      <div class="ttl">استيراد توكيل جديد بحرف "${letter}"</div>
+      <input type="text" id="poaImportName" value="${letter}" placeholder="اسم صاحب التوكيل">
+      <label class="file-upload-btn" for="poaImportFile">📎 استيراد صورة أو PDF</label>
+      <input type="file" id="poaImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="importPoaToLetter(this)">
+    </div>`;
+  await renderPoaCards(items, `مفيش توكيلات بحرف "${letter}"`, document.getElementById('poaLetterResultsList'));
+}
+
+async function importPoaToLetter(inputEl){
+  const name = (document.getElementById('poaImportName').value || '').trim();
+  if(!inputEl.files.length) return;
+  if(!name || normalizePoaLetter(name) !== currentPoaLetter){
+    alert('اكتب اسم صاحب التوكيل وابدأه بحرف "' + currentPoaLetter + '"');
+    inputEl.value = ''; return;
+  }
+  const col = poasCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+  try{
+    const existing = poasCache.find(p=>(p.name||'').trim() === name);
+    const poaId = existing ? existing.id : (await col.add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
+    await handlePoaFileUpload(inputEl, poaId);
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+async function refreshPoaLetterView(){
+  const col = poasCol();
+  if(col){
+    const snap = await col.orderBy('name').get();
+    poasCache = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+    renderPoaLettersGrid();
+  }
+  if(currentPoaLetter){ await openPoaLetter(currentPoaLetter); }
+  else if((document.getElementById('poaSearch').value||'').trim()){ renderPoaSearch(); }
 }
 
 function renderPoaSearch(){
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
   if(!q){ showPoaLetters(); return; }
+  currentPoaLetter = null;
   document.getElementById('poaLettersGrid').style.display = 'none';
   document.getElementById('poaLetterResults').style.display = 'none';
   document.getElementById('poaSearchResults').style.display = 'block';
   const filtered = poasCache.filter(p=>(p.name||'').toLowerCase().includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
-  document.getElementById('poaSearchResultsList').innerHTML = poaListRowsHtml(filtered, 'مفيش توكيل باسم كده');
+  renderPoaCards(filtered, 'مفيش توكيل باسم كده', document.getElementById('poaSearchResultsList'));
 }
 
 async function addPoa(){
@@ -3082,9 +3168,10 @@ async function renderPoaFilesList(){
   `).join('');
 }
 
-async function handlePoaFileUpload(inputEl){
-  if(!currentPoaId || !inputEl.files.length) return;
-  const col = poaFilesCol(currentPoaId);
+async function handlePoaFileUpload(inputEl, poaIdArg){
+  const poaId = poaIdArg || currentPoaId;
+  if(!poaId || !inputEl.files.length) return;
+  const col = poaFilesCol(poaId);
   if(!col) return;
   for(const file of Array.from(inputEl.files)){
     const isPdf = file.type === 'application/pdf';
@@ -3111,7 +3198,7 @@ async function handlePoaFileUpload(inputEl){
     }
   }
   inputEl.value = '';
-  renderPoaFilesList();
+  if(poaIdArg) await refreshPoaLetterView(); else renderPoaFilesList();
 }
 
 async function viewPoaFile(fileId){
@@ -3126,11 +3213,11 @@ async function viewPoaFile(fileId){
   }
 }
 
-async function deletePoaFile(fileId){
-  const col = poaFilesCol(currentPoaId);
+async function deletePoaFile(fileId, poaIdArg){
+  const col = poaFilesCol(poaIdArg || currentPoaId);
   if(!col) return;
   await col.doc(fileId).delete();
-  renderPoaFilesList();
+  if(poaIdArg) await refreshPoaLetterView(); else renderPoaFilesList();
 }
 
 /* ---------- TRIPS ---------- */
