@@ -876,7 +876,7 @@
 
     <div id="clientsCategoryHubView" style="display:none;">
       <div class="row-actions" style="margin-bottom:8px;">
-        <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+        <button class="act btn-ghost btn-small" onclick="showClientsListForCategory(clientCategoryHubCat)">‹ رجوع</button>
       </div>
       <h2 id="categoryHubTitle" style="text-align:center;"></h2>
       <div class="landing-cats">
@@ -892,7 +892,7 @@
         <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
       </div>
       <h2 id="categorySectionTitle" style="text-align:center;"></h2>
-      <div class="empty">القسم ده لسه هيتحدد شكله لاحقًا</div>
+      <div id="categorySectionBody"></div>
     </div>
 
     <div id="clientsTaxYearsView" style="display:none;">
@@ -3000,8 +3000,24 @@ function startNewClient(cat){
   if(nameEl) nameEl.focus();
 }
 let clientCategoryHubCat = '';
+let currentClientHubId = null;
+
 function openClientCategoryList(cat){
   showClientsListForCategory(cat);
+}
+
+function openClientHub(clientId){
+  currentClientHubId = clientId;
+  const c = loadClients().find(x=>x.id===clientId);
+  if(c && c.category) clientCategoryHubCat = c.category;
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'block';
+  document.getElementById('categoryHubTitle').textContent = c ? c.name : '';
 }
 function showClientsCategoryHub(){
   document.getElementById('clientsLandingView').style.display = 'none';
@@ -3015,19 +3031,75 @@ function showClientsCategoryHub(){
 const TAX_YEARS = ['2020','2021','2022','2023','2024','2025','2026','2027'];
 let currentTaxSection = '';
 function openCategorySection(section){
-  if(section === 'بيانات المنشأة'){ showClientsListForCategory(clientCategoryHubCat); return; }
+  if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
   if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
+  if(section === 'مستندات'){ renderClientDocsSection(); return; }
+}
+
+function renderClientInfoSection(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'block';
-  document.getElementById('categorySectionTitle').textContent = clientCategoryHubCat + ' — ' + section;
+  document.getElementById('categorySectionTitle').textContent = 'بيانات المنشأة';
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  const body = document.getElementById('categorySectionBody');
+  if(!c){ body.innerHTML = '<div class="empty">العميل ده مش موجود</div>'; return; }
+  const rows = [
+    ['السمة التجارية', c.tradeName], ['نوع الشركة', c.companyType],
+    ['رقم التسجيل الضريبي', c.taxRegNo], ['المأمورية', c.taxOffice],
+    ['مكتب السجل التجاري', c.crOffice], ['رقم السجل التجاري', c.crNo],
+    ['تاريخ انتهاء السجل التجاري', c.crExpiry], ['تاريخ انتهاء البطاقة الضريبية', c.taxCardExpiry],
+    ['تاريخ انتهاء شهادة القيمة المضافة', c.vatExpiry], ['تاريخ انتهاء التوكن', c.tokenExpiry],
+    ['رقم الهاتف', c.phone]
+  ];
+  body.innerHTML = rows.map(r => `<div class="cd-info-row"><span>${escapeHtml(r[0])}</span><span>${escapeHtml(r[1])||'—'}</span></div>`).join('')
+    + `<div class="row-actions"><button class="act btn-primary" onclick="editClientFromHub()">✏️ تعديل بيانات المنشأة</button></div>`;
+}
+function editClientFromHub(){
+  const id = currentClientHubId;
+  showClientsForm();
+  editClient(id);
+}
+
+async function renderClientDocsSection(){
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'block';
+  document.getElementById('categorySectionTitle').textContent = 'مستندات';
+  const body = document.getElementById('categorySectionBody');
+  body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  let files = [];
+  try{ files = (await getFilesForClient(currentClientHubId)).filter(f => (f.folder||'general') === 'general'); }catch(e){}
+  body.innerHTML = `
+    <div class="attach-box" style="margin:0;">
+      <label class="file-upload-btn" for="clientHubDocsInput">📎 اختيار ملف</label>
+      <input type="file" id="clientHubDocsInput" multiple style="display:none;" onchange="uploadClientHubDoc(this)">
+      <div class="attach-list">${clientHubFileRows(files) || '<div class="empty" style="padding:14px;">مفيش مستندات مرفوعة لسه</div>'}</div>
+    </div>`;
+}
+function clientHubFileRows(files){
+  return files.map(f => `
+    <div class="attach-row">
+      <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${currentClientHubId}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${currentClientHubId}').then(renderClientDocsSection))">حذف</button>
+      </div>
+    </div>`).join('');
+}
+async function uploadClientHubDoc(inputEl){
+  if(!inputEl.files.length) return;
+  try{ await addFilesToClient(currentClientHubId, inputEl.files, 'general'); }
+  catch(err){ alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف')); }
+  inputEl.value = '';
+  renderClientDocsSection();
 }
 
 function openTaxYearsList(section){
   currentTaxSection = section;
+  const c = loadClients().find(x=>x.id===currentClientHubId);
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
   document.getElementById('clientsTaxYearsView').style.display = 'block';
-  document.getElementById('taxYearsTitle').textContent = clientCategoryHubCat + ' — ' + section;
+  document.getElementById('taxYearsTitle').textContent = (c ? c.name : '') + ' — ' + section;
   document.getElementById('taxYearsList').innerHTML = TAX_YEARS.map(y =>
     `<button type="button" class="year-btn" onclick="openTaxYear('${y}')">${y}</button>`
   ).join('');
@@ -3052,16 +3124,17 @@ function taxFileIcon(f){
 function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
 function taxYearFilesCol(){
   const col = poasCol();
-  if(!col || !clientCategoryHubCat || !currentTaxSection || !currentTaxYear) return null;
-  const docId = 'taxyear_' + clientCategoryHubCat + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
+  if(!col || !currentClientHubId || !currentTaxSection || !currentTaxYear) return null;
+  const docId = 'taxyear_' + currentClientHubId + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
   return col.doc(docId).collection('files');
 }
 
 function openTaxYear(year){
   currentTaxYear = year;
+  const c = loadClients().find(x=>x.id===currentClientHubId);
   document.getElementById('clientsTaxYearsView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'block';
-  document.getElementById('taxYearDetailTitle').textContent = clientCategoryHubCat + ' — ' + currentTaxSection + ' — ' + year;
+  document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + currentTaxSection + ' — ' + year;
   renderTaxYearFilesList();
 }
 
@@ -3177,12 +3250,12 @@ async function renderClientsTab(){
   body.innerHTML = clients.map(c => `
     <div class="poa-row" style="flex-wrap:wrap;align-items:flex-start;">
       <div class="info" style="flex:1 1 220px;min-width:0;">
-        <div class="poa-card-name" style="cursor:pointer;" onclick="openClientDetail('${c.id}')">${escapeHtml(c.name)} ${anyWarn(c)?'⚠️':''}</div>
+        <div class="poa-card-name" style="cursor:pointer;" onclick="openClientHub('${c.id}')">${escapeHtml(c.name)} ${anyWarn(c)?'⚠️':''}</div>
         <div style="font-size:12.5px;color:var(--navy-dim);margin-top:2px;">
           ${escapeHtml(c.tradeName) || ''}${c.tradeName && c.phone ? ' · ' : ''}${escapeHtml(c.phone) || ''}
         </div>
       </div>
-      <button class="act btn-ghost btn-small" onclick="openClientDetail('${c.id}')">تفاصيل</button>
+      <button class="act btn-ghost btn-small" onclick="openClientHub('${c.id}')">تفاصيل</button>
       <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
       <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
     </div>`).join('');
