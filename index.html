@@ -909,7 +909,7 @@
       </div>
       <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
       <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
-      <input type="file" id="taxYearImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
+      <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
     </div>
     <div id="clientsFormView" style="display:none;">
@@ -3054,6 +3054,16 @@ function showTaxYearsList(){
 }
 
 let currentTaxYear = '';
+function taxFileIcon(f){
+  const t = f.type || '';
+  const n = (f.name || '').toLowerCase();
+  if(t.startsWith('image/')) return '🖼️';
+  if(t === 'application/pdf' || n.endsWith('.pdf')) return '📕';
+  if(t.includes('word') || n.endsWith('.doc') || n.endsWith('.docx')) return '📄';
+  if(t.includes('excel') || t.includes('spreadsheet') || n.endsWith('.xls') || n.endsWith('.xlsx')) return '📊';
+  if(t.includes('powerpoint') || t.includes('presentation') || n.endsWith('.ppt') || n.endsWith('.pptx')) return '📽️';
+  return '📎';
+}
 function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
 function taxYearFilesCol(){
   const col = poasCol();
@@ -3080,7 +3090,7 @@ async function renderTaxYearFilesList(){
   if(!files.length){ listEl.innerHTML = '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة لسنة ' + currentTaxYear + ' لسه</div>'; return; }
   listEl.innerHTML = files.map(f => `
     <div class="attach-row">
-      <div class="info"><div class="fname">${(f.type||'').startsWith('image/')?'🖼️':'📕'} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="info"><div class="fname">${taxFileIcon(f)} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
       <div class="btns" style="display:flex;gap:6px;">
         <button class="act btn-primary btn-small" onclick="downloadTaxYearFile('${f.id}')">تحميل</button>
         <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteTaxYearFile('${f.id}'))">حذف</button>
