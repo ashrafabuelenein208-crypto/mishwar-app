@@ -873,6 +873,27 @@
         <button class="act btn-ghost" onclick="showClientsList()">عرض كل العملاء</button>
       </div>
     </div>
+
+    <div id="clientsCategoryHubView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+      </div>
+      <h2 id="categoryHubTitle" style="text-align:center;"></h2>
+      <div class="landing-cats">
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('بيانات المنشأة')">بيانات المنشأة</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
+      </div>
+    </div>
+
+    <div id="clientsCategorySectionView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
+      </div>
+      <h2 id="categorySectionTitle" style="text-align:center;"></h2>
+      <div class="empty">القسم ده لسه هيتحدد شكله لاحقًا</div>
+    </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
       <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
@@ -2973,24 +2994,45 @@ function startNewClient(cat){
   const nameEl = document.getElementById('cName');
   if(nameEl) nameEl.focus();
 }
+let clientCategoryHubCat = '';
 function openClientCategoryList(cat){
-  showClientsList();
-  setClientCatFilter(cat);
+  clientCategoryHubCat = cat;
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'block';
+  document.getElementById('categoryHubTitle').textContent = cat;
+}
+function showClientsCategoryHub(){
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'block';
+}
+function openCategorySection(section){
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'block';
+  document.getElementById('categorySectionTitle').textContent = clientCategoryHubCat + ' — ' + section;
 }
 function showClientsForm(){
   document.getElementById('clientsLandingView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'block';
 }
 function showClientsList(){
   document.getElementById('clientsLandingView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'block';
   renderClientsTab();
 }
 function showClientsLanding(){
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsLandingView').style.display = 'block';
 }
 
