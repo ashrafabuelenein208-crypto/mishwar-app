@@ -2996,6 +2996,9 @@ function openClientCategoryList(cat){
   document.getElementById('categoryHubTitle').textContent = cat;
 }
 function showClientsCategoryHub(){
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'block';
 }
