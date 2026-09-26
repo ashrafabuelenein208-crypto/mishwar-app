@@ -626,7 +626,8 @@
   .cd-year.open .cd-year-body{display:block;}
   .cd-year-count{font-size:12.5px;font-weight:700;color:var(--navy-dim);}
   .cat-badge{font-size:12.5px;background:var(--bronze-soft);color:#8a6f00;padding:3px 10px;border-radius:999px;margin-right:8px;font-weight:800;}
-  .add-title-pill{background:var(--navy);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;}
+  .add-title-pill{display:block;width:100%;background:var(--navy);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;border:none;cursor:pointer;}
+  .add-title-pill:active{filter:brightness(1.1);}
   .landing-cats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:920px;margin:0 auto;}
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
@@ -862,7 +863,7 @@
   <!-- CLIENTS -->
   <div class="panel" id="panel-clients">
     <div id="clientsLandingView">
-      <div class="add-title-pill">اضافة منشأة</div>
+      <button type="button" class="add-title-pill" onclick="startNewClient('')">اضافة منشأة</button>
       <div class="landing-cats">
         <button type="button" class="landing-cat-btn" onclick="startNewClient('شركات')">شركات</button>
         <button type="button" class="landing-cat-btn" onclick="startNewClient('فردي')">فردي</button>
@@ -877,7 +878,15 @@
       <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
     </div>
     <section>
-      <h2>إضافة / تعديل عميل <span id="formCategoryBadge" class="cat-badge" style="display:none;"></span></h2>
+      <h2>إضافة / تعديل عميل</h2>
+      <div class="field" style="margin-bottom:14px;">
+        <label>نوع المنشأة</label>
+        <div class="cat-choice" id="cCategoryChoice">
+          <button type="button" class="cat-btn" data-cat="فردي" onclick="pickClientCategory('فردي')">فردي</button>
+          <button type="button" class="cat-btn" data-cat="شركات" onclick="pickClientCategory('شركات')">شركات</button>
+          <button type="button" class="cat-btn" data-cat="غير مسجل" onclick="pickClientCategory('غير مسجل')">غير مسجل</button>
+        </div>
+      </div>
       <div class="grid2">
         <div class="field">
           <label>اسم الشركة</label>
@@ -2955,11 +2964,7 @@ function setClientCatFilter(cat){
 let cClientCategory = '';
 function pickClientCategory(cat){
   cClientCategory = cat;
-  const badge = document.getElementById('formCategoryBadge');
-  if(badge){
-    if(cat){ badge.textContent = cat; badge.style.display = 'inline-block'; }
-    else { badge.style.display = 'none'; }
-  }
+  document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
 }
 function startNewClient(cat){
   resetClientForm();
