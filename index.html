@@ -1028,14 +1028,7 @@
       <div class="search-box">
         <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
       </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>الاسم</th><th>النوع</th><th>السمة التجارية</th><th>نوع الشركة</th><th>رقم التسجيل الضريبي</th><th>المأمورية</th><th>مكتب السجل التجاري</th><th>رقم السجل التجاري</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>التليفون</th><th>المستندات</th><th></th></tr>
-          </thead>
-          <tbody id="clientsBody"></tbody>
-        </table>
-      </div>
+      <div id="clientsBody"></div>
       <div class="empty" id="clientsEmpty" style="display:none;">مفيش عملاء مسجلين لسه</div>
     </section>
     </div>
@@ -3188,67 +3181,21 @@ async function renderClientsTab(){
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
 
-  const rowsHtml = await Promise.all(clients.map(async c => {
-    let count = 0;
-    try{ count = (await getFilesForClient(c.id)).length; }catch(e){ count = 0; }
-    const isOpen = openClientDocsId === c.id;
-    let docsCellHtml = '';
-    if(isOpen){
-      let files = [];
-      try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
-      const fileRows = files.map(f => `
-        <div class="attach-row">
-          <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
-          <div class="btns" style="display:flex;gap:6px;">
-            <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
-            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}'))">حذف</button>
-          </div>
+  const anyWarn = c => isExpiringSoon(c.crExpiry) || isExpiringSoon(c.taxCardExpiry) || isExpiringSoon(c.vatExpiry) || isExpiringSoon(c.tokenExpiry);
+  body.innerHTML = clients.map(c => `
+    <div class="poa-row" style="flex-wrap:wrap;align-items:flex-start;">
+      <div class="info" style="flex:1 1 220px;min-width:0;">
+        <div class="poa-card-name" style="cursor:pointer;" onclick="openClientDetail('${c.id}')">${escapeHtml(c.name)} ${anyWarn(c)?'⚠️':''}</div>
+        <div style="font-size:12.5px;color:var(--navy-dim);margin-top:2px;">
+          ${escapeHtml(c.tradeName) || ''}${c.tradeName && c.phone ? ' · ' : ''}${escapeHtml(c.phone) || ''}
         </div>
-      `).join('');
-      docsCellHtml = `
-        <tr>
-          <td colspan="15">
-            <div class="attach-box" style="margin:0;">
-              <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
-              <div class="attach-list">
-                ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
-              </div>
-            </div>
-          </td>
-        </tr>`;
-    }
-    return `
-    <tr>
-      <td><a href="javascript:void(0)" onclick="openClientDetail('${c.id}')" style="color:var(--navy);font-weight:800;text-decoration:underline;">${escapeHtml(c.name)}</a></td>
-      <td>${escapeHtml(c.category)||'—'}</td>
-      <td>${escapeHtml(c.tradeName)||'—'}</td>
-      <td>${escapeHtml(c.companyType)||'—'}</td>
-      <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
-      <td>${escapeHtml(c.taxOffice)||'—'}</td>
-      <td>${escapeHtml(c.crOffice)||'—'}</td>
-      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
-      <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
-      <td class="num">${escapeHtml(c.phone)||'—'}</td>
-      <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
-      <td>
-        <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
-        <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
-      </td>
-    </tr>
-    ${docsCellHtml}`;
-  }));
-
-  body.innerHTML = rowsHtml.join('');
+      </div>
+      <button class="act btn-ghost btn-small" onclick="openClientDetail('${c.id}')">تفاصيل</button>
+      <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
+      <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
+    </div>`).join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
-
-function toggleClientDocs(id){
-  openClientDocsId = (openClientDocsId === id) ? null : id;
-  renderClientsTab();
-}
 
 /* ---------- CLIENT POWERS OF ATTORNEY (TOKALAT) ---------- */
 const POA_LETTERS = ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
