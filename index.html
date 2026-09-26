@@ -865,9 +865,9 @@
     <div id="clientsLandingView">
       <button type="button" class="add-title-pill" onclick="startNewClient('')">اضافة منشأة</button>
       <div class="landing-cats">
-        <button type="button" class="landing-cat-btn" onclick="startNewClient('شركات')">شركات</button>
-        <button type="button" class="landing-cat-btn" onclick="startNewClient('فردي')">فردي</button>
-        <button type="button" class="landing-cat-btn" onclick="startNewClient('غير مسجل')">غير مسجل</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('شركات')">شركات</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('فردي')">فردي</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
       </div>
       <div class="row-actions" style="margin-top:20px;justify-content:center;">
         <button class="act btn-ghost" onclick="showClientsList()">عرض كل العملاء</button>
@@ -2972,6 +2972,10 @@ function startNewClient(cat){
   showClientsForm();
   const nameEl = document.getElementById('cName');
   if(nameEl) nameEl.focus();
+}
+function openClientCategoryList(cat){
+  showClientsList();
+  setClientCatFilter(cat);
 }
 function showClientsForm(){
   document.getElementById('clientsLandingView').style.display = 'none';
