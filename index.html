@@ -604,6 +604,28 @@
   #newClientModal .ncm-name{ color:var(--bronze); }
   #newClientModal .ncm-sub{ font-size:13px; color:#666; margin-bottom:16px; }
 
+  .cat-choice{display:flex;gap:10px;flex-wrap:wrap;}
+  .cat-btn{flex:1;min-width:100px;padding:12px 10px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:var(--navy);}
+  .cat-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .cat-filter{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .cat-filter button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  #clientDetailModal{position:fixed;inset:0;background:rgba(10,20,40,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+  .cd-box{background:#fff;border-radius:18px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+  .cd-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1.5px solid var(--line);}
+  .cd-head .cd-title{font-weight:900;font-size:17px;color:var(--navy);}
+  .cd-tabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap;border-bottom:1.5px solid var(--line);}
+  .cd-tab{padding:10px 14px;border:none;background:transparent;font-weight:800;font-size:13.5px;color:var(--navy-dim);cursor:pointer;border-bottom:3px solid transparent;}
+  .cd-tab.active{color:var(--navy);border-bottom-color:var(--navy);}
+  .cd-body{padding:16px 18px;overflow-y:auto;flex:1;}
+  .cd-info-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .cd-info-row span:first-child{color:var(--navy-dim);font-weight:700;}
+  .cd-info-row span:last-child{font-weight:800;color:var(--navy);text-align:left;overflow-wrap:anywhere;}
+  .cd-year{border:1.5px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+  .cd-year-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;background:#f7f8fb;font-weight:900;color:var(--navy);}
+  .cd-year-body{padding:12px 14px;display:none;}
+  .cd-year.open .cd-year-body{display:block;}
+  .cd-year-count{font-size:12.5px;font-weight:700;color:var(--navy-dim);}
+
 </style>
 </head>
 <body>
@@ -615,6 +637,22 @@
   <div class="lightbox-actions">
     <button class="lb-download" onclick="downloadLightboxImage()">تحميل الصورة</button>
     <button class="lb-close" onclick="closeImgLightbox()">إغلاق</button>
+  </div>
+</div>
+
+<div id="clientDetailModal">
+  <div class="cd-box">
+    <div class="cd-head">
+      <div class="cd-title" id="cdClientName">—</div>
+      <button class="act btn-ghost btn-small" onclick="closeClientDetail()">إغلاق ✕</button>
+    </div>
+    <div class="cd-tabs">
+      <button class="cd-tab active" data-t="info" onclick="switchClientDetailTab('info')">بيانات المنشأة</button>
+      <button class="cd-tab" data-t="income" onclick="switchClientDetailTab('income')">ضرائب دخل</button>
+      <button class="cd-tab" data-t="vat" onclick="switchClientDetailTab('vat')">ضرائب قيمة مضافة</button>
+      <button class="cd-tab" data-t="docs" onclick="switchClientDetailTab('docs')">مستندات</button>
+    </div>
+    <div class="cd-body" id="cdBody"></div>
   </div>
 </div>
 
@@ -819,6 +857,14 @@
   <div class="panel" id="panel-clients">
     <section>
       <h2>إضافة / تعديل عميل</h2>
+      <div class="field" style="margin-bottom:14px;">
+        <label>نوع المنشأة</label>
+        <div class="cat-choice" id="cCategoryChoice">
+          <button type="button" class="cat-btn" data-cat="فردي" onclick="pickClientCategory('فردي')">فردي</button>
+          <button type="button" class="cat-btn" data-cat="شركات" onclick="pickClientCategory('شركات')">شركات</button>
+          <button type="button" class="cat-btn" data-cat="غير مسجل" onclick="pickClientCategory('غير مسجل')">غير مسجل</button>
+        </div>
+      </div>
       <div class="grid2">
         <div class="field">
           <label>اسم الشركة</label>
@@ -913,13 +959,19 @@
 
     <section>
       <h2>كل العملاء</h2>
+      <div class="cat-filter" id="clientCatFilter">
+        <button class="act btn-ghost btn-small active" data-cat="" onclick="setClientCatFilter('')">الكل</button>
+        <button class="act btn-ghost btn-small" data-cat="فردي" onclick="setClientCatFilter('فردي')">فردي</button>
+        <button class="act btn-ghost btn-small" data-cat="شركات" onclick="setClientCatFilter('شركات')">شركات</button>
+        <button class="act btn-ghost btn-small" data-cat="غير مسجل" onclick="setClientCatFilter('غير مسجل')">غير مسجل</button>
+      </div>
       <div class="search-box">
         <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
       </div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>الاسم</th><th>السمة التجارية</th><th>نوع الشركة</th><th>رقم التسجيل الضريبي</th><th>المأمورية</th><th>مكتب السجل التجاري</th><th>رقم السجل التجاري</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>التليفون</th><th>المستندات</th><th></th></tr>
+            <tr><th>الاسم</th><th>النوع</th><th>السمة التجارية</th><th>نوع الشركة</th><th>رقم التسجيل الضريبي</th><th>المأمورية</th><th>مكتب السجل التجاري</th><th>رقم السجل التجاري</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>التليفون</th><th>المستندات</th><th></th></tr>
           </thead>
           <tbody id="clientsBody"></tbody>
         </table>
@@ -2694,10 +2746,12 @@ let editingClientId = null;
 function saveClient(){
   const name = document.getElementById('cName').value.trim();
   if(!name){ document.getElementById('cName').focus(); return; }
+  if(!cClientCategory){ alert('اختار نوع المنشأة الأول: فردي / شركات / غير مسجل'); return; }
   const col = officeClientsCol();
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   const data = {
     name,
+    category: cClientCategory,
     tradeName: document.getElementById('cTradeName').value.trim(),
     taxOffice: document.getElementById('cTaxOffice').value.trim(),
     phone: document.getElementById('cPhone').value.trim(),
@@ -2719,6 +2773,7 @@ function saveClient(){
 
 function resetClientForm(){
   editingClientId = null;
+  pickClientCategory('');
   document.getElementById('cName').value = '';
   document.getElementById('cTradeName').value = '';
   document.getElementById('cTaxOffice').value = '';
@@ -2739,6 +2794,7 @@ function editClient(id){
   const c = loadClients().find(x=>x.id===id);
   if(!c) return;
   editingClientId = id;
+  pickClientCategory(c.category || '');
   document.getElementById('cName').value = c.name;
   document.getElementById('cTradeName').value = c.tradeName || '';
   document.getElementById('cTaxOffice').value = c.taxOffice || '';
@@ -2870,10 +2926,21 @@ function isExpiringSoon(dateStr){
 }
 
 let openClientDocsId = null;
+let clientCatFilter = '';
+function setClientCatFilter(cat){
+  clientCatFilter = cat;
+  document.querySelectorAll('#clientCatFilter button').forEach(b=>b.classList.toggle('active', (b.dataset.cat||'')===cat));
+  renderClientsTab();
+}
+let cClientCategory = '';
+function pickClientCategory(cat){
+  cClientCategory = cat;
+  document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
+}
 
 async function renderClientsTab(){
   const q = (document.getElementById('clientListSearch').value || '').trim().toLowerCase();
-  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const clients = loadClients().filter(c => c.name.toLowerCase().includes(q) && (!clientCatFilter || c.category===clientCatFilter)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
   const body = document.getElementById('clientsBody');
   const empty = document.getElementById('clientsEmpty');
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
@@ -2898,7 +2965,7 @@ async function renderClientsTab(){
       `).join('');
       docsCellHtml = `
         <tr>
-          <td colspan="14">
+          <td colspan="15">
             <div class="attach-box" style="margin:0;">
               <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
               <div class="attach-list">
@@ -2910,7 +2977,8 @@ async function renderClientsTab(){
     }
     return `
     <tr>
-      <td>${escapeHtml(c.name)}</td>
+      <td><a href="javascript:void(0)" onclick="openClientDetail('${c.id}')" style="color:var(--navy);font-weight:800;text-decoration:underline;">${escapeHtml(c.name)}</a></td>
+      <td>${escapeHtml(c.category)||'—'}</td>
       <td>${escapeHtml(c.tradeName)||'—'}</td>
       <td>${escapeHtml(c.companyType)||'—'}</td>
       <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
@@ -3702,7 +3770,7 @@ async function getFilesForClient(clientId){
   return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
 }
 
-async function addFilesToClient(clientId, fileList){
+async function addFilesToClient(clientId, fileList, folder){
   const col = clientDocsCol(clientId);
   if(!col) return;
   for(const file of Array.from(fileList)){
@@ -3726,6 +3794,7 @@ async function addFilesToClient(clientId, fileList){
       size: dataUrl.length,
       date: todayStr(),
       dataUrl,
+      folder: folder || 'general',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
@@ -3735,7 +3804,8 @@ async function deleteClientFile(id, clientId){
   const col = clientDocsCol(clientId);
   if(!col) return;
   await col.doc(id).delete();
-  renderClientsTab();
+  if(cdClientId === clientId) renderClientDetailBody();
+  else renderClientsTab();
 }
 
 function fmtSize(bytes){
@@ -3754,6 +3824,115 @@ async function handleFileUploadInClientsTab(clientId, inputEl){
   inputEl.value = '';
   renderClientsTab();
 }
+
+
+/* ---------- CLIENT DETAIL MODAL (بيانات المنشأة / ضرائب دخل / ضرائب قيمة مضافة / مستندات) ---------- */
+let cdClientId = null;
+let cdActiveTab = 'info';
+let cdOpenYears = new Set();
+const CD_YEARS = [2027,2026,2025,2024,2023,2022,2021,2020];
+
+function openClientDetail(id){
+  cdClientId = id;
+  cdActiveTab = 'info';
+  document.querySelectorAll('.cd-tabs .cd-tab').forEach(b=>b.classList.toggle('active', b.dataset.t==='info'));
+  document.getElementById('clientDetailModal').style.display = 'flex';
+  renderClientDetailBody();
+}
+function closeClientDetail(){
+  document.getElementById('clientDetailModal').style.display = 'none';
+  cdClientId = null;
+}
+function switchClientDetailTab(tab){
+  cdActiveTab = tab;
+  document.querySelectorAll('.cd-tabs .cd-tab').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
+  renderClientDetailBody();
+}
+function editClientFromDetail(){
+  const id = cdClientId;
+  closeClientDetail();
+  activateTab('clients');
+  editClient(id);
+}
+async function renderClientDetailBody(){
+  const body = document.getElementById('cdBody');
+  const c = loadClients().find(x=>x.id===cdClientId);
+  if(!c){ body.innerHTML = '<div class="empty">العميل ده مش موجود</div>'; return; }
+  document.getElementById('cdClientName').textContent = c.name + (c.category ? ' — ' + c.category : '');
+  if(cdActiveTab === 'info'){
+    const rows = [
+      ['السمة التجارية', c.tradeName], ['نوع الشركة', c.companyType],
+      ['رقم التسجيل الضريبي', c.taxRegNo], ['المأمورية', c.taxOffice],
+      ['مكتب السجل التجاري', c.crOffice], ['رقم السجل التجاري', c.crNo],
+      ['تاريخ انتهاء السجل التجاري', c.crExpiry], ['تاريخ انتهاء البطاقة الضريبية', c.taxCardExpiry],
+      ['تاريخ انتهاء شهادة القيمة المضافة', c.vatExpiry], ['تاريخ انتهاء التوكن', c.tokenExpiry],
+      ['رقم الهاتف', c.phone]
+    ];
+    body.innerHTML = rows.map(r => `<div class="cd-info-row"><span>${escapeHtml(r[0])}</span><span>${escapeHtml(r[1])||'—'}</span></div>`).join('')
+      + `<div class="row-actions"><button class="act btn-primary" onclick="editClientFromDetail()">✏️ تعديل بيانات المنشأة</button></div>`;
+    return;
+  }
+  if(cdActiveTab === 'docs'){
+    body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+    let files = [];
+    try{ files = (await getFilesForClient(c.id)).filter(f => (f.folder||'general') === 'general'); }catch(e){}
+    body.innerHTML = `
+      <div class="attach-box" style="margin:0;">
+        <input type="file" multiple onchange="uploadClientDetailFile('general', this)">
+        <div class="attach-list">${cdFileRows(files) || '<div class="empty" style="padding:14px;">مفيش مستندات مرفوعة لسه</div>'}</div>
+      </div>`;
+    return;
+  }
+  // income / vat: per-year folders
+  const kind = cdActiveTab; // 'income' | 'vat'
+  const label = kind === 'income' ? 'ضرائب دخل' : 'ضرائب قيمة مضافة';
+  body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  let allFiles = [];
+  try{ allFiles = await getFilesForClient(c.id); }catch(e){}
+  body.innerHTML = CD_YEARS.map(year => {
+    const folder = kind + '-' + year;
+    const files = allFiles.filter(f => f.folder === folder);
+    const key = kind + ':' + year;
+    const open = cdOpenYears.has(key);
+    return `<div class="cd-year${open?' open':''}">
+      <div class="cd-year-head" onclick="cdToggleYear('${key}')">
+        <span>سنة ${year}</span>
+        <span class="cd-year-count">${files.length ? files.length + ' ملف' : 'مفيش ملفات'} ${open?'▲':'▼'}</span>
+      </div>
+      <div class="cd-year-body">
+        <div class="attach-box" style="margin:0;">
+          <input type="file" multiple onchange="uploadClientDetailFile('${folder}', this)">
+          <div class="attach-list">${cdFileRows(files) || '<div class="empty" style="padding:10px;">مفيش ملفات ${label} لسنة ${year} لسه</div>'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cdFileRows(files){
+  return files.map(f => `
+    <div class="attach-row">
+      <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${cdClientId}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${cdClientId}'))">حذف</button>
+      </div>
+    </div>`).join('');
+}
+function cdToggleYear(key){
+  if(cdOpenYears.has(key)) cdOpenYears.delete(key); else cdOpenYears.add(key);
+  renderClientDetailBody();
+}
+async function uploadClientDetailFile(folder, inputEl){
+  if(!inputEl.files.length) return;
+  try{
+    await addFilesToClient(cdClientId, inputEl.files, folder);
+  }catch(err){
+    alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+  inputEl.value = '';
+  renderClientDetailBody();
+}
+
 
 async function downloadClientFile(id, clientId){
   const files = await getFilesForClient(clientId);
