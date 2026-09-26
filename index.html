@@ -3056,9 +3056,10 @@ function showTaxYearsList(){
 let currentTaxYear = '';
 function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
 function taxYearFilesCol(){
-  if(!currentOfficeId || !clientCategoryHubCat || !currentTaxSection || !currentTaxYear) return null;
-  const docId = clientCategoryHubCat + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
-  return db.collection('offices').doc(currentOfficeId).collection('taxYearFiles').doc(docId).collection('files');
+  const col = poasCol();
+  if(!col || !clientCategoryHubCat || !currentTaxSection || !currentTaxYear) return null;
+  const docId = 'taxyear_' + clientCategoryHubCat + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
+  return col.doc(docId).collection('files');
 }
 
 function openTaxYear(year){
