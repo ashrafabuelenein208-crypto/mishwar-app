@@ -625,6 +625,12 @@
   .cd-year-body{padding:12px 14px;display:none;}
   .cd-year.open .cd-year-body{display:block;}
   .cd-year-count{font-size:12.5px;font-weight:700;color:var(--navy-dim);}
+  .cat-badge{font-size:12.5px;background:var(--bronze-soft);color:#8a6f00;padding:3px 10px;border-radius:999px;margin-right:8px;font-weight:800;}
+  .add-title-pill{background:var(--navy);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;}
+  .landing-cats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:920px;margin:0 auto;}
+  .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
+  .landing-cat-btn:active{filter:brightness(1.1);}
+  @media (max-width:640px){ .landing-cat-btn{flex:1 1 100%;min-height:80px;font-size:17px;} }
 
 </style>
 </head>
@@ -855,16 +861,23 @@
 
   <!-- CLIENTS -->
   <div class="panel" id="panel-clients">
-    <section>
-      <h2>إضافة / تعديل عميل</h2>
-      <div class="field" style="margin-bottom:14px;">
-        <label>نوع المنشأة</label>
-        <div class="cat-choice" id="cCategoryChoice">
-          <button type="button" class="cat-btn" data-cat="فردي" onclick="pickClientCategory('فردي')">فردي</button>
-          <button type="button" class="cat-btn" data-cat="شركات" onclick="pickClientCategory('شركات')">شركات</button>
-          <button type="button" class="cat-btn" data-cat="غير مسجل" onclick="pickClientCategory('غير مسجل')">غير مسجل</button>
-        </div>
+    <div id="clientsLandingView">
+      <div class="add-title-pill">اضافة منشأة</div>
+      <div class="landing-cats">
+        <button type="button" class="landing-cat-btn" onclick="startNewClient('شركات')">شركات</button>
+        <button type="button" class="landing-cat-btn" onclick="startNewClient('فردي')">فردي</button>
+        <button type="button" class="landing-cat-btn" onclick="startNewClient('غير مسجل')">غير مسجل</button>
       </div>
+      <div class="row-actions" style="margin-top:20px;justify-content:center;">
+        <button class="act btn-ghost" onclick="showClientsMain()">عرض كل العملاء</button>
+      </div>
+    </div>
+    <div id="clientsMainView" style="display:none;">
+    <div class="row-actions" style="margin-bottom:8px;">
+      <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+    </div>
+    <section>
+      <h2>إضافة / تعديل عميل <span id="formCategoryBadge" class="cat-badge" style="display:none;"></span></h2>
       <div class="grid2">
         <div class="field">
           <label>اسم الشركة</label>
@@ -978,6 +991,7 @@
       </div>
       <div class="empty" id="clientsEmpty" style="display:none;">مفيش عملاء مسجلين لسه</div>
     </section>
+    </div>
   </div>
 
   <!-- CASH WITH OFFICE OWNER -->
@@ -2705,7 +2719,7 @@ function activateTab(tabName){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-'+tabName).classList.add('active');
-  if(tabName === 'clients') renderClientsTab();
+  if(tabName === 'clients'){ showClientsLanding(); renderClientsTab(); }
   if(tabName === 'poas') renderPoaTab();
   if(tabName === 'cash') renderCashTab();
   if(tabName === 'alerts') renderAlertsTab();
@@ -2793,6 +2807,7 @@ function resetClientForm(){
 function editClient(id){
   const c = loadClients().find(x=>x.id===id);
   if(!c) return;
+  showClientsMain();
   editingClientId = id;
   pickClientCategory(c.category || '');
   document.getElementById('cName').value = c.name;
@@ -2935,7 +2950,27 @@ function setClientCatFilter(cat){
 let cClientCategory = '';
 function pickClientCategory(cat){
   cClientCategory = cat;
-  document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
+  const badge = document.getElementById('formCategoryBadge');
+  if(badge){
+    if(cat){ badge.textContent = cat; badge.style.display = 'inline-block'; }
+    else { badge.style.display = 'none'; }
+  }
+}
+function startNewClient(cat){
+  resetClientForm();
+  pickClientCategory(cat);
+  showClientsMain();
+  const nameEl = document.getElementById('cName');
+  if(nameEl) nameEl.focus();
+}
+function showClientsMain(){
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsMainView').style.display = 'block';
+  renderClientsTab();
+}
+function showClientsLanding(){
+  document.getElementById('clientsMainView').style.display = 'none';
+  document.getElementById('clientsLandingView').style.display = 'block';
 }
 
 async function renderClientsTab(){
