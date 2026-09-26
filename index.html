@@ -908,7 +908,9 @@
         <button class="act btn-ghost btn-small" onclick="showTaxYearsList()">‹ رجوع</button>
       </div>
       <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
-      <div class="empty">لسه هيتحدد شكل الصفحة دي لاحقًا</div>
+      <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
+      <input type="file" id="taxYearImportFile" accept="image/*,application/pdf" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
+      <div id="taxYearFilesList"></div>
     </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
@@ -3051,10 +3053,85 @@ function showTaxYearsList(){
   document.getElementById('clientsTaxYearsView').style.display = 'block';
 }
 
+let currentTaxYear = '';
+function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
+function taxYearFilesCol(){
+  if(!currentOfficeId || !clientCategoryHubCat || !currentTaxSection || !currentTaxYear) return null;
+  const docId = clientCategoryHubCat + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
+  return db.collection('offices').doc(currentOfficeId).collection('taxYearFiles').doc(docId).collection('files');
+}
+
 function openTaxYear(year){
+  currentTaxYear = year;
   document.getElementById('clientsTaxYearsView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'block';
   document.getElementById('taxYearDetailTitle').textContent = clientCategoryHubCat + ' — ' + currentTaxSection + ' — ' + year;
+  renderTaxYearFilesList();
+}
+
+async function renderTaxYearFilesList(){
+  const listEl = document.getElementById('taxYearFilesList');
+  const col = taxYearFilesCol();
+  if(!col){ listEl.innerHTML = '<div class="empty">لسه بيتحمّل بيانات المكتب...</div>'; return; }
+  listEl.innerHTML = '<div class="empty" style="padding:14px;">جارٍ التحميل...</div>';
+  let files = [];
+  try{ const snap = await col.get(); files = snap.docs.map(d=>Object.assign({ id: d.id }, d.data())); }catch(err){}
+  if(!files.length){ listEl.innerHTML = '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة لسنة ' + currentTaxYear + ' لسه</div>'; return; }
+  listEl.innerHTML = files.map(f => `
+    <div class="attach-row">
+      <div class="info"><div class="fname">${(f.type||'').startsWith('image/')?'🖼️':'📕'} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-primary btn-small" onclick="downloadTaxYearFile('${f.id}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteTaxYearFile('${f.id}'))">حذف</button>
+      </div>
+    </div>`).join('');
+}
+
+async function uploadTaxYearFile(inputEl){
+  if(!inputEl.files.length) return;
+  const col = taxYearFilesCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+  for(const file of Array.from(inputEl.files)){
+    let dataUrl, isPdf = file.type === 'application/pdf';
+    try{
+      if(isPdf){
+        dataUrl = await pdfToSafeDataUrl(file);
+      } else if(file.type && file.type.startsWith('image/')){
+        dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+        if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+        if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+      } else {
+        dataUrl = await fileToDataUrl(file);
+      }
+      if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+        alert(`الملف "${file.name}" كبير جدًا حتى بعد الضغط. جرب ملف أصغر.`);
+        continue;
+      }
+      await col.add({ name: file.name, type: file.type || '', size: dataUrl.length, date: todayStr(), dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }catch(err){
+      alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف'));
+    }
+  }
+  inputEl.value = '';
+  renderTaxYearFilesList();
+}
+
+async function downloadTaxYearFile(fileId){
+  const col = taxYearFilesCol();
+  if(!col) return;
+  const doc = await col.doc(fileId).get();
+  if(!doc.exists) return;
+  const f = doc.data();
+  const a = document.createElement('a');
+  a.href = f.dataUrl; a.download = f.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+async function deleteTaxYearFile(fileId){
+  const col = taxYearFilesCol();
+  if(!col) return;
+  await col.doc(fileId).delete();
+  renderTaxYearFilesList();
 }
 
 function showClientsListForCategory(cat){
