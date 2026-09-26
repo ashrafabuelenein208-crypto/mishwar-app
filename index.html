@@ -870,7 +870,7 @@
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
       </div>
       <div class="row-actions" style="margin-top:20px;justify-content:center;">
-        <button class="act btn-ghost" onclick="showClientsList()">عرض كل العملاء</button>
+        <button class="act btn-ghost" onclick="clientsListBackToHub=false; showClientsList(); setClientCatFilter('');">عرض كل العملاء</button>
       </div>
     </div>
 
@@ -991,7 +991,7 @@
 
     <div id="clientsListView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
-      <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+      <button class="act btn-ghost btn-small" onclick="clientsListBackToHub ? showClientsCategoryHub() : showClientsLanding()">‹ رجوع</button>
     </div>
     <section>
       <h2>استيراد عملاء من إكسيل</h2>
@@ -2816,7 +2816,7 @@ function saveClient(){
   const promise = editingClientId
     ? col.doc(editingClientId).set(data, { merge: true })
     : (()=>{ const newId = uid(); openClientDocsId = newId; return col.doc(newId).set(data); })();
-  promise.then(()=> showClientsList()).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+  promise.then(()=> showClientsListForCategory(cClientCategory)).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   resetClientForm();
 }
 
@@ -3009,9 +3009,18 @@ function showClientsCategoryHub(){
   document.getElementById('clientsCategoryHubView').style.display = 'block';
 }
 function openCategorySection(section){
+  if(section === 'بيانات المنشأة'){ showClientsListForCategory(clientCategoryHubCat); return; }
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'block';
   document.getElementById('categorySectionTitle').textContent = clientCategoryHubCat + ' — ' + section;
+}
+
+let clientsListBackToHub = false;
+function showClientsListForCategory(cat){
+  clientCategoryHubCat = cat;
+  clientsListBackToHub = true;
+  showClientsList();
+  setClientCatFilter(cat);
 }
 function showClientsForm(){
   document.getElementById('clientsLandingView').style.display = 'none';
@@ -3021,6 +3030,7 @@ function showClientsForm(){
   document.getElementById('clientsFormView').style.display = 'block';
 }
 function showClientsList(){
+  if(clientsListBackToHub === undefined) clientsListBackToHub = false;
   document.getElementById('clientsLandingView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'none';
