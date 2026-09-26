@@ -628,6 +628,9 @@
   .cat-badge{font-size:12.5px;background:var(--bronze-soft);color:#8a6f00;padding:3px 10px;border-radius:999px;margin-right:8px;font-weight:800;}
   .add-title-pill{display:block;width:100%;background:var(--navy);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;border:none;cursor:pointer;}
   .add-title-pill:active{filter:brightness(1.1);}
+  .year-list{display:flex;flex-direction:column;gap:12px;max-width:920px;margin:0 auto;}
+  .year-btn{background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);padding:16px;width:100%;}
+  .year-btn:active{filter:brightness(1.1);}
   .landing-cats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:920px;margin:0 auto;}
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
@@ -890,6 +893,22 @@
       </div>
       <h2 id="categorySectionTitle" style="text-align:center;"></h2>
       <div class="empty">القسم ده لسه هيتحدد شكله لاحقًا</div>
+    </div>
+
+    <div id="clientsTaxYearsView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
+      </div>
+      <h2 id="taxYearsTitle" style="text-align:center;"></h2>
+      <div class="year-list" id="taxYearsList"></div>
+    </div>
+
+    <div id="clientsTaxYearDetailView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showTaxYearsList()">‹ رجوع</button>
+      </div>
+      <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
+      <div class="empty">لسه هيتحدد شكل الصفحة دي لاحقًا</div>
     </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
@@ -2994,6 +3013,8 @@ function openClientCategoryList(cat){
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'block';
   document.getElementById('categoryHubTitle').textContent = cat;
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsCategoryHub(){
   document.getElementById('clientsLandingView').style.display = 'none';
@@ -3001,12 +3022,39 @@ function showClientsCategoryHub(){
   document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'block';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
+const TAX_YEARS = ['2020','2021','2022','2023','2024','2025','2026','2027'];
+let currentTaxSection = '';
 function openCategorySection(section){
   if(section === 'بيانات المنشأة'){ showClientsListForCategory(clientCategoryHubCat); return; }
+  if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'block';
   document.getElementById('categorySectionTitle').textContent = clientCategoryHubCat + ' — ' + section;
+}
+
+function openTaxYearsList(section){
+  currentTaxSection = section;
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'block';
+  document.getElementById('taxYearsTitle').textContent = clientCategoryHubCat + ' — ' + section;
+  document.getElementById('taxYearsList').innerHTML = TAX_YEARS.map(y =>
+    `<button type="button" class="year-btn" onclick="openTaxYear('${y}')">${y}</button>`
+  ).join('');
+}
+
+function showTaxYearsList(){
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'block';
+}
+
+function openTaxYear(year){
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'block';
+  document.getElementById('taxYearDetailTitle').textContent = clientCategoryHubCat + ' — ' + currentTaxSection + ' — ' + year;
 }
 
 function showClientsListForCategory(cat){
@@ -3021,6 +3069,8 @@ function showClientsForm(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'block';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsList(){
   document.getElementById('clientsLandingView').style.display = 'none';
@@ -3029,6 +3079,8 @@ function showClientsList(){
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'block';
   renderClientsTab();
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsLanding(){
   document.getElementById('clientsFormView').style.display = 'none';
@@ -3036,6 +3088,8 @@ function showClientsLanding(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsLandingView').style.display = 'block';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 
 async function renderClientsTab(){
