@@ -3091,18 +3091,28 @@ async function renderClientDocsSection(){
   body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
   let files = [];
   try{ files = (await getFilesForClient(currentClientHubId)).filter(f => (f.folder||'general') === 'general'); }catch(e){}
+  clientDocsSectionCache = files;
   body.innerHTML = `
     <div class="attach-box" style="margin:0;">
-      <label class="file-upload-btn" for="clientHubDocsInput">📎 اختيار ملف</label>
-      <input type="file" id="clientHubDocsInput" multiple style="display:none;" onchange="uploadClientHubDoc(this)">
+      <div class="row-actions" style="margin-top:0;">
+        <label class="file-upload-btn" for="clientHubDocsInput">📎 اختيار ملف</label>
+        <input type="file" id="clientHubDocsInput" multiple style="display:none;" onchange="uploadClientHubDoc(this)">
+        <button class="act btn-primary btn-small" onclick="shareSelectedClientDocs()">📤 مشاركة المحدد</button>
+        <button class="act btn-ghost btn-small" onclick="shareAllClientDocs()">📤 مشاركة الكل</button>
+      </div>
       <div class="attach-list">${clientHubFileRows(files) || '<div class="empty" style="padding:14px;">مفيش مستندات مرفوعة لسه</div>'}</div>
     </div>`;
 }
+let clientDocsSectionCache = [];
 function clientHubFileRows(files){
   return files.map(f => `
     <div class="attach-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" class="doc-share-check" value="${f.id}">
+      </label>
       <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
       <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-ghost btn-small" onclick="shareSingleClientDoc('${f.id}')">مشاركة</button>
         <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${currentClientHubId}')">تحميل</button>
         <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${currentClientHubId}').then(renderClientDocsSection))">حذف</button>
       </div>
@@ -3114,6 +3124,48 @@ async function uploadClientHubDoc(inputEl){
   catch(err){ alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف')); }
   inputEl.value = '';
   renderClientDocsSection();
+}
+
+async function dataUrlToFile(dataUrl, name, type){
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], name, { type: type || blob.type || 'application/octet-stream' });
+}
+
+async function shareClientDocFiles(ids){
+  if(!ids.length){ alert('اختار مستند واحد على الأقل الأول'); return; }
+  const files = clientDocsSectionCache.filter(f => ids.includes(f.id));
+  if(!files.length) return;
+  try{
+    const fileObjs = await Promise.all(files.map(f => dataUrlToFile(f.dataUrl, f.name, f.type)));
+    if(navigator.canShare && navigator.canShare({ files: fileObjs })){
+      await navigator.share({ files: fileObjs, title: 'مستندات' });
+      return;
+    }
+    // Fallback: no native share-with-files support (common on desktop) — download so the user can attach manually
+    fileObjs.forEach((fileObj, i) => {
+      const url = URL.createObjectURL(fileObj);
+      const a = document.createElement('a');
+      a.href = url; a.download = files[i].name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    });
+    alert('المتصفح ده مبيدعمش المشاركة المباشرة، فنزّلنا الملفات على جهازك — دلوقتي افتح واتساب أو الإيميل وارفقها يدويًا من مجلد التنزيلات.');
+  }catch(err){
+    if(err && err.name === 'AbortError') return; // user cancelled the share sheet
+    alert('حصل خطأ في المشاركة: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+function shareSingleClientDoc(id){
+  shareClientDocFiles([id]);
+}
+function shareSelectedClientDocs(){
+  const ids = Array.from(document.querySelectorAll('.doc-share-check:checked')).map(el=>el.value);
+  shareClientDocFiles(ids);
+}
+function shareAllClientDocs(){
+  shareClientDocFiles(clientDocsSectionCache.map(f=>f.id));
 }
 
 function openTaxYearsList(section){
