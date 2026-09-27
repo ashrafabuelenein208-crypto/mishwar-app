@@ -2075,6 +2075,29 @@ async function addOwnerClient(){
   }
 }
 
+async function openClientOwnerLedger(clientId){
+  const col = ownerClientsCol();
+  if(!col){ alert('الميزة دي متاحة بس لصاحب المكتب'); return; }
+  const c = loadClients().find(x=>x.id===clientId);
+  if(!c) return;
+  try{
+    const docRef = col.doc(clientId);
+    const snap = await docRef.get();
+    if(!snap.exists){
+      await docRef.set({ name: c.name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    const btn = document.querySelector('#tabsNav button[data-tab="ownerclients"]');
+    document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('panel-ownerclients').classList.add('active');
+    await renderOwnerClientsTab();
+    await openOwnerClientDetail(clientId);
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
 async function fetchOwnerClientBalance(clientId){
   const col = ownerClientEntriesCol(clientId);
   if(!col) return { totalSpent: 0, totalReceived: 0, balance: 0 };
@@ -3256,8 +3279,9 @@ async function renderClientsTab(){
         </div>
       </div>
       <button class="act btn-ghost btn-small" onclick="openClientHub('${c.id}')">تفاصيل</button>
+      ${currentUserRole === 'owner' ? `<button class="act btn-ghost btn-small" onclick="openClientOwnerLedger('${c.id}')">حساب العميل</button>` : ''}
       <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
-      <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
+      <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClient('${c.id}'))">حذف</button>
     </div>`).join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
