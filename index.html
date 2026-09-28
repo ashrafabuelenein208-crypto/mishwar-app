@@ -29,6 +29,27 @@
     --green:#1f9d6c;
     --green-soft:#e0f5ec;
   }
+
+  :root[data-theme="dark"]{
+    --ink:#e8edf2;
+    --paper:#0f1720;
+    --panel:#182430;
+    --line:#2a3a47;
+    --navy:#2a9fd6;
+    --navy-dim:#8fa8b8;
+    --bronze:#e0b400;
+    --bronze-soft:#3a3320;
+    --red:#ff6b5e;
+    --red-soft:#3a2220;
+    --green:#3fc98a;
+    --green-soft:#153328;
+  }
+  .theme-toggle{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:12px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.16);color:#fff;font-size:18px;flex:none;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,.28);}
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -110,11 +131,11 @@
   nav.tabs button::after{content:"\2039";opacity:.55;font-size:20px;line-height:1;flex:none;}
   nav.tabs button.active{
     color:var(--navy);
-    background:#fff;
+    background:var(--panel);
   }
   nav.tabs button.active .ic-wrap{background:rgba(0,105,156,.12);}
   nav.tabs button:hover{background:rgba(255,255,255,.22);}
-  nav.tabs button.active:hover{background:#fff;}
+  nav.tabs button.active:hover{background:var(--panel);}
 
   main{
     max-width:1120px;
@@ -134,7 +155,7 @@
     }
     nav.tabs button{max-width:none;background:transparent;}
     nav.tabs button:hover{background:rgba(255,255,255,.12);}
-    nav.tabs button.active,nav.tabs button.active:hover{background:#fff;}
+    nav.tabs button.active,nav.tabs button.active:hover{background:var(--panel);}
   }
 
   .panel{display:none;}
@@ -214,7 +235,7 @@
   input:focus,select:focus,textarea:focus{
     outline:none;
     border-color:var(--navy);
-    background:#fff;
+    background:var(--panel);
   }
   .field{margin-bottom:13px;}
 
@@ -281,7 +302,7 @@
     border-radius:14px;
     padding:14px 16px;
     margin-bottom:18px;
-    background:#fff;
+    background:var(--panel);
     border:1.5px solid var(--line);
     border-inline-start:5px solid var(--bronze);
   }
@@ -348,7 +369,7 @@
   .login-err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:8px;}
 
   .office-name{font-size:12.5px;color:var(--bronze);font-weight:800;letter-spacing:.3px;margin-bottom:2px;}
-  .office-logo{height:42px;width:42px;object-fit:contain;border-radius:14px;background:#fff;padding:3px;}
+  .office-logo{height:42px;width:42px;object-fit:contain;border-radius:14px;background:var(--panel);padding:3px;}
   .office-brand{display:flex;align-items:center;gap:11px;}
 
   .alert-banner{
@@ -365,7 +386,7 @@
     align-items:center;
     gap:10px;
     flex-wrap:wrap;
-    background:#fff;
+    background:var(--panel);
     border-radius:14px;
     padding:10px 14px;
     margin-bottom:8px;
@@ -450,8 +471,8 @@
   .poa-letters button.on .count{color:#dff1fa;}
   .poa-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
   .poa-bar input[type=text]{flex:1 1 220px;min-width:0;}
-  .poa-row{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
-  .poa-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;}
+  .poa-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
+  .poa-card{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;}
   .poa-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .poa-card-name{flex:1;min-width:0;font-weight:800;font-size:15px;color:var(--navy);overflow-wrap:anywhere;cursor:pointer;}
   .poa-mini{padding:7px 12px !important;font-size:12.5px !important;white-space:nowrap;}
@@ -469,7 +490,7 @@
 
   .reminder-row{
     display:flex;align-items:center;gap:12px;
-    background:#fff;border:1.5px solid var(--line);border-radius:16px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:16px;
     padding:12px 15px;margin-bottom:9px;
   }
   .reminder-row.due{background:var(--red-soft);border-color:#f3bfb6;}
@@ -488,7 +509,7 @@
   }
   .chat-emp-row{
     display:flex; justify-content:space-between; align-items:center; gap:12px;
-    background:#fff; border:1.5px solid var(--line); border-radius:18px;
+    background:var(--panel); border:1.5px solid var(--line); border-radius:18px;
     padding:13px 16px; margin-bottom:12px; cursor:pointer;
     box-shadow:0 1px 3px rgba(15,23,42,.05);
     transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -512,7 +533,7 @@
     padding:9px 14px; border-radius:16px; font-size:14.5px; line-height:1.5; word-break:break-word;
   }
   .msg-row.me .msg-bubble{background:var(--navy); color:#fff; border-bottom-left-radius:4px;}
-  .msg-row.them .msg-bubble{background:#fff; color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
+  .msg-row.them .msg-bubble{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
   .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; display:flex; align-items:center; gap:3px;}
   .msg-row.me .msg-time{justify-content:flex-end;}
   .msg-row.them .msg-time{justify-content:flex-start;}
@@ -555,7 +576,7 @@
     font-family:inherit;
   }
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
-  #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
+  #imgLightbox .lb-close{ background:var(--panel); color:var(--navy); }
 
   #waPickerModal{
     display:none; position:fixed; inset:0; z-index:10001;
@@ -563,7 +584,7 @@
   }
   #waPickerModal.show{ display:flex; }
   #waPickerModal .wa-picker-box{
-    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    background:var(--panel); border-radius:18px; padding:20px; width:100%; max-width:360px;
     max-height:80vh; overflow-y:auto;
   }
   #waPickerModal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
@@ -580,7 +601,7 @@
   }
   .picker-modal.show{ display:flex; }
   .picker-modal .picker-box{
-    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    background:var(--panel); border-radius:18px; padding:20px; width:100%; max-width:360px;
     max-height:80vh; overflow-y:auto;
   }
   .picker-modal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
@@ -598,19 +619,19 @@
   }
   #newClientModal.show{ display:flex; }
   #newClientModal .ncm-box{
-    background:#fff; border-radius:16px; padding:22px 18px; max-width:380px; width:100%; text-align:center;
+    background:var(--panel); border-radius:16px; padding:22px 18px; max-width:380px; width:100%; text-align:center;
   }
   #newClientModal .ncm-title{ font-weight:800; font-size:16px; margin-bottom:4px; color:var(--navy); }
   #newClientModal .ncm-name{ color:var(--bronze); }
   #newClientModal .ncm-sub{ font-size:13px; color:#666; margin-bottom:16px; }
 
   .cat-choice{display:flex;gap:10px;flex-wrap:wrap;}
-  .cat-btn{flex:1;min-width:100px;padding:12px 10px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:var(--navy);}
+  .cat-btn{flex:1;min-width:100px;padding:12px 10px;border-radius:12px;border:2px solid var(--line);background:var(--panel);font-weight:800;font-size:14px;cursor:pointer;color:var(--navy);}
   .cat-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .cat-filter{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
   .cat-filter button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   #clientDetailModal{position:fixed;inset:0;background:rgba(10,20,40,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
-  .cd-box{background:#fff;border-radius:18px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+  .cd-box{background:var(--panel);border-radius:18px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
   .cd-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1.5px solid var(--line);}
   .cd-head .cd-title{font-weight:900;font-size:17px;color:var(--navy);}
   .cd-tabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap;border-bottom:1.5px solid var(--line);}
@@ -625,19 +646,26 @@
   .cd-year-body{padding:12px 14px;display:none;}
   .cd-year.open .cd-year-body{display:block;}
   .cd-year-count{font-size:12.5px;font-weight:700;color:var(--navy-dim);}
-  .vat-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px;}
-  .vat-table th{background:#f7f8fb;color:var(--navy-dim);font-weight:800;padding:7px 8px;text-align:center;}
-  .vat-table td{padding:5px 6px;text-align:center;border-bottom:1px solid var(--line);}
-  .vat-input{width:90px;padding:6px;border:1.5px solid var(--line);border-radius:8px;text-align:center;font-size:13px;}
   .cat-badge{font-size:12.5px;background:var(--bronze-soft);color:#8a6f00;padding:3px 10px;border-radius:999px;margin-right:8px;font-weight:800;}
-  .add-title-pill{display:block;width:100%;background:var(--navy);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;border:none;cursor:pointer;}
+  .add-title-pill{display:block;width:100%;background:var(--green);color:#fff;font-weight:900;font-size:21px;text-align:center;padding:18px 30px;border-radius:16px;max-width:440px;margin:10px auto 28px;border:none;cursor:pointer;}
   .add-title-pill:active{filter:brightness(1.1);}
+  .year-list{display:flex;flex-direction:column;gap:12px;max-width:920px;margin:0 auto;}
+  .year-btn{background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);padding:16px;width:100%;}
+  .year-btn:active{filter:brightness(1.1);}
   .landing-cats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:920px;margin:0 auto;}
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
   @media (max-width:640px){ .landing-cat-btn{flex:1 1 100%;min-height:80px;font-size:17px;} }
 
 </style>
+<script>
+  (function(){
+    try{
+      var saved = localStorage.getItem('mishwar_theme');
+      if(saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    }catch(e){}
+  })();
+</script>
 </head>
 <body>
 
@@ -658,9 +686,9 @@
       <button class="act btn-ghost btn-small" onclick="closeClientDetail()">إغلاق ✕</button>
     </div>
     <div class="cd-tabs">
-      <button class="cd-tab active" data-t="info" onclick="switchClientDetailTab('info')">بيانات المنشأة</button>
-      <button class="cd-tab" data-t="income" onclick="switchClientDetailTab('income')">ضرائب دخل</button>
-      <button class="cd-tab" data-t="vat" onclick="switchClientDetailTab('vat')">ضرائب قيمة مضافة</button>
+      <button class="cd-tab" data-t="info" onclick="switchClientDetailTab('info')">بيانات المنشأة</button>
+      <button class="cd-tab" data-t="income" onclick="switchClientDetailTab('income')">ضرائب الدخل</button>
+      <button class="cd-tab" data-t="vat" onclick="switchClientDetailTab('vat')">ضرائب القيمة المضافة</button>
       <button class="cd-tab" data-t="docs" onclick="switchClientDetailTab('docs')">مستندات</button>
     </div>
     <div class="cd-body" id="cdBody"></div>
@@ -741,7 +769,10 @@
         <p>متابعة مصاريف المواصلات والحساب مع صاحب المكتب</p>
       </div>
     </div>
-    <div class="today-badge" id="todayBadge"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button type="button" class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
+      <div class="today-badge" id="todayBadge"></div>
+    </div>
   </div>
   <nav class="tabs" id="tabsNav">
     <button data-tab="home" class="active"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="lbl">الرئيسية</span></button>
@@ -753,7 +784,7 @@
     <button data-tab="alerts"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="lbl">التنبيهات</span></button>
     <button data-tab="chat"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span><span class="lbl">الشات <span id="chatUnreadDot" style="display:none;"></span></span></button>
     <button data-tab="owner" id="ownerTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span><span class="lbl">لوحة صاحب المكتب</span></button>
-    <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg></span><span class="lbl">عُهد العملاء</span></button>
+    <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg></span><span class="lbl">حساب عميل</span></button>
   </nav>
 </header>
 
@@ -774,6 +805,16 @@
     <section>
       <h2>إعدادات التنبيهات</h2>
       <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك. جهات اتصال الواتساب بتتظبط من تاب "التنبيهات".</p>
+    </section>
+    <section>
+      <h2>نسخة احتياطية</h2>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">بتجمّع كل بيانات المكتب (عملاء، توكيلات ومرفقاتها، مشاوير، حساب المكتب، تنبيهات) في ملف واحد على جهازك. احتفظ بيه في مكان آمن.</p>
+      <div class="row-actions">
+        <button class="act btn-primary" id="backupBtn" onclick="downloadBackup()">⬇️ تنزيل نسخة احتياطية</button>
+        <label class="act btn-ghost" for="restoreFileInput" style="cursor:pointer;">⬆️ استعادة من نسخة احتياطية</label>
+        <input type="file" id="restoreFileInput" accept="application/json" style="display:none;" onchange="handleRestoreFile(this)">
+      </div>
+      <div id="backupStatus" style="font-size:12.5px;color:var(--navy-dim);margin-top:8px;"></div>
     </section>
   </div>
 
@@ -869,35 +910,57 @@
     <div id="clientsLandingView">
       <button type="button" class="add-title-pill" onclick="startNewClient('')">اضافة منشأة</button>
       <div class="landing-cats">
-        <button type="button" class="landing-cat-btn" onclick="openClientHub('شركات')">شركات</button>
-        <button type="button" class="landing-cat-btn" onclick="openClientHub('فردي')">فردي</button>
-        <button type="button" class="landing-cat-btn" onclick="openClientHub('غير مسجل')">غير مسجل</button>
-      </div>
-      <div class="row-actions" style="margin-top:20px;justify-content:center;">
-        <button class="act btn-ghost" onclick="showClientsList()">عرض كل العملاء</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('شركات')">شركات</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('فردي')">فردي</button>
+        <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
       </div>
     </div>
 
-    <div id="clientsHubView" style="display:none;">
+    <div id="clientsCategoryHubView" style="display:none;">
       <div class="row-actions" style="margin-bottom:8px;">
-        <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+        <button class="act btn-ghost btn-small" onclick="showClientsListForCategory(clientCategoryHubCat)">‹ رجوع</button>
       </div>
-      <div class="add-title-pill" id="chHubTitle" style="cursor:default;">—</div>
+      <h2 id="categoryHubTitle" style="text-align:center;"></h2>
       <div class="landing-cats">
-        <button type="button" class="landing-cat-btn" onclick="chOpenTab('info')">بيانات المنشأة</button>
-        <button type="button" class="landing-cat-btn" onclick="chOpenTab('income')">ضرائب دخل</button>
-        <button type="button" class="landing-cat-btn" onclick="chOpenTab('vat')">ضرائب قيمة مضافة</button>
-        <button type="button" class="landing-cat-btn" onclick="chOpenTab('docs')">مستندات</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('بيانات المنشأة')">بيانات المنشأة</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
       </div>
     </div>
 
+    <div id="clientsCategorySectionView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
+      </div>
+      <h2 id="categorySectionTitle" style="text-align:center;"></h2>
+      <div id="categorySectionBody"></div>
+    </div>
+
+    <div id="clientsTaxYearsView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
+      </div>
+      <h2 id="taxYearsTitle" style="text-align:center;"></h2>
+      <div class="year-list" id="taxYearsList"></div>
+    </div>
+
+    <div id="clientsTaxYearDetailView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showTaxYearsList()">‹ رجوع</button>
+      </div>
+      <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
+      <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
+      <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
+      <div id="taxYearFilesList"></div>
+    </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
-      <button class="act btn-ghost btn-small" onclick="clientsFormBack()">‹ رجوع</button>
+      <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
     </div>
     <section>
-      <h2>إضافة / تعديل عميل <span id="formCategoryBadge" class="cat-badge" style="display:none;"></span></h2>
-      <div class="field" style="margin-bottom:14px;" id="cCategoryField">
+      <h2>إضافة / تعديل عميل</h2>
+      <div class="field" style="margin-bottom:14px;">
         <label>نوع المنشأة</label>
         <div class="cat-choice" id="cCategoryChoice">
           <button type="button" class="cat-btn" data-cat="فردي" onclick="pickClientCategory('فردي')">فردي</button>
@@ -1003,24 +1066,11 @@
     </section>
 
     <section>
-      <h2>كل العملاء</h2>
-      <div class="cat-filter" id="clientCatFilter">
-        <button class="act btn-ghost btn-small active" data-cat="" onclick="setClientCatFilter('')">الكل</button>
-        <button class="act btn-ghost btn-small" data-cat="فردي" onclick="setClientCatFilter('فردي')">فردي</button>
-        <button class="act btn-ghost btn-small" data-cat="شركات" onclick="setClientCatFilter('شركات')">شركات</button>
-        <button class="act btn-ghost btn-small" data-cat="غير مسجل" onclick="setClientCatFilter('غير مسجل')">غير مسجل</button>
-      </div>
+      <h2>بيانات المنشأة <span id="clientsListCatLabel" style="color:var(--navy-dim);"></span></h2>
       <div class="search-box">
         <input type="text" id="clientListSearch" placeholder="دور باسم العميل...">
       </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>الاسم</th><th>النوع</th><th>السمة التجارية</th><th>نوع الشركة</th><th>رقم التسجيل الضريبي</th><th>المأمورية</th><th>مكتب السجل التجاري</th><th>رقم السجل التجاري</th><th>انتهاء السجل التجاري</th><th>انتهاء البطاقة الضريبية</th><th>انتهاء شهادة القيمة المضافة</th><th>انتهاء التوكن</th><th>التليفون</th><th>المستندات</th><th></th></tr>
-          </thead>
-          <tbody id="clientsBody"></tbody>
-        </table>
-      </div>
+      <div id="clientsBody"></div>
       <div class="empty" id="clientsEmpty" style="display:none;">مفيش عملاء مسجلين لسه</div>
     </section>
     </div>
@@ -1319,6 +1369,25 @@
 </main>
 
 <script>
+function applyThemeIcon(){
+  const btn = document.getElementById('themeToggleBtn');
+  if(!btn) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  btn.textContent = isDark ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if(isDark){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('mishwar_theme', 'light'); }catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try{ localStorage.setItem('mishwar_theme', 'dark'); }catch(e){}
+  }
+  applyThemeIcon();
+}
+document.addEventListener('DOMContentLoaded', applyThemeIcon);
+
 function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'; }
 function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
 function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
@@ -1682,6 +1751,199 @@ function requirePin(cb){
   if(p === EDIT_PIN){ cb(); } else { alert('الكود غير صحيح'); }
 }
 
+async function downloadBackup(){
+  const btn = document.getElementById('backupBtn');
+  const status = document.getElementById('backupStatus');
+  const user = auth.currentUser;
+  if(!user){ if(status) status.textContent = 'لازم تكون مسجّل دخول الأول.'; return; }
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ جارٍ التجميع...'; }
+  if(status) status.textContent = '';
+  try{
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      officeId: currentOfficeId || null,
+      uid: user.uid,
+      clients: [],
+      poas: [],
+      taxYearFiles: [],
+      trips: [],
+      cash: [],
+      reminders: [],
+      ownerClients: []
+    };
+
+    // clients + their document attachments
+    const clientsColRef = officeClientsCol();
+    if(clientsColRef){
+      const clientsSnap = await clientsColRef.get();
+      for(const cDoc of clientsSnap.docs){
+        const client = Object.assign({ id: cDoc.id }, cDoc.data());
+        try{
+          const docsSnap = await cDoc.ref.collection('documents').get();
+          client.documents = docsSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        }catch(e){ client.documents = []; }
+        backup.clients.push(client);
+      }
+    }
+
+    // POAs + their files (split real POAs from the tax-year files stored under the same collection)
+    const poasColRef = poasCol();
+    if(poasColRef){
+      const poasSnap = await poasColRef.get();
+      for(const pDoc of poasSnap.docs){
+        const filesSnap = await pDoc.ref.collection('files').get();
+        const files = filesSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        if(pDoc.id.startsWith('taxyear_')){
+          backup.taxYearFiles.push({ key: pDoc.id, files });
+        } else {
+          const poa = Object.assign({ id: pDoc.id }, pDoc.data());
+          poa.files = files;
+          backup.poas.push(poa);
+        }
+      }
+    }
+
+    // this user's trips + receipts, cash log, reminders, and (if owner) their client roster
+    const [tripsSnap, cashSnap, remindersSnap, ownerClientsSnap] = await Promise.all([
+      db.collection('users').doc(user.uid).collection('trips').get(),
+      db.collection('users').doc(user.uid).collection('cash').get(),
+      db.collection('users').doc(user.uid).collection('reminders').get().catch(()=>({docs:[]})),
+      db.collection('users').doc(user.uid).collection('ownerClients').get().catch(()=>({docs:[]}))
+    ]);
+    for(const tDoc of tripsSnap.docs){
+      const trip = Object.assign({ id: tDoc.id }, tDoc.data());
+      try{
+        const rSnap = await tDoc.ref.collection('receipts').get();
+        trip.receipts = rSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      }catch(e){ trip.receipts = []; }
+      backup.trips.push(trip);
+    }
+    backup.cash = cashSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    backup.reminders = remindersSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    backup.ownerClients = ownerClientsSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'نسخة-احتياطية-' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if(status) status.textContent = `تم التنزيل ✅ — ${backup.clients.length} عميل، ${backup.poas.length} توكيل، ${backup.trips.length} مشوار.`;
+  }catch(err){
+    if(status) status.textContent = 'حصل خطأ في تجميع النسخة الاحتياطية: ' + (err && err.message ? err.message : 'غير معروف');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل نسخة احتياطية'; }
+  }
+}
+
+function handleRestoreFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';
+  if(!file) return;
+  const status = document.getElementById('backupStatus');
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try{ data = JSON.parse(reader.result); }
+    catch(e){ if(status) status.textContent = 'الملف ده مش نسخة احتياطية صحيحة (مش JSON سليم).'; return; }
+    if(!data || typeof data !== 'object' || !('clients' in data)){
+      if(status) status.textContent = 'الملف ده مش شكل نسخة احتياطية معروف.';
+      return;
+    }
+    const summary = `هيتم استرجاع: ${(data.clients||[]).length} عميل، ${(data.poas||[]).length} توكيل، `
+      + `${(data.trips||[]).length} مشوار، ${(data.cash||[]).length} حركة حساب، ${(data.reminders||[]).length} تنبيه.\n`
+      + `البيانات الحالية اللي بنفس المعرّف هتتحدّث بالقيم الجديدة (مش هيتمسح حاجة مش موجودة في الملف). متأكد عايز تكمل؟`;
+    if(!confirm(summary)) return;
+    requirePin(() => restoreBackup(data));
+  };
+  reader.onerror = () => { if(status) status.textContent = 'محصلش تحميل الملف.'; };
+  reader.readAsText(file);
+}
+
+async function restoreBackup(data){
+  const status = document.getElementById('backupStatus');
+  const user = auth.currentUser;
+  if(!user){ if(status) status.textContent = 'لازم تكون مسجّل دخول الأول.'; return; }
+  if(status) status.textContent = '⏳ جارٍ الاستعادة...';
+  try{
+    // clients + their document attachments
+    const clientsColRef = officeClientsCol();
+    if(clientsColRef){
+      for(const client of (data.clients || [])){
+        const { id, documents, ...fields } = client;
+        if(!id) continue;
+        await clientsColRef.doc(id).set(fields, { merge: true });
+        for(const f of (documents || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await clientsColRef.doc(id).collection('documents').doc(fid).set(ffields, { merge: true });
+        }
+      }
+    }
+
+    // POAs + their files
+    const poasColRef = poasCol();
+    if(poasColRef){
+      for(const poa of (data.poas || [])){
+        const { id, files, ...fields } = poa;
+        if(!id) continue;
+        await poasColRef.doc(id).set(fields, { merge: true });
+        for(const f of (files || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await poasColRef.doc(id).collection('files').doc(fid).set(ffields, { merge: true });
+        }
+      }
+      // tax-year files (stored as poas/taxyear_*/files/*)
+      for(const entry of (data.taxYearFiles || [])){
+        if(!entry.key) continue;
+        for(const f of (entry.files || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await poasColRef.doc(entry.key).collection('files').doc(fid).set(ffields, { merge: true });
+        }
+      }
+    }
+
+    // this user's trips + receipts
+    for(const trip of (data.trips || [])){
+      const { id, receipts, ...fields } = trip;
+      if(!id) continue;
+      const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(id);
+      await tripRef.set(fields, { merge: true });
+      for(const r of (receipts || [])){
+        const { id: rid, ...rfields } = r;
+        if(!rid) continue;
+        await tripRef.collection('receipts').doc(rid).set(rfields, { merge: true });
+      }
+    }
+
+    // cash, reminders, ownerClients
+    for(const c of (data.cash || [])){
+      const { id, ...fields } = c;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('cash').doc(id).set(fields, { merge: true });
+    }
+    for(const r of (data.reminders || [])){
+      const { id, ...fields } = r;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('reminders').doc(id).set(fields, { merge: true });
+    }
+    for(const oc of (data.ownerClients || [])){
+      const { id, ...fields } = oc;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('ownerClients').doc(id).set(fields, { merge: true });
+    }
+
+    if(status) status.textContent = '✅ تمت الاستعادة بنجاح. لو مش شايف التحديث، جدّد الصفحة.';
+  }catch(err){
+    if(status) status.textContent = 'حصل خطأ أثناء الاستعادة: ' + (err && err.message ? err.message : 'غير معروف');
+  }
+}
+
 function officeClientsCol(){
   if(!currentOfficeId) return null;
   return db.collection('offices').doc(currentOfficeId).collection('clients');
@@ -1706,8 +1968,6 @@ function watchOfficeClients(){
     if(clientsPanel && clientsPanel.classList.contains('active')) renderClientsTab();
     const homePanel = document.getElementById('panel-home');
     if(homePanel && homePanel.classList.contains('active')) renderHomeTab();
-    const cdModal = document.getElementById('clientDetailModal');
-    if(cdModal && cdModal.style.display === 'flex' && cdActiveTab === 'info') renderClientDetailBody();
   }, ()=>{});
 }
 
@@ -2064,6 +2324,29 @@ async function addOwnerClient(){
     await col.add({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     document.getElementById('ownerClientNameInput').value = '';
     renderOwnerClientsTab();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+async function openClientOwnerLedger(clientId){
+  const col = ownerClientsCol();
+  if(!col){ alert('الميزة دي متاحة بس لصاحب المكتب'); return; }
+  const c = loadClients().find(x=>x.id===clientId);
+  if(!c) return;
+  try{
+    const docRef = col.doc(clientId);
+    const snap = await docRef.get();
+    if(!snap.exists){
+      await docRef.set({ name: c.name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    const btn = document.querySelector('#tabsNav button[data-tab="ownerclients"]');
+    document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('panel-ownerclients').classList.add('active');
+    await renderOwnerClientsTab();
+    await openOwnerClientDetail(clientId);
   }catch(err){
     alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
   }
@@ -2435,7 +2718,7 @@ async function openOwnerClientPickerForTrip(idx){
   }
   const list = document.getElementById('ownerClientPickerList');
   if(!ownerClientsCache.length){
-    list.innerHTML = '<div class="empty" style="padding:10px 0;">لسه مسجلتش أي شركة في "عهد العملاء". سجّل واحدة الأول من التاب ده.</div>';
+    list.innerHTML = '<div class="empty" style="padding:10px 0;">لسه مسجلتش أي شركة في "حساب عميل". سجّل واحدة الأول من التاب ده.</div>';
   } else {
     list.innerHTML = ownerClientsCache.map(c => `
       <button class="picker-btn" onclick="linkTripToOwnerClient('${c.id}')">${escapeHtml(c.name)}</button>
@@ -2812,15 +3095,10 @@ function saveClient(){
     taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
     crNo: document.getElementById('cCrNo').value.trim(),
   };
-  let targetId = editingClientId;
   const promise = editingClientId
     ? col.doc(editingClientId).set(data, { merge: true })
-    : (()=>{ targetId = uid(); openClientDocsId = targetId; return col.doc(targetId).set(data); })();
-  promise.then(()=>{
-    chClientId = targetId;
-    if(chReturnToHub) showClientsHub();
-    else showClientsList();
-  }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+    : (()=>{ const newId = uid(); openClientDocsId = newId; return col.doc(newId).set(data); })();
+  promise.then(()=> showClientsListForCategory(cClientCategory)).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
   resetClientForm();
 }
 
@@ -2843,13 +3121,11 @@ function resetClientForm(){
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
 
-function editClient(id, returnToHub){
+function editClient(id){
   const c = loadClients().find(x=>x.id===id);
   if(!c) return;
-  chReturnToHub = !!returnToHub;
   showClientsForm();
   editingClientId = id;
-  setClientCategoryUiMode('');
   pickClientCategory(c.category || '');
   document.getElementById('cName').value = c.name;
   document.getElementById('cTradeName').value = c.tradeName || '';
@@ -2993,79 +3269,302 @@ function pickClientCategory(cat){
   cClientCategory = cat;
   document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
 }
-let chCategory = '';
-let chClientId = null;
-let chReturnToHub = false;
-
-function openClientHub(cat){
-  chCategory = cat;
-  chClientId = null;
-  showClientsHub();
-}
-function showClientsHub(){
-  document.getElementById('clientsLandingView').style.display = 'none';
-  document.getElementById('clientsFormView').style.display = 'none';
-  document.getElementById('clientsListView').style.display = 'none';
-  document.getElementById('clientsHubView').style.display = 'block';
-  document.getElementById('chHubTitle').textContent = chCategory || '—';
-}
-function chOpenTab(tab){
-  if(tab === 'info'){
-    if(chClientId) editClient(chClientId, true);
-    else startNewClient(chCategory, true);
-    return;
-  }
-  if(!chClientId){
-    alert('سجّل بيانات المنشأة الأول قبل ما تضيف ' + (tab==='income' ? 'ضرائب الدخل' : tab==='vat' ? 'ضرائب القيمة المضافة' : 'المستندات'));
-    return;
-  }
-  openClientDetail(chClientId);
-  switchClientDetailTab(tab);
-}
-function clientsFormBack(){
-  if(chReturnToHub) showClientsHub();
-  else showClientsLanding();
-}
-function startNewClient(cat, returnToHub){
+function startNewClient(cat){
   resetClientForm();
   pickClientCategory(cat);
-  setClientCategoryUiMode(cat);
-  chReturnToHub = !!returnToHub;
   showClientsForm();
   const nameEl = document.getElementById('cName');
   if(nameEl) nameEl.focus();
 }
-function setClientCategoryUiMode(cat){
-  const field = document.getElementById('cCategoryField');
-  const badge = document.getElementById('formCategoryBadge');
-  if(cat){
-    field.style.display = 'none';
-    badge.textContent = cat;
-    badge.style.display = 'inline-block';
-  } else {
-    field.style.display = 'block';
-    badge.style.display = 'none';
+let clientCategoryHubCat = '';
+let currentClientHubId = null;
+
+function openClientCategoryList(cat){
+  showClientsListForCategory(cat);
+}
+
+function openClientHub(clientId){
+  currentClientHubId = clientId;
+  const c = loadClients().find(x=>x.id===clientId);
+  if(c && c.category) clientCategoryHubCat = c.category;
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'block';
+  document.getElementById('categoryHubTitle').textContent = c ? c.name : '';
+}
+function showClientsCategoryHub(){
+  document.getElementById('clientsLandingView').style.display = 'none';
+  document.getElementById('clientsFormView').style.display = 'none';
+  document.getElementById('clientsListView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'block';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+}
+const TAX_YEARS = ['2020','2021','2022','2023','2024','2025','2026','2027'];
+let currentTaxSection = '';
+function openCategorySection(section){
+  if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
+  if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
+  if(section === 'مستندات'){ renderClientDocsSection(); return; }
+}
+
+function renderClientInfoSection(){
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'block';
+  document.getElementById('categorySectionTitle').textContent = 'بيانات المنشأة';
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  const body = document.getElementById('categorySectionBody');
+  if(!c){ body.innerHTML = '<div class="empty">العميل ده مش موجود</div>'; return; }
+  const rows = [
+    ['السمة التجارية', c.tradeName], ['نوع الشركة', c.companyType],
+    ['رقم التسجيل الضريبي', c.taxRegNo], ['المأمورية', c.taxOffice],
+    ['مكتب السجل التجاري', c.crOffice], ['رقم السجل التجاري', c.crNo],
+    ['تاريخ انتهاء السجل التجاري', c.crExpiry], ['تاريخ انتهاء البطاقة الضريبية', c.taxCardExpiry],
+    ['تاريخ انتهاء شهادة القيمة المضافة', c.vatExpiry], ['تاريخ انتهاء التوكن', c.tokenExpiry],
+    ['رقم الهاتف', c.phone]
+  ];
+  body.innerHTML = rows.map(r => `<div class="cd-info-row"><span>${escapeHtml(r[0])}</span><span>${escapeHtml(r[1])||'—'}</span></div>`).join('')
+    + `<div class="row-actions"><button class="act btn-primary" onclick="editClientFromHub()">✏️ تعديل بيانات المنشأة</button></div>`;
+}
+function editClientFromHub(){
+  const id = currentClientHubId;
+  showClientsForm();
+  editClient(id);
+}
+
+async function renderClientDocsSection(){
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'block';
+  document.getElementById('categorySectionTitle').textContent = 'مستندات';
+  const body = document.getElementById('categorySectionBody');
+  body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  let files = [];
+  try{ files = (await getFilesForClient(currentClientHubId)).filter(f => (f.folder||'general') === 'general'); }catch(e){}
+  clientDocsSectionCache = files;
+  body.innerHTML = `
+    <div class="attach-box" style="margin:0;">
+      <div class="row-actions" style="margin-top:0;">
+        <label class="file-upload-btn" for="clientHubDocsInput">📎 اختيار ملف</label>
+        <input type="file" id="clientHubDocsInput" multiple style="display:none;" onchange="uploadClientHubDoc(this)">
+        <button class="act btn-primary btn-small" onclick="shareSelectedClientDocs()">📤 مشاركة المحدد</button>
+        <button class="act btn-ghost btn-small" onclick="shareAllClientDocs()">📤 مشاركة الكل</button>
+      </div>
+      <div class="attach-list">${clientHubFileRows(files) || '<div class="empty" style="padding:14px;">مفيش مستندات مرفوعة لسه</div>'}</div>
+    </div>`;
+}
+let clientDocsSectionCache = [];
+function clientHubFileRows(files){
+  return files.map(f => `
+    <div class="attach-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" class="doc-share-check" value="${f.id}">
+      </label>
+      <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-ghost btn-small" onclick="shareSingleClientDoc('${f.id}')">مشاركة</button>
+        <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${currentClientHubId}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${currentClientHubId}').then(renderClientDocsSection))">حذف</button>
+      </div>
+    </div>`).join('');
+}
+async function uploadClientHubDoc(inputEl){
+  if(!inputEl.files.length) return;
+  try{ await addFilesToClient(currentClientHubId, inputEl.files, 'general'); }
+  catch(err){ alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف')); }
+  inputEl.value = '';
+  renderClientDocsSection();
+}
+
+async function dataUrlToFile(dataUrl, name, type){
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], name, { type: type || blob.type || 'application/octet-stream' });
+}
+
+async function shareClientDocFiles(ids){
+  if(!ids.length){ alert('اختار مستند واحد على الأقل الأول'); return; }
+  const files = clientDocsSectionCache.filter(f => ids.includes(f.id));
+  if(!files.length) return;
+  try{
+    const fileObjs = await Promise.all(files.map(f => dataUrlToFile(f.dataUrl, f.name, f.type)));
+    if(navigator.canShare && navigator.canShare({ files: fileObjs })){
+      await navigator.share({ files: fileObjs, title: 'مستندات' });
+      return;
+    }
+    // Fallback: no native share-with-files support (common on desktop) — download so the user can attach manually
+    fileObjs.forEach((fileObj, i) => {
+      const url = URL.createObjectURL(fileObj);
+      const a = document.createElement('a');
+      a.href = url; a.download = files[i].name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    });
+    alert('المتصفح ده مبيدعمش المشاركة المباشرة، فنزّلنا الملفات على جهازك — دلوقتي افتح واتساب أو الإيميل وارفقها يدويًا من مجلد التنزيلات.');
+  }catch(err){
+    if(err && err.name === 'AbortError') return; // user cancelled the share sheet
+    alert('حصل خطأ في المشاركة: ' + (err && err.message ? err.message : 'غير معروف'));
   }
+}
+
+function shareSingleClientDoc(id){
+  shareClientDocFiles([id]);
+}
+function shareSelectedClientDocs(){
+  const ids = Array.from(document.querySelectorAll('.doc-share-check:checked')).map(el=>el.value);
+  shareClientDocFiles(ids);
+}
+function shareAllClientDocs(){
+  shareClientDocFiles(clientDocsSectionCache.map(f=>f.id));
+}
+
+function openTaxYearsList(section){
+  currentTaxSection = section;
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'block';
+  document.getElementById('taxYearsTitle').textContent = (c ? c.name : '') + ' — ' + section;
+  document.getElementById('taxYearsList').innerHTML = TAX_YEARS.map(y =>
+    `<button type="button" class="year-btn" onclick="openTaxYear('${y}')">${y}</button>`
+  ).join('');
+}
+
+function showTaxYearsList(){
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'block';
+}
+
+let currentTaxYear = '';
+function taxFileIcon(f){
+  const t = f.type || '';
+  const n = (f.name || '').toLowerCase();
+  if(t.startsWith('image/')) return '🖼️';
+  if(t === 'application/pdf' || n.endsWith('.pdf')) return '📕';
+  if(t.includes('word') || n.endsWith('.doc') || n.endsWith('.docx')) return '📄';
+  if(t.includes('excel') || t.includes('spreadsheet') || n.endsWith('.xls') || n.endsWith('.xlsx')) return '📊';
+  if(t.includes('powerpoint') || t.includes('presentation') || n.endsWith('.ppt') || n.endsWith('.pptx')) return '📽️';
+  return '📎';
+}
+function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
+function taxYearFilesCol(){
+  const col = poasCol();
+  if(!col || !currentClientHubId || !currentTaxSection || !currentTaxYear) return null;
+  const docId = 'taxyear_' + currentClientHubId + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
+  return col.doc(docId).collection('files');
+}
+
+function openTaxYear(year){
+  currentTaxYear = year;
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'block';
+  document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + currentTaxSection + ' — ' + year;
+  renderTaxYearFilesList();
+}
+
+async function renderTaxYearFilesList(){
+  const listEl = document.getElementById('taxYearFilesList');
+  const col = taxYearFilesCol();
+  if(!col){ listEl.innerHTML = '<div class="empty">لسه بيتحمّل بيانات المكتب...</div>'; return; }
+  listEl.innerHTML = '<div class="empty" style="padding:14px;">جارٍ التحميل...</div>';
+  let files = [];
+  try{ const snap = await col.get(); files = snap.docs.map(d=>Object.assign({ id: d.id }, d.data())); }catch(err){}
+  if(!files.length){ listEl.innerHTML = '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة لسنة ' + currentTaxYear + ' لسه</div>'; return; }
+  listEl.innerHTML = files.map(f => `
+    <div class="attach-row">
+      <div class="info"><div class="fname">${taxFileIcon(f)} <bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
+      <div class="btns" style="display:flex;gap:6px;">
+        <button class="act btn-primary btn-small" onclick="downloadTaxYearFile('${f.id}')">تحميل</button>
+        <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteTaxYearFile('${f.id}'))">حذف</button>
+      </div>
+    </div>`).join('');
+}
+
+async function uploadTaxYearFile(inputEl){
+  if(!inputEl.files.length) return;
+  const col = taxYearFilesCol();
+  if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+  for(const file of Array.from(inputEl.files)){
+    let dataUrl, isPdf = file.type === 'application/pdf';
+    try{
+      if(isPdf){
+        dataUrl = await pdfToSafeDataUrl(file);
+      } else if(file.type && file.type.startsWith('image/')){
+        dataUrl = await compressImageToDataUrl(file, 1000, 0.7);
+        if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 700, 0.55);
+        if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES) dataUrl = await compressImageToDataUrl(file, 500, 0.4);
+      } else {
+        dataUrl = await fileToDataUrl(file);
+      }
+      if(dataUrl.length > FIRESTORE_SAFE_MEDIA_BYTES){
+        alert(`الملف "${file.name}" كبير جدًا حتى بعد الضغط. جرب ملف أصغر.`);
+        continue;
+      }
+      await col.add({ name: file.name, type: file.type || '', size: dataUrl.length, date: todayStr(), dataUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }catch(err){
+      alert('حصل خطأ في رفع الملف: ' + (err && err.message ? err.message : 'غير معروف'));
+    }
+  }
+  inputEl.value = '';
+  renderTaxYearFilesList();
+}
+
+async function downloadTaxYearFile(fileId){
+  const col = taxYearFilesCol();
+  if(!col) return;
+  const doc = await col.doc(fileId).get();
+  if(!doc.exists) return;
+  const f = doc.data();
+  const a = document.createElement('a');
+  a.href = f.dataUrl; a.download = f.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+async function deleteTaxYearFile(fileId){
+  const col = taxYearFilesCol();
+  if(!col) return;
+  await col.doc(fileId).delete();
+  renderTaxYearFilesList();
+}
+
+function showClientsListForCategory(cat){
+  clientCategoryHubCat = cat;
+  showClientsList();
+  setClientCatFilter(cat);
+  document.getElementById('clientsListCatLabel').textContent = '— ' + cat;
 }
 function showClientsForm(){
   document.getElementById('clientsLandingView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
-  document.getElementById('clientsHubView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'block';
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsList(){
   document.getElementById('clientsLandingView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'none';
-  document.getElementById('clientsHubView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'block';
   renderClientsTab();
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsLanding(){
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
-  document.getElementById('clientsHubView').style.display = 'none';
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsLandingView').style.display = 'block';
-  chReturnToHub = false;
+  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 
 async function renderClientsTab(){
@@ -3076,67 +3575,22 @@ async function renderClientsTab(){
   if(clients.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
 
-  const rowsHtml = await Promise.all(clients.map(async c => {
-    let count = 0;
-    try{ count = (await getFilesForClient(c.id)).length; }catch(e){ count = 0; }
-    const isOpen = openClientDocsId === c.id;
-    let docsCellHtml = '';
-    if(isOpen){
-      let files = [];
-      try{ files = await getFilesForClient(c.id); }catch(e){ files = []; }
-      const fileRows = files.map(f => `
-        <div class="attach-row">
-          <div class="info"><div class="fname"><bdi>${escapeHtml(f.name)}</bdi></div><span class="meta">${fmtSize(f.size)} — ${f.date}</span></div>
-          <div class="btns" style="display:flex;gap:6px;">
-            <button class="act btn-ghost btn-small" onclick="downloadClientFile('${f.id}','${c.id}')">تحميل</button>
-            <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClientFile('${f.id}','${c.id}'))">حذف</button>
-          </div>
+  const anyWarn = c => isExpiringSoon(c.crExpiry) || isExpiringSoon(c.taxCardExpiry) || isExpiringSoon(c.vatExpiry) || isExpiringSoon(c.tokenExpiry);
+  body.innerHTML = clients.map(c => `
+    <div class="poa-row" style="flex-wrap:wrap;align-items:flex-start;">
+      <div class="info" style="flex:1 1 220px;min-width:0;">
+        <div class="poa-card-name" style="cursor:pointer;" onclick="openClientHub('${c.id}')">${escapeHtml(c.name)} ${anyWarn(c)?'⚠️':''}</div>
+        <div style="font-size:12.5px;color:var(--navy-dim);margin-top:2px;">
+          ${escapeHtml(c.tradeName) || ''}${c.tradeName && c.phone ? ' · ' : ''}${escapeHtml(c.phone) || ''}
         </div>
-      `).join('');
-      docsCellHtml = `
-        <tr>
-          <td colspan="15">
-            <div class="attach-box" style="margin:0;">
-              <input type="file" multiple onchange="handleFileUploadInClientsTab('${c.id}', this)">
-              <div class="attach-list">
-                ${fileRows || '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة للعميل ده لسه</div>'}
-              </div>
-            </div>
-          </td>
-        </tr>`;
-    }
-    return `
-    <tr>
-      <td><a href="javascript:void(0)" onclick="openClientDetail('${c.id}')" style="color:var(--navy);font-weight:800;text-decoration:underline;">${escapeHtml(c.name)}</a></td>
-      <td>${escapeHtml(c.category)||'—'}</td>
-      <td>${escapeHtml(c.tradeName)||'—'}</td>
-      <td>${escapeHtml(c.companyType)||'—'}</td>
-      <td class="num">${escapeHtml(c.taxRegNo)||'—'}</td>
-      <td>${escapeHtml(c.taxOffice)||'—'}</td>
-      <td>${escapeHtml(c.crOffice)||'—'}</td>
-      <td class="num">${escapeHtml(c.crNo)||'—'}</td>
-      <td class="num ${isExpiringSoon(c.crExpiry)?'expiry-warn':''}">${c.crExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.taxCardExpiry)?'expiry-warn':''}">${c.taxCardExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.vatExpiry)?'expiry-warn':''}">${c.vatExpiry||'—'}</td>
-      <td class="num ${isExpiringSoon(c.tokenExpiry)?'expiry-warn':''}">${c.tokenExpiry||'—'}</td>
-      <td class="num">${escapeHtml(c.phone)||'—'}</td>
-      <td><button class="act btn-ghost btn-small" onclick="toggleClientDocs('${c.id}')">📎 مستندات (${count})</button></td>
-      <td>
-        <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
-        <button class="act btn-danger btn-small" onclick="deleteClient('${c.id}')">حذف</button>
-      </td>
-    </tr>
-    ${docsCellHtml}`;
-  }));
-
-  body.innerHTML = rowsHtml.join('');
+      </div>
+      <button class="act btn-ghost btn-small" onclick="openClientHub('${c.id}')">تفاصيل</button>
+      ${currentUserRole === 'owner' ? `<button class="act btn-ghost btn-small" onclick="openClientOwnerLedger('${c.id}')">حساب العميل</button>` : ''}
+      <button class="act btn-ghost btn-small" onclick="editClient('${c.id}')">تعديل</button>
+      <button class="act btn-danger btn-small" onclick="requirePin(()=>deleteClient('${c.id}'))">حذف</button>
+    </div>`).join('');
 }
 document.getElementById('clientListSearch').addEventListener('input', renderClientsTab);
-
-function toggleClientDocs(id){
-  openClientDocsId = (openClientDocsId === id) ? null : id;
-  renderClientsTab();
-}
 
 /* ---------- CLIENT POWERS OF ATTORNEY (TOKALAT) ---------- */
 const POA_LETTERS = ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
@@ -3961,72 +4415,6 @@ let cdClientId = null;
 let cdActiveTab = 'info';
 let cdOpenYears = new Set();
 const CD_YEARS = [2027,2026,2025,2024,2023,2022,2021,2020];
-const VAT_YEARS_ASC = [2020,2021,2022,2023,2024,2025,2026,2027];
-const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-function fmtEGP(n){
-  const v = Number(n)||0;
-  return v.toLocaleString('ar-EG', { maximumFractionDigits: 2 }) + ' جنيه';
-}
-function clientVatCol(clientId){
-  const col = officeClientsCol();
-  if(!col) return null;
-  return col.doc(clientId).collection('vatEntries');
-}
-async function getVatEntriesForClient(clientId){
-  const col = clientVatCol(clientId);
-  if(!col) return {};
-  const snap = await col.get();
-  const map = {};
-  snap.docs.forEach(d => { map[d.id] = d.data(); });
-  return map;
-}
-async function saveVatEntry(clientId, year, month, field, value){
-  const col = clientVatCol(clientId);
-  if(!col) return;
-  const id = year + '-' + String(month).padStart(2,'0');
-  const patch = { year, month };
-  patch[field] = Number(value) || 0;
-  await col.doc(id).set(patch, { merge: true });
-}
-async function saveVatOpeningBalance(clientId, value){
-  const col = officeClientsCol();
-  if(!col) return;
-  await col.doc(clientId).set({ vatOpeningBalance: Number(value) || 0 }, { merge: true });
-}
-// Walks every month from 2020 forward, carrying the credit/due balance across months and years.
-function computeVatSchedule(openingBalance, entriesMap){
-  let balance = Number(openingBalance) || 0; // credit balance carried into the current month
-  const schedule = {};
-  VAT_YEARS_ASC.forEach(year => {
-    schedule[year] = [];
-    for(let m = 1; m <= 12; m++){
-      const key = year + '-' + String(m).padStart(2,'0');
-      const e = entriesMap[key] || {};
-      const sales = Number(e.sales) || 0;
-      const purchases = Number(e.purchases) || 0;
-      const tax = (sales - purchases) * 0.14;
-      const net = tax - balance;
-      let due, creditAfter;
-      if(net > 0){ due = net; creditAfter = 0; }
-      else { due = 0; creditAfter = -net; }
-      schedule[year].push({ month: m, sales, purchases, tax, due, creditAfter });
-      balance = creditAfter;
-    }
-  });
-  return schedule;
-}
-async function vatFieldChange(year, month, field, value){
-  if(!cdClientId) return;
-  try{ await saveVatEntry(cdClientId, year, month, field, value); }
-  catch(err){ alert('حصل خطأ في الحفظ: ' + (err && err.message ? err.message : 'غير معروف')); }
-  renderClientDetailBody();
-}
-async function vatOpeningChange(value){
-  if(!cdClientId) return;
-  try{ await saveVatOpeningBalance(cdClientId, value); }
-  catch(err){ alert('حصل خطأ في الحفظ: ' + (err && err.message ? err.message : 'غير معروف')); }
-  renderClientDetailBody();
-}
 
 function openClientDetail(id){
   cdClientId = id;
@@ -4079,84 +4467,31 @@ async function renderClientDetailBody(){
       </div>`;
     return;
   }
-  // income: per-year file folders only
-  if(cdActiveTab === 'income'){
-    const kind = 'income';
-    body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
-    let allFiles = [];
-    try{ allFiles = await getFilesForClient(c.id); }catch(e){}
-    body.innerHTML = CD_YEARS.map(year => {
-      const folder = kind + '-' + year;
-      const files = allFiles.filter(f => f.folder === folder);
-      const key = kind + ':' + year;
-      const open = cdOpenYears.has(key);
-      return `<div class="cd-year${open?' open':''}">
-        <div class="cd-year-head" onclick="cdToggleYear('${key}')">
-          <span>سنة ${year}</span>
-          <span class="cd-year-count">${files.length ? files.length + ' ملف' : 'مفيش ملفات'} ${open?'▲':'▼'}</span>
-        </div>
-        <div class="cd-year-body">
-          <div class="attach-box" style="margin:0;">
-            <input type="file" multiple onchange="uploadClientDetailFile('${folder}', this)">
-            <div class="attach-list">${cdFileRows(files) || '<div class="empty" style="padding:10px;">مفيش ملفات ضرائب دخل لسنة ${year} لسه</div>'}</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    return;
-  }
-  // vat: monthly sales/purchases calculator with automatic carry-forward + per-year files
-  if(cdActiveTab === 'vat'){
-    body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
-    let allFiles = [], entries = {};
-    try{ allFiles = await getFilesForClient(c.id); }catch(e){}
-    try{ entries = await getVatEntriesForClient(c.id); }catch(e){}
-    const schedule = computeVatSchedule(c.vatOpeningBalance, entries);
-    const yearRows = CD_YEARS.map(year => {
-      const folder = 'vat-' + year;
-      const files = allFiles.filter(f => f.folder === folder);
-      const key = 'vat:' + year;
-      const open = cdOpenYears.has(key);
-      const months = schedule[year] || [];
-      const monthRows = months.map(mo => `
-        <tr>
-          <td style="white-space:nowrap;">${AR_MONTHS[mo.month-1]}</td>
-          <td><input type="number" inputmode="decimal" class="vat-input" value="${mo.sales || ''}" placeholder="0" onchange="vatFieldChange(${year},${mo.month},'sales',this.value)"></td>
-          <td><input type="number" inputmode="decimal" class="vat-input" value="${mo.purchases || ''}" placeholder="0" onchange="vatFieldChange(${year},${mo.month},'purchases',this.value)"></td>
-          <td style="white-space:nowrap;">${fmtEGP(Math.abs(mo.tax))}</td>
-          <td style="white-space:nowrap;">${mo.due > 0.004
-              ? `<span style="color:var(--red);font-weight:800;">مطلوب ${fmtEGP(mo.due)}</span>`
-              : (mo.creditAfter > 0.004 ? `<span style="color:#1c7a34;font-weight:800;">دائن ${fmtEGP(mo.creditAfter)}</span>` : '—')}</td>
-        </tr>`).join('');
-      return `<div class="cd-year${open?' open':''}">
-        <div class="cd-year-head" onclick="cdToggleYear('${key}')">
-          <span>سنة ${year}</span>
-          <span class="cd-year-count">${open?'▲':'▼'}</span>
-        </div>
-        <div class="cd-year-body">
-          <div style="overflow-x:auto;">
-            <table class="vat-table">
-              <thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>الحالة</th></tr></thead>
-              <tbody>${monthRows}</tbody>
-            </table>
-          </div>
-          <div class="attach-box" style="margin-top:12px;">
-            <input type="file" multiple onchange="uploadClientDetailFile('${folder}', this)">
-            <div class="attach-list">${cdFileRows(files) || '<div class="empty" style="padding:10px;">مفيش مستندات قيمة مضافة لسنة ${year} لسه</div>'}</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    body.innerHTML = `
-      <div class="field" style="margin-bottom:16px;">
-        <label>رصيد دائن سابق (لو موجود، من قبل أول سنة بتسجلها هنا)</label>
-        <input type="number" inputmode="decimal" id="cdVatOpening" value="${c.vatOpeningBalance || ''}" placeholder="0" onchange="vatOpeningChange(this.value)">
+  // income / vat: per-year folders
+  const kind = cdActiveTab; // 'income' | 'vat'
+  const label = kind === 'income' ? 'ضرائب دخل' : 'ضرائب قيمة مضافة';
+  body.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  let allFiles = [];
+  try{ allFiles = await getFilesForClient(c.id); }catch(e){}
+  body.innerHTML = CD_YEARS.map(year => {
+    const folder = kind + '-' + year;
+    const files = allFiles.filter(f => f.folder === folder);
+    const key = kind + ':' + year;
+    const open = cdOpenYears.has(key);
+    return `<div class="cd-year${open?' open':''}">
+      <div class="cd-year-head" onclick="cdToggleYear('${key}')">
+        <span>سنة ${year}</span>
+        <span class="cd-year-count">${files.length ? files.length + ' ملف' : 'مفيش ملفات'} ${open?'▲':'▼'}</span>
       </div>
-      ${yearRows}`;
-    return;
-  }
+      <div class="cd-year-body">
+        <div class="attach-box" style="margin:0;">
+          <input type="file" multiple onchange="uploadClientDetailFile('${folder}', this)">
+          <div class="attach-list">${cdFileRows(files) || '<div class="empty" style="padding:10px;">مفيش ملفات ${label} لسنة ${year} لسه</div>'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
-
 function cdFileRows(files){
   return files.map(f => `
     <div class="attach-row">
