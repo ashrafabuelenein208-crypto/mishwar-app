@@ -29,6 +29,27 @@
     --green:#1f9d6c;
     --green-soft:#e0f5ec;
   }
+
+  :root[data-theme="dark"]{
+    --ink:#e8edf2;
+    --paper:#0f1720;
+    --panel:#182430;
+    --line:#2a3a47;
+    --navy:#2a9fd6;
+    --navy-dim:#8fa8b8;
+    --bronze:#e0b400;
+    --bronze-soft:#3a3320;
+    --red:#ff6b5e;
+    --red-soft:#3a2220;
+    --green:#3fc98a;
+    --green-soft:#153328;
+  }
+  .theme-toggle{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:12px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.16);color:#fff;font-size:18px;flex:none;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,.28);}
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -110,11 +131,11 @@
   nav.tabs button::after{content:"\2039";opacity:.55;font-size:20px;line-height:1;flex:none;}
   nav.tabs button.active{
     color:var(--navy);
-    background:#fff;
+    background:var(--panel);
   }
   nav.tabs button.active .ic-wrap{background:rgba(0,105,156,.12);}
   nav.tabs button:hover{background:rgba(255,255,255,.22);}
-  nav.tabs button.active:hover{background:#fff;}
+  nav.tabs button.active:hover{background:var(--panel);}
 
   main{
     max-width:1120px;
@@ -134,7 +155,7 @@
     }
     nav.tabs button{max-width:none;background:transparent;}
     nav.tabs button:hover{background:rgba(255,255,255,.12);}
-    nav.tabs button.active,nav.tabs button.active:hover{background:#fff;}
+    nav.tabs button.active,nav.tabs button.active:hover{background:var(--panel);}
   }
 
   .panel{display:none;}
@@ -214,7 +235,7 @@
   input:focus,select:focus,textarea:focus{
     outline:none;
     border-color:var(--navy);
-    background:#fff;
+    background:var(--panel);
   }
   .field{margin-bottom:13px;}
 
@@ -281,7 +302,7 @@
     border-radius:14px;
     padding:14px 16px;
     margin-bottom:18px;
-    background:#fff;
+    background:var(--panel);
     border:1.5px solid var(--line);
     border-inline-start:5px solid var(--bronze);
   }
@@ -348,7 +369,7 @@
   .login-err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:8px;}
 
   .office-name{font-size:12.5px;color:var(--bronze);font-weight:800;letter-spacing:.3px;margin-bottom:2px;}
-  .office-logo{height:42px;width:42px;object-fit:contain;border-radius:14px;background:#fff;padding:3px;}
+  .office-logo{height:42px;width:42px;object-fit:contain;border-radius:14px;background:var(--panel);padding:3px;}
   .office-brand{display:flex;align-items:center;gap:11px;}
 
   .alert-banner{
@@ -365,7 +386,7 @@
     align-items:center;
     gap:10px;
     flex-wrap:wrap;
-    background:#fff;
+    background:var(--panel);
     border-radius:14px;
     padding:10px 14px;
     margin-bottom:8px;
@@ -450,8 +471,8 @@
   .poa-letters button.on .count{color:#dff1fa;}
   .poa-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
   .poa-bar input[type=text]{flex:1 1 220px;min-width:0;}
-  .poa-row{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
-  .poa-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;}
+  .poa-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
+  .poa-card{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;}
   .poa-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .poa-card-name{flex:1;min-width:0;font-weight:800;font-size:15px;color:var(--navy);overflow-wrap:anywhere;cursor:pointer;}
   .poa-mini{padding:7px 12px !important;font-size:12.5px !important;white-space:nowrap;}
@@ -469,7 +490,7 @@
 
   .reminder-row{
     display:flex;align-items:center;gap:12px;
-    background:#fff;border:1.5px solid var(--line);border-radius:16px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:16px;
     padding:12px 15px;margin-bottom:9px;
   }
   .reminder-row.due{background:var(--red-soft);border-color:#f3bfb6;}
@@ -488,7 +509,7 @@
   }
   .chat-emp-row{
     display:flex; justify-content:space-between; align-items:center; gap:12px;
-    background:#fff; border:1.5px solid var(--line); border-radius:18px;
+    background:var(--panel); border:1.5px solid var(--line); border-radius:18px;
     padding:13px 16px; margin-bottom:12px; cursor:pointer;
     box-shadow:0 1px 3px rgba(15,23,42,.05);
     transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -512,7 +533,7 @@
     padding:9px 14px; border-radius:16px; font-size:14.5px; line-height:1.5; word-break:break-word;
   }
   .msg-row.me .msg-bubble{background:var(--navy); color:#fff; border-bottom-left-radius:4px;}
-  .msg-row.them .msg-bubble{background:#fff; color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
+  .msg-row.them .msg-bubble{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-bottom-right-radius:4px;}
   .msg-time{font-size:10.5px; color:var(--navy-dim); margin-top:3px; display:flex; align-items:center; gap:3px;}
   .msg-row.me .msg-time{justify-content:flex-end;}
   .msg-row.them .msg-time{justify-content:flex-start;}
@@ -555,7 +576,7 @@
     font-family:inherit;
   }
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
-  #imgLightbox .lb-close{ background:#fff; color:var(--navy); }
+  #imgLightbox .lb-close{ background:var(--panel); color:var(--navy); }
 
   #waPickerModal{
     display:none; position:fixed; inset:0; z-index:10001;
@@ -563,7 +584,7 @@
   }
   #waPickerModal.show{ display:flex; }
   #waPickerModal .wa-picker-box{
-    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    background:var(--panel); border-radius:18px; padding:20px; width:100%; max-width:360px;
     max-height:80vh; overflow-y:auto;
   }
   #waPickerModal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
@@ -580,7 +601,7 @@
   }
   .picker-modal.show{ display:flex; }
   .picker-modal .picker-box{
-    background:#fff; border-radius:18px; padding:20px; width:100%; max-width:360px;
+    background:var(--panel); border-radius:18px; padding:20px; width:100%; max-width:360px;
     max-height:80vh; overflow-y:auto;
   }
   .picker-modal h3{ margin:0 0 14px; color:var(--navy); font-size:16px; }
@@ -598,19 +619,19 @@
   }
   #newClientModal.show{ display:flex; }
   #newClientModal .ncm-box{
-    background:#fff; border-radius:16px; padding:22px 18px; max-width:380px; width:100%; text-align:center;
+    background:var(--panel); border-radius:16px; padding:22px 18px; max-width:380px; width:100%; text-align:center;
   }
   #newClientModal .ncm-title{ font-weight:800; font-size:16px; margin-bottom:4px; color:var(--navy); }
   #newClientModal .ncm-name{ color:var(--bronze); }
   #newClientModal .ncm-sub{ font-size:13px; color:#666; margin-bottom:16px; }
 
   .cat-choice{display:flex;gap:10px;flex-wrap:wrap;}
-  .cat-btn{flex:1;min-width:100px;padding:12px 10px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:var(--navy);}
+  .cat-btn{flex:1;min-width:100px;padding:12px 10px;border-radius:12px;border:2px solid var(--line);background:var(--panel);font-weight:800;font-size:14px;cursor:pointer;color:var(--navy);}
   .cat-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .cat-filter{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
   .cat-filter button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   #clientDetailModal{position:fixed;inset:0;background:rgba(10,20,40,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
-  .cd-box{background:#fff;border-radius:18px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+  .cd-box{background:var(--panel);border-radius:18px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
   .cd-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1.5px solid var(--line);}
   .cd-head .cd-title{font-weight:900;font-size:17px;color:var(--navy);}
   .cd-tabs{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap;border-bottom:1.5px solid var(--line);}
@@ -637,6 +658,14 @@
   @media (max-width:640px){ .landing-cat-btn{flex:1 1 100%;min-height:80px;font-size:17px;} }
 
 </style>
+<script>
+  (function(){
+    try{
+      var saved = localStorage.getItem('mishwar_theme');
+      if(saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    }catch(e){}
+  })();
+</script>
 </head>
 <body>
 
@@ -740,7 +769,10 @@
         <p>متابعة مصاريف المواصلات والحساب مع صاحب المكتب</p>
       </div>
     </div>
-    <div class="today-badge" id="todayBadge"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button type="button" class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
+      <div class="today-badge" id="todayBadge"></div>
+    </div>
   </div>
   <nav class="tabs" id="tabsNav">
     <button data-tab="home" class="active"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="lbl">الرئيسية</span></button>
@@ -1337,6 +1369,25 @@
 </main>
 
 <script>
+function applyThemeIcon(){
+  const btn = document.getElementById('themeToggleBtn');
+  if(!btn) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  btn.textContent = isDark ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if(isDark){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('mishwar_theme', 'light'); }catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try{ localStorage.setItem('mishwar_theme', 'dark'); }catch(e){}
+  }
+  applyThemeIcon();
+}
+document.addEventListener('DOMContentLoaded', applyThemeIcon);
+
 function authUid(){ return (auth.currentUser && auth.currentUser.uid) || 'guest'; }
 function TKEY(){ return 'mishwar_trips_v2_' + authUid(); }
 function RKEY(){ return 'mishwar_receipts_v2_' + authUid(); }
