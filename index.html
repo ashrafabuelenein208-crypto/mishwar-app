@@ -774,6 +774,16 @@
       <h2>إعدادات التنبيهات</h2>
       <p style="font-size:12.5px;color:var(--navy-dim);margin:0;">التطبيق مبيبعتش رسائل تلقائي؛ بيجهزلك رابط واتساب أو نص جاهز تنسخه للإيميل (ashrafabuelenein208@gmail.com) وترسله بنفسك. جهات اتصال الواتساب بتتظبط من تاب "التنبيهات".</p>
     </section>
+    <section>
+      <h2>نسخة احتياطية</h2>
+      <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">بتجمّع كل بيانات المكتب (عملاء، توكيلات ومرفقاتها، مشاوير، حساب المكتب، تنبيهات) في ملف واحد على جهازك. احتفظ بيه في مكان آمن.</p>
+      <div class="row-actions">
+        <button class="act btn-primary" id="backupBtn" onclick="downloadBackup()">⬇️ تنزيل نسخة احتياطية</button>
+        <label class="act btn-ghost" for="restoreFileInput" style="cursor:pointer;">⬆️ استعادة من نسخة احتياطية</label>
+        <input type="file" id="restoreFileInput" accept="application/json" style="display:none;" onchange="handleRestoreFile(this)">
+      </div>
+      <div id="backupStatus" style="font-size:12.5px;color:var(--navy-dim);margin-top:8px;"></div>
+    </section>
   </div>
 
   <!-- ADD TRIP -->
@@ -1688,6 +1698,199 @@ function requirePin(cb){
   const p = prompt('ادخل كود التعديل:');
   if(p === null) return;
   if(p === EDIT_PIN){ cb(); } else { alert('الكود غير صحيح'); }
+}
+
+async function downloadBackup(){
+  const btn = document.getElementById('backupBtn');
+  const status = document.getElementById('backupStatus');
+  const user = auth.currentUser;
+  if(!user){ if(status) status.textContent = 'لازم تكون مسجّل دخول الأول.'; return; }
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ جارٍ التجميع...'; }
+  if(status) status.textContent = '';
+  try{
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      officeId: currentOfficeId || null,
+      uid: user.uid,
+      clients: [],
+      poas: [],
+      taxYearFiles: [],
+      trips: [],
+      cash: [],
+      reminders: [],
+      ownerClients: []
+    };
+
+    // clients + their document attachments
+    const clientsColRef = officeClientsCol();
+    if(clientsColRef){
+      const clientsSnap = await clientsColRef.get();
+      for(const cDoc of clientsSnap.docs){
+        const client = Object.assign({ id: cDoc.id }, cDoc.data());
+        try{
+          const docsSnap = await cDoc.ref.collection('documents').get();
+          client.documents = docsSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        }catch(e){ client.documents = []; }
+        backup.clients.push(client);
+      }
+    }
+
+    // POAs + their files (split real POAs from the tax-year files stored under the same collection)
+    const poasColRef = poasCol();
+    if(poasColRef){
+      const poasSnap = await poasColRef.get();
+      for(const pDoc of poasSnap.docs){
+        const filesSnap = await pDoc.ref.collection('files').get();
+        const files = filesSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        if(pDoc.id.startsWith('taxyear_')){
+          backup.taxYearFiles.push({ key: pDoc.id, files });
+        } else {
+          const poa = Object.assign({ id: pDoc.id }, pDoc.data());
+          poa.files = files;
+          backup.poas.push(poa);
+        }
+      }
+    }
+
+    // this user's trips + receipts, cash log, reminders, and (if owner) their client roster
+    const [tripsSnap, cashSnap, remindersSnap, ownerClientsSnap] = await Promise.all([
+      db.collection('users').doc(user.uid).collection('trips').get(),
+      db.collection('users').doc(user.uid).collection('cash').get(),
+      db.collection('users').doc(user.uid).collection('reminders').get().catch(()=>({docs:[]})),
+      db.collection('users').doc(user.uid).collection('ownerClients').get().catch(()=>({docs:[]}))
+    ]);
+    for(const tDoc of tripsSnap.docs){
+      const trip = Object.assign({ id: tDoc.id }, tDoc.data());
+      try{
+        const rSnap = await tDoc.ref.collection('receipts').get();
+        trip.receipts = rSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      }catch(e){ trip.receipts = []; }
+      backup.trips.push(trip);
+    }
+    backup.cash = cashSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    backup.reminders = remindersSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    backup.ownerClients = ownerClientsSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'نسخة-احتياطية-' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if(status) status.textContent = `تم التنزيل ✅ — ${backup.clients.length} عميل، ${backup.poas.length} توكيل، ${backup.trips.length} مشوار.`;
+  }catch(err){
+    if(status) status.textContent = 'حصل خطأ في تجميع النسخة الاحتياطية: ' + (err && err.message ? err.message : 'غير معروف');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = '⬇️ تنزيل نسخة احتياطية'; }
+  }
+}
+
+function handleRestoreFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';
+  if(!file) return;
+  const status = document.getElementById('backupStatus');
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try{ data = JSON.parse(reader.result); }
+    catch(e){ if(status) status.textContent = 'الملف ده مش نسخة احتياطية صحيحة (مش JSON سليم).'; return; }
+    if(!data || typeof data !== 'object' || !('clients' in data)){
+      if(status) status.textContent = 'الملف ده مش شكل نسخة احتياطية معروف.';
+      return;
+    }
+    const summary = `هيتم استرجاع: ${(data.clients||[]).length} عميل، ${(data.poas||[]).length} توكيل، `
+      + `${(data.trips||[]).length} مشوار، ${(data.cash||[]).length} حركة حساب، ${(data.reminders||[]).length} تنبيه.\n`
+      + `البيانات الحالية اللي بنفس المعرّف هتتحدّث بالقيم الجديدة (مش هيتمسح حاجة مش موجودة في الملف). متأكد عايز تكمل؟`;
+    if(!confirm(summary)) return;
+    requirePin(() => restoreBackup(data));
+  };
+  reader.onerror = () => { if(status) status.textContent = 'محصلش تحميل الملف.'; };
+  reader.readAsText(file);
+}
+
+async function restoreBackup(data){
+  const status = document.getElementById('backupStatus');
+  const user = auth.currentUser;
+  if(!user){ if(status) status.textContent = 'لازم تكون مسجّل دخول الأول.'; return; }
+  if(status) status.textContent = '⏳ جارٍ الاستعادة...';
+  try{
+    // clients + their document attachments
+    const clientsColRef = officeClientsCol();
+    if(clientsColRef){
+      for(const client of (data.clients || [])){
+        const { id, documents, ...fields } = client;
+        if(!id) continue;
+        await clientsColRef.doc(id).set(fields, { merge: true });
+        for(const f of (documents || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await clientsColRef.doc(id).collection('documents').doc(fid).set(ffields, { merge: true });
+        }
+      }
+    }
+
+    // POAs + their files
+    const poasColRef = poasCol();
+    if(poasColRef){
+      for(const poa of (data.poas || [])){
+        const { id, files, ...fields } = poa;
+        if(!id) continue;
+        await poasColRef.doc(id).set(fields, { merge: true });
+        for(const f of (files || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await poasColRef.doc(id).collection('files').doc(fid).set(ffields, { merge: true });
+        }
+      }
+      // tax-year files (stored as poas/taxyear_*/files/*)
+      for(const entry of (data.taxYearFiles || [])){
+        if(!entry.key) continue;
+        for(const f of (entry.files || [])){
+          const { id: fid, ...ffields } = f;
+          if(!fid) continue;
+          await poasColRef.doc(entry.key).collection('files').doc(fid).set(ffields, { merge: true });
+        }
+      }
+    }
+
+    // this user's trips + receipts
+    for(const trip of (data.trips || [])){
+      const { id, receipts, ...fields } = trip;
+      if(!id) continue;
+      const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(id);
+      await tripRef.set(fields, { merge: true });
+      for(const r of (receipts || [])){
+        const { id: rid, ...rfields } = r;
+        if(!rid) continue;
+        await tripRef.collection('receipts').doc(rid).set(rfields, { merge: true });
+      }
+    }
+
+    // cash, reminders, ownerClients
+    for(const c of (data.cash || [])){
+      const { id, ...fields } = c;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('cash').doc(id).set(fields, { merge: true });
+    }
+    for(const r of (data.reminders || [])){
+      const { id, ...fields } = r;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('reminders').doc(id).set(fields, { merge: true });
+    }
+    for(const oc of (data.ownerClients || [])){
+      const { id, ...fields } = oc;
+      if(!id) continue;
+      await db.collection('users').doc(user.uid).collection('ownerClients').doc(id).set(fields, { merge: true });
+    }
+
+    if(status) status.textContent = '✅ تمت الاستعادة بنجاح. لو مش شايف التحديث، جدّد الصفحة.';
+  }catch(err){
+    if(status) status.textContent = 'حصل خطأ أثناء الاستعادة: ' + (err && err.message ? err.message : 'غير معروف');
+  }
 }
 
 function officeClientsCol(){
