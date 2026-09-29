@@ -1045,6 +1045,16 @@
         </div>
       </div>
       <div class="grid2">
+        <div class="field">
+          <label>الإيميل (بيانات الدخول)</label>
+          <input type="text" id="cEmail" placeholder="الإيميل / اليوزر">
+        </div>
+        <div class="field">
+          <label>الباسورد (بيانات الدخول)</label>
+          <input type="text" id="cPassword" placeholder="الباسورد">
+        </div>
+      </div>
+      <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
           <div class="row-actions" style="margin-top:0;">
             <button class="act btn-primary" onclick="saveClient()" id="clientSaveBtn">حفظ العميل</button>
@@ -3100,6 +3110,8 @@ function saveClient(){
     crOffice: document.getElementById('cCrOffice').value.trim(),
     taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
     crNo: document.getElementById('cCrNo').value.trim(),
+    email: document.getElementById('cEmail').value.trim(),
+    password: document.getElementById('cPassword').value,
   };
   const promise = editingClientId
     ? col.doc(editingClientId).set(data, { merge: true })
@@ -3123,6 +3135,8 @@ function resetClientForm(){
   document.getElementById('cCrOffice').value = '';
   document.getElementById('cTaxRegNo').value = '';
   document.getElementById('cCrNo').value = '';
+  document.getElementById('cEmail').value = '';
+  document.getElementById('cPassword').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -3145,6 +3159,8 @@ function editClient(id){
   document.getElementById('cCrOffice').value = c.crOffice || '';
   document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
   document.getElementById('cCrNo').value = c.crNo || '';
+  document.getElementById('cEmail').value = c.email || '';
+  document.getElementById('cPassword').value = c.password || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -3333,7 +3349,26 @@ function renderClientLoginsSection(){
   const c = loadClients().find(x=>x.id===currentClientHubId);
   const logins = (c && c.logins) || {};
   const body = document.getElementById('categorySectionBody');
-  body.innerHTML = LOGIN_SYSTEMS.map(sys => {
+  const mainCard = `
+    <div class="login-card">
+      <h3>بيانات الدخول الأساسية</h3>
+      <div class="login-field-row">
+        <label>الإيميل</label>
+        <input type="text" id="mainLoginEmail" readonly value="${escapeHtml((c && c.email) || '')}">
+        <button class="act btn-ghost btn-small" onclick="copyLoginField('mainLoginEmail', this)">نسخ</button>
+      </div>
+      <div class="login-field-row">
+        <label>الباسورد</label>
+        <input type="password" id="mainLoginPassword" readonly value="${escapeHtml((c && c.password) || '')}">
+        <button class="act btn-ghost btn-small" onclick="toggleFieldVisibility('mainLoginPassword', this)">إظهار</button>
+        <button class="act btn-ghost btn-small" onclick="copyLoginField('mainLoginPassword', this)">نسخ</button>
+      </div>
+      <div style="font-size:12px;color:var(--navy-dim);margin-bottom:8px;">🔒 دي بتتسجل من بيانات المنشأة — للتعديل ادخل هناك</div>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="act btn-primary btn-small" onclick="editClientFromHub()">✏️ تعديل من بيانات المنشأة</button>
+      </div>
+    </div>`;
+  body.innerHTML = mainCard + LOGIN_SYSTEMS.map(sys => {
     const d = logins[sys.key] || {};
     return `
       <div class="login-card">
@@ -3391,6 +3426,12 @@ function copyLoginField(inputId, btnEl){
   }
 }
 
+function toggleFieldVisibility(inputId, btnEl){
+  const el = document.getElementById(inputId);
+  if(!el) return;
+  if(el.type === 'password'){ el.type = 'text'; btnEl.textContent = 'إخفاء'; }
+  else { el.type = 'password'; btnEl.textContent = 'إظهار'; }
+}
 function toggleLoginPasswordVisibility(sysKey, btnEl){
   const el = document.getElementById('loginPass_' + sysKey);
   if(!el) return;
