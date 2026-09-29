@@ -652,6 +652,10 @@
   .year-list{display:flex;flex-direction:column;gap:12px;max-width:920px;margin:0 auto;}
   .year-btn{background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);padding:16px;width:100%;}
   .year-btn:active{filter:brightness(1.1);}
+  .vat-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px;}
+  .vat-table th{background:var(--panel);color:var(--navy-dim);font-weight:800;padding:7px 8px;text-align:center;}
+  .vat-table td{padding:5px 6px;text-align:center;border-bottom:1px solid var(--line);}
+  .vat-input{width:90px;padding:6px;border:1.5px solid var(--line);border-radius:8px;text-align:center;font-size:13px;background:var(--panel);color:var(--ink);}
   .landing-cats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:920px;margin:0 auto;}
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
@@ -942,6 +946,12 @@
         <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
       </div>
       <h2 id="taxYearsTitle" style="text-align:center;"></h2>
+      <div id="vatOpeningBox" style="display:none;margin-bottom:16px;">
+        <div class="field">
+          <label>رصيد دائن سابق (لو موجود، من قبل أول سنة بتسجلها هنا)</label>
+          <input type="number" inputmode="decimal" id="vatOpeningInput" placeholder="0" onchange="vatOpeningChange(this.value)">
+        </div>
+      </div>
       <div class="year-list" id="taxYearsList"></div>
     </div>
 
@@ -950,6 +960,7 @@
         <button class="act btn-ghost btn-small" onclick="showTaxYearsList()">‹ رجوع</button>
       </div>
       <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
+      <div id="vatMonthlyBox" style="display:none;margin-bottom:18px;"></div>
       <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
       <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
@@ -3429,6 +3440,13 @@ function openTaxYearsList(section){
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
   document.getElementById('clientsTaxYearsView').style.display = 'block';
   document.getElementById('taxYearsTitle').textContent = (c ? c.name : '') + ' — ' + section;
+  const openingBox = document.getElementById('vatOpeningBox');
+  if(taxSectionKey(section) === 'vat'){
+    openingBox.style.display = 'block';
+    document.getElementById('vatOpeningInput').value = (c && c.vatOpeningBalance) || '';
+  } else {
+    openingBox.style.display = 'none';
+  }
   document.getElementById('taxYearsList').innerHTML = TAX_YEARS.map(y =>
     `<button type="button" class="year-btn" onclick="openTaxYear('${y}')">${y}</button>`
   ).join('');
@@ -3458,12 +3476,114 @@ function taxYearFilesCol(){
   return col.doc(docId).collection('files');
 }
 
+/* ---------- VAT MONTHLY CALCULATOR (sales/purchases -> tax due, with carry-forward credit) ---------- */
+const VAT_YEARS_ASC = ['2020','2021','2022','2023','2024','2025','2026','2027'];
+const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function fmtEGP(n){
+  const v = Number(n) || 0;
+  return v.toLocaleString('ar-EG', { maximumFractionDigits: 2 }) + ' جنيه';
+}
+function clientVatCol(clientId){
+  const col = officeClientsCol();
+  if(!col) return null;
+  return col.doc(clientId).collection('vatEntries');
+}
+async function getVatEntriesForClient(clientId){
+  const col = clientVatCol(clientId);
+  if(!col) return {};
+  const snap = await col.get();
+  const map = {};
+  snap.docs.forEach(d => { map[d.id] = d.data(); });
+  return map;
+}
+async function saveVatEntry(clientId, year, month, field, value){
+  const col = clientVatCol(clientId);
+  if(!col) return;
+  const id = year + '-' + String(month).padStart(2,'0');
+  const patch = { year: Number(year), month: Number(month) };
+  patch[field] = Number(value) || 0;
+  await col.doc(id).set(patch, { merge: true });
+}
+async function saveVatOpeningBalance(clientId, value){
+  const col = officeClientsCol();
+  if(!col) return;
+  await col.doc(clientId).set({ vatOpeningBalance: Number(value) || 0 }, { merge: true });
+}
+// Walks every month from 2020 forward, carrying the credit/due balance across months and years.
+function computeVatSchedule(openingBalance, entriesMap){
+  let balance = Number(openingBalance) || 0; // credit balance carried into the current month
+  const schedule = {};
+  VAT_YEARS_ASC.forEach(year => {
+    schedule[year] = [];
+    for(let m = 1; m <= 12; m++){
+      const key = year + '-' + String(m).padStart(2,'0');
+      const e = entriesMap[key] || {};
+      const sales = Number(e.sales) || 0;
+      const purchases = Number(e.purchases) || 0;
+      const tax = (sales - purchases) * 0.14;
+      const net = tax - balance;
+      let due, creditAfter;
+      if(net > 0){ due = net; creditAfter = 0; }
+      else { due = 0; creditAfter = -net; }
+      schedule[year].push({ month: m, sales, purchases, tax, due, creditAfter });
+      balance = creditAfter;
+    }
+  });
+  return schedule;
+}
+async function renderVatMonthlyTable(){
+  const box = document.getElementById('vatMonthlyBox');
+  if(!box) return;
+  box.innerHTML = '<div class="empty">جارٍ التحميل...</div>';
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  let entries = {};
+  try{ entries = await getVatEntriesForClient(currentClientHubId); }catch(e){}
+  const schedule = computeVatSchedule(c && c.vatOpeningBalance, entries);
+  const months = schedule[currentTaxYear] || [];
+  const rows = months.map(mo => `
+    <tr>
+      <td style="white-space:nowrap;">${AR_MONTHS[mo.month-1]}</td>
+      <td><input type="number" inputmode="decimal" class="vat-input" value="${mo.sales || ''}" placeholder="0" onchange="vatFieldChange('${currentTaxYear}',${mo.month},'sales',this.value)"></td>
+      <td><input type="number" inputmode="decimal" class="vat-input" value="${mo.purchases || ''}" placeholder="0" onchange="vatFieldChange('${currentTaxYear}',${mo.month},'purchases',this.value)"></td>
+      <td style="white-space:nowrap;">${fmtEGP(Math.abs(mo.tax))}</td>
+      <td style="white-space:nowrap;">${mo.due > 0.004
+          ? `<span style="color:var(--red);font-weight:800;">مطلوب ${fmtEGP(mo.due)}</span>`
+          : (mo.creditAfter > 0.004 ? `<span style="color:var(--green);font-weight:800;">دائن ${fmtEGP(mo.creditAfter)}</span>` : '—')}</td>
+    </tr>`).join('');
+  box.innerHTML = `<div style="overflow-x:auto;">
+    <table class="vat-table">
+      <thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>الحالة</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+async function vatFieldChange(year, month, field, value){
+  if(!currentClientHubId) return;
+  try{ await saveVatEntry(currentClientHubId, year, month, field, value); }
+  catch(err){ alert('حصل خطأ في الحفظ: ' + (err && err.message ? err.message : 'غير معروف')); }
+  renderVatMonthlyTable();
+}
+async function vatOpeningChange(value){
+  if(!currentClientHubId) return;
+  try{ await saveVatOpeningBalance(currentClientHubId, value); }
+  catch(err){ alert('حصل خطأ في الحفظ: ' + (err && err.message ? err.message : 'غير معروف')); }
+}
+
+
 function openTaxYear(year){
   currentTaxYear = year;
   const c = loadClients().find(x=>x.id===currentClientHubId);
   document.getElementById('clientsTaxYearsView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'block';
   document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + currentTaxSection + ' — ' + year;
+  const vatBox = document.getElementById('vatMonthlyBox');
+  if(taxSectionKey(currentTaxSection) === 'vat'){
+    vatBox.style.display = 'block';
+    renderVatMonthlyTable();
+  } else {
+    vatBox.style.display = 'none';
+    vatBox.innerHTML = '';
+  }
   renderTaxYearFilesList();
 }
 
