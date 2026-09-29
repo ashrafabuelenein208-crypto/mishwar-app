@@ -656,6 +656,11 @@
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
   @media (max-width:640px){ .landing-cat-btn{flex:1 1 100%;min-height:80px;font-size:17px;} }
+  .login-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .login-card h3{margin:0 0 12px;font-size:15px;color:var(--navy);}
+  .login-field-row{display:flex;gap:8px;margin-bottom:9px;align-items:center;}
+  .login-field-row input{flex:1;min-width:0;}
+  .login-field-row label{font-size:12px;color:var(--navy-dim);white-space:nowrap;}
 
 </style>
 <script>
@@ -926,6 +931,7 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('بيانات الدخول')">بيانات الدخول</button>
       </div>
     </div>
 
@@ -3311,6 +3317,89 @@ function openCategorySection(section){
   if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
   if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
   if(section === 'مستندات'){ renderClientDocsSection(); return; }
+  if(section === 'بيانات الدخول'){ renderClientLoginsSection(); return; }
+}
+
+const LOGIN_SYSTEMS = [
+  { key: 'new', label: 'المنظومة الجديدة' },
+  { key: 'old', label: 'المنظومة القديمة' },
+  { key: 'einvoice', label: 'الفاتورة الإلكترونية' },
+];
+
+function renderClientLoginsSection(){
+  document.getElementById('clientsCategoryHubView').style.display = 'none';
+  document.getElementById('clientsCategorySectionView').style.display = 'block';
+  document.getElementById('categorySectionTitle').textContent = 'بيانات الدخول';
+  const c = loadClients().find(x=>x.id===currentClientHubId);
+  const logins = (c && c.logins) || {};
+  const body = document.getElementById('categorySectionBody');
+  body.innerHTML = LOGIN_SYSTEMS.map(sys => {
+    const d = logins[sys.key] || {};
+    return `
+      <div class="login-card">
+        <h3>${sys.label}</h3>
+        <div class="login-field-row">
+          <label>الإيميل</label>
+          <input type="text" id="loginEmail_${sys.key}" placeholder="الإيميل / اليوزر" value="${escapeHtml(d.email||'')}" onchange="saveClientLoginField('${sys.key}','email',this.value)">
+          <button class="act btn-ghost btn-small" onclick="copyLoginField('loginEmail_${sys.key}', this)">نسخ</button>
+        </div>
+        <div class="login-field-row">
+          <label>الباسورد</label>
+          <input type="password" id="loginPass_${sys.key}" placeholder="الباسورد" value="${escapeHtml(d.password||'')}" onchange="saveClientLoginField('${sys.key}','password',this.value)">
+          <button class="act btn-ghost btn-small" onclick="toggleLoginPasswordVisibility('${sys.key}', this)">إظهار</button>
+          <button class="act btn-ghost btn-small" onclick="copyLoginField('loginPass_${sys.key}', this)">نسخ</button>
+        </div>
+        <div class="login-field-row">
+          <label>الرابط</label>
+          <input type="text" id="loginUrl_${sys.key}" placeholder="رابط صفحة تسجيل الدخول (اختياري)" value="${escapeHtml(d.url||'')}" onchange="saveClientLoginField('${sys.key}','url',this.value)">
+          <button class="act btn-primary btn-small" onclick="openLoginUrl('${sys.key}')">فتح الموقع</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveClientLoginField(sysKey, field, value){
+  const col = officeClientsCol();
+  if(!col || !currentClientHubId) return;
+  try{
+    await col.doc(currentClientHubId).set({ logins: { [sysKey]: { [field]: value } } }, { merge: true });
+  }catch(err){
+    alert('حصل خطأ في حفظ البيانات: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
+function copyLoginField(inputId, btnEl){
+  const el = document.getElementById(inputId);
+  if(!el || !el.value){ return; }
+  const finish = ()=>{
+    const original = btnEl.textContent;
+    btnEl.textContent = '✅ اتنسخ';
+    setTimeout(()=>{ btnEl.textContent = original; }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(el.value).then(finish).catch(()=>{
+      el.select();
+      try{ document.execCommand('copy'); finish(); }catch(e){}
+    });
+  } else {
+    el.select();
+    try{ document.execCommand('copy'); finish(); }catch(e){}
+  }
+}
+
+function toggleLoginPasswordVisibility(sysKey, btnEl){
+  const el = document.getElementById('loginPass_' + sysKey);
+  if(!el) return;
+  if(el.type === 'password'){ el.type = 'text'; btnEl.textContent = 'إخفاء'; }
+  else { el.type = 'password'; btnEl.textContent = 'إظهار'; }
+}
+
+function openLoginUrl(sysKey){
+  const el = document.getElementById('loginUrl_' + sysKey);
+  const url = el ? el.value.trim() : '';
+  if(!url){ alert('محطوطش رابط لصفحة تسجيل الدخول لسه'); return; }
+  window.open(/^https?:\/\//i.test(url) ? url : 'https://' + url, '_blank');
 }
 
 function renderClientInfoSection(){
