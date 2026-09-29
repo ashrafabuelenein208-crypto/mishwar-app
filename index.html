@@ -1044,14 +1044,31 @@
           <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
         </div>
       </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>منظومة الدخول (اختار واحدة)</label>
+        <div class="cat-choice" id="cLoginSystemChoice">
+          <button type="button" class="cat-btn" data-sys="new" onclick="pickLoginSystem('new')">منظومة جديدة</button>
+          <button type="button" class="cat-btn" data-sys="old" onclick="pickLoginSystem('old')">منظومة قديمة</button>
+        </div>
+      </div>
       <div class="grid2">
         <div class="field">
-          <label>الإيميل (بيانات الدخول)</label>
-          <input type="text" id="cEmail" placeholder="الإيميل / اليوزر">
+          <label>اسم المستخدم / الإيميل (المنظومة)</label>
+          <input type="text" id="cLoginUser" placeholder="اسم المستخدم أو الإيميل">
         </div>
         <div class="field">
-          <label>الباسورد (بيانات الدخول)</label>
-          <input type="text" id="cPassword" placeholder="الباسورد">
+          <label>الباسورد (المنظومة)</label>
+          <input type="text" id="cLoginPass" placeholder="الباسورد">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>إيميل الفاتورة الإلكترونية</label>
+          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل">
+        </div>
+        <div class="field">
+          <label>باسورد الفاتورة الإلكترونية</label>
+          <input type="text" id="cEinvoicePass" placeholder="الباسورد">
         </div>
       </div>
       <div class="grid2">
@@ -3110,9 +3127,20 @@ function saveClient(){
     crOffice: document.getElementById('cCrOffice').value.trim(),
     taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
     crNo: document.getElementById('cCrNo').value.trim(),
-    email: document.getElementById('cEmail').value.trim(),
-    password: document.getElementById('cPassword').value,
   };
+  if(cLoginSystem){
+    data.logins = data.logins || {};
+    data.logins[cLoginSystem] = {
+      email: document.getElementById('cLoginUser').value.trim(),
+      password: document.getElementById('cLoginPass').value
+    };
+  }
+  const einvoiceEmail = document.getElementById('cEinvoiceEmail').value.trim();
+  const einvoicePass = document.getElementById('cEinvoicePass').value;
+  if(einvoiceEmail || einvoicePass){
+    data.logins = data.logins || {};
+    data.logins.einvoice = { email: einvoiceEmail, password: einvoicePass };
+  }
   const promise = editingClientId
     ? col.doc(editingClientId).set(data, { merge: true })
     : (()=>{ const newId = uid(); openClientDocsId = newId; return col.doc(newId).set(data); })();
@@ -3135,8 +3163,11 @@ function resetClientForm(){
   document.getElementById('cCrOffice').value = '';
   document.getElementById('cTaxRegNo').value = '';
   document.getElementById('cCrNo').value = '';
-  document.getElementById('cEmail').value = '';
-  document.getElementById('cPassword').value = '';
+  pickLoginSystem('');
+  document.getElementById('cLoginUser').value = '';
+  document.getElementById('cLoginPass').value = '';
+  document.getElementById('cEinvoiceEmail').value = '';
+  document.getElementById('cEinvoicePass').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -3159,8 +3190,14 @@ function editClient(id){
   document.getElementById('cCrOffice').value = c.crOffice || '';
   document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
   document.getElementById('cCrNo').value = c.crNo || '';
-  document.getElementById('cEmail').value = c.email || '';
-  document.getElementById('cPassword').value = c.password || '';
+  const cLogins = c.logins || {};
+  const activeSys = (cLogins.new && (cLogins.new.email || cLogins.new.password)) ? 'new'
+                   : (cLogins.old && (cLogins.old.email || cLogins.old.password)) ? 'old' : '';
+  pickLoginSystem(activeSys);
+  document.getElementById('cLoginUser').value = (activeSys && cLogins[activeSys] && cLogins[activeSys].email) || '';
+  document.getElementById('cLoginPass').value = (activeSys && cLogins[activeSys] && cLogins[activeSys].password) || '';
+  document.getElementById('cEinvoiceEmail').value = (cLogins.einvoice && cLogins.einvoice.email) || '';
+  document.getElementById('cEinvoicePass').value = (cLogins.einvoice && cLogins.einvoice.password) || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -3287,6 +3324,11 @@ function setClientCatFilter(cat){
   renderClientsTab();
 }
 let cClientCategory = '';
+let cLoginSystem = '';
+function pickLoginSystem(sys){
+  cLoginSystem = sys;
+  document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.sys===sys));
+}
 function pickClientCategory(cat){
   cClientCategory = cat;
   document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
@@ -3349,26 +3391,7 @@ function renderClientLoginsSection(){
   const c = loadClients().find(x=>x.id===currentClientHubId);
   const logins = (c && c.logins) || {};
   const body = document.getElementById('categorySectionBody');
-  const mainCard = `
-    <div class="login-card">
-      <h3>بيانات الدخول الأساسية</h3>
-      <div class="login-field-row">
-        <label>الإيميل</label>
-        <input type="text" id="mainLoginEmail" readonly value="${escapeHtml((c && c.email) || '')}">
-        <button class="act btn-ghost btn-small" onclick="copyLoginField('mainLoginEmail', this)">نسخ</button>
-      </div>
-      <div class="login-field-row">
-        <label>الباسورد</label>
-        <input type="password" id="mainLoginPassword" readonly value="${escapeHtml((c && c.password) || '')}">
-        <button class="act btn-ghost btn-small" onclick="toggleFieldVisibility('mainLoginPassword', this)">إظهار</button>
-        <button class="act btn-ghost btn-small" onclick="copyLoginField('mainLoginPassword', this)">نسخ</button>
-      </div>
-      <div style="font-size:12px;color:var(--navy-dim);margin-bottom:8px;">🔒 دي بتتسجل من بيانات المنشأة — للتعديل ادخل هناك</div>
-      <div class="row-actions" style="margin-top:0;">
-        <button class="act btn-primary btn-small" onclick="editClientFromHub()">✏️ تعديل من بيانات المنشأة</button>
-      </div>
-    </div>`;
-  body.innerHTML = mainCard + LOGIN_SYSTEMS.map(sys => {
+  body.innerHTML = LOGIN_SYSTEMS.map(sys => {
     const d = logins[sys.key] || {};
     return `
       <div class="login-card">
