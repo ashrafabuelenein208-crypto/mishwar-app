@@ -3321,9 +3321,9 @@ function openCategorySection(section){
 }
 
 const LOGIN_SYSTEMS = [
-  { key: 'new', label: 'المنظومة الجديدة' },
-  { key: 'old', label: 'المنظومة القديمة' },
-  { key: 'einvoice', label: 'الفاتورة الإلكترونية' },
+  { key: 'new', label: 'المنظومة الجديدة', fixedUrl: 'https://www.eta.gov.eg' },
+  { key: 'old', label: 'المنظومة القديمة', fixedUrl: null },
+  { key: 'einvoice', label: 'الفاتورة الإلكترونية', fixedUrl: 'https://invoicing.eta.gov.eg' },
 ];
 
 function renderClientLoginsSection(){
@@ -3349,10 +3349,13 @@ function renderClientLoginsSection(){
           <button class="act btn-ghost btn-small" onclick="toggleLoginPasswordVisibility('${sys.key}', this)">إظهار</button>
           <button class="act btn-ghost btn-small" onclick="copyLoginField('loginPass_${sys.key}', this)">نسخ</button>
         </div>
+        ${sys.fixedUrl ? '' : `
         <div class="login-field-row">
           <label>الرابط</label>
-          <input type="text" id="loginUrl_${sys.key}" placeholder="رابط صفحة تسجيل الدخول (اختياري)" value="${escapeHtml(d.url||'')}" onchange="saveClientLoginField('${sys.key}','url',this.value)">
-          <button class="act btn-primary btn-small" onclick="openLoginUrl('${sys.key}')">فتح الموقع</button>
+          <input type="text" id="loginUrl_${sys.key}" placeholder="رابط صفحة تسجيل الدخول" value="${escapeHtml(d.url||'')}" onchange="saveClientLoginField('${sys.key}','url',this.value)">
+        </div>`}
+        <div class="row-actions" style="margin-top:0;">
+          <button class="act btn-primary btn-small" onclick="openLoginUrl('${sys.key}')">فتح الموقع 🔗</button>
         </div>
       </div>
     `;
@@ -3396,9 +3399,11 @@ function toggleLoginPasswordVisibility(sysKey, btnEl){
 }
 
 function openLoginUrl(sysKey){
+  const sys = LOGIN_SYSTEMS.find(s => s.key === sysKey);
+  if(sys && sys.fixedUrl){ window.open(sys.fixedUrl, '_blank'); return; }
   const el = document.getElementById('loginUrl_' + sysKey);
   const url = el ? el.value.trim() : '';
-  if(!url){ alert('محطوطش رابط لصفحة تسجيل الدخول لسه'); return; }
+  if(!url){ alert('محطوطش رابط لصفحة تسجيل الدخول لسه — اكتبه في الخانة فوق'); return; }
   window.open(/^https?:\/\//i.test(url) ? url : 'https://' + url, '_blank');
 }
 
