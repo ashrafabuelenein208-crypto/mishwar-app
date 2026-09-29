@@ -931,7 +931,7 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
-        <button type="button" class="landing-cat-btn" onclick="openCategorySection('بيانات الدخول')">بيانات الدخول</button>
+        <button type="button" class="landing-cat-btn" onclick="openCategorySection('SAP')">SAP</button>
       </div>
     </div>
 
@@ -1044,32 +1044,37 @@
           <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
         </div>
       </div>
+      <div class="row-actions" style="margin-bottom:10px;">
+        <button type="button" class="act btn-ghost btn-small" id="cLoginUnlockBtn" onclick="unlockLoginFields()">🔒 بيانات الدخول مقفولة — دوس لفتحها بالكود</button>
+      </div>
+      <div id="cLoginFieldsWrap">
       <div class="field" style="margin-bottom:14px;">
         <label>منظومة الدخول (اختار واحدة)</label>
         <div class="cat-choice" id="cLoginSystemChoice">
-          <button type="button" class="cat-btn" data-sys="new" onclick="pickLoginSystem('new')">منظومة جديدة</button>
-          <button type="button" class="cat-btn" data-sys="old" onclick="pickLoginSystem('old')">منظومة قديمة</button>
+          <button type="button" class="cat-btn" data-sys="new" onclick="pickLoginSystem('new')" disabled>منظومة جديدة</button>
+          <button type="button" class="cat-btn" data-sys="old" onclick="pickLoginSystem('old')" disabled>منظومة قديمة</button>
         </div>
       </div>
       <div class="grid2">
         <div class="field">
           <label>اسم المستخدم / الإيميل (المنظومة)</label>
-          <input type="text" id="cLoginUser" placeholder="اسم المستخدم أو الإيميل">
+          <input type="text" id="cLoginUser" placeholder="اسم المستخدم أو الإيميل" disabled>
         </div>
         <div class="field">
           <label>الباسورد (المنظومة)</label>
-          <input type="text" id="cLoginPass" placeholder="الباسورد">
+          <input type="text" id="cLoginPass" placeholder="الباسورد" disabled>
         </div>
       </div>
       <div class="grid2">
         <div class="field">
           <label>إيميل الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل">
+          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل" disabled>
         </div>
         <div class="field">
           <label>باسورد الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoicePass" placeholder="الباسورد">
+          <input type="text" id="cEinvoicePass" placeholder="الباسورد" disabled>
         </div>
+      </div>
       </div>
       <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
@@ -3168,6 +3173,7 @@ function resetClientForm(){
   document.getElementById('cLoginPass').value = '';
   document.getElementById('cEinvoiceEmail').value = '';
   document.getElementById('cEinvoicePass').value = '';
+  lockLoginFields();
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
@@ -3198,6 +3204,7 @@ function editClient(id){
   document.getElementById('cLoginPass').value = (activeSys && cLogins[activeSys] && cLogins[activeSys].password) || '';
   document.getElementById('cEinvoiceEmail').value = (cLogins.einvoice && cLogins.einvoice.email) || '';
   document.getElementById('cEinvoicePass').value = (cLogins.einvoice && cLogins.einvoice.password) || '';
+  lockLoginFields();
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -3325,6 +3332,24 @@ function setClientCatFilter(cat){
 }
 let cClientCategory = '';
 let cLoginSystem = '';
+function lockLoginFields(){
+  ['cLoginUser','cLoginPass','cEinvoiceEmail','cEinvoicePass'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.disabled = true;
+  });
+  document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=> b.disabled = true);
+  const btn = document.getElementById('cLoginUnlockBtn');
+  if(btn) btn.textContent = '🔒 بيانات الدخول مقفولة — دوس لفتحها بالكود';
+}
+function unlockLoginFields(){
+  requirePin(()=>{
+    ['cLoginUser','cLoginPass','cEinvoiceEmail','cEinvoicePass'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.disabled = false;
+    });
+    document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=> b.disabled = false);
+    const btn = document.getElementById('cLoginUnlockBtn');
+    if(btn) btn.textContent = '🔓 بيانات الدخول متاحة للتعديل دلوقتي';
+  });
+}
 function pickLoginSystem(sys){
   cLoginSystem = sys;
   document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.sys===sys));
@@ -3375,43 +3400,38 @@ function openCategorySection(section){
   if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
   if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
   if(section === 'مستندات'){ renderClientDocsSection(); return; }
-  if(section === 'بيانات الدخول'){ renderClientLoginsSection(); return; }
+  if(section === 'SAP'){ renderClientLoginsSection(); return; }
 }
 
 const LOGIN_SYSTEMS = [
   { key: 'new', label: 'المنظومة الجديدة', fixedUrl: 'https://www.eta.gov.eg' },
-  { key: 'old', label: 'المنظومة القديمة', fixedUrl: null },
+  { key: 'old', label: 'المنظومة القديمة', fixedUrl: 'https://eservice.incometax.gov.eg/etax' },
   { key: 'einvoice', label: 'الفاتورة الإلكترونية', fixedUrl: 'https://invoicing.eta.gov.eg' },
 ];
 
 function renderClientLoginsSection(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'block';
-  document.getElementById('categorySectionTitle').textContent = 'بيانات الدخول';
+  document.getElementById('categorySectionTitle').textContent = 'SAP';
   const c = loadClients().find(x=>x.id===currentClientHubId);
   const logins = (c && c.logins) || {};
   const body = document.getElementById('categorySectionBody');
-  body.innerHTML = LOGIN_SYSTEMS.map(sys => {
+  body.innerHTML = `<div style="font-size:12.5px;color:var(--navy-dim);margin-bottom:12px;">🔒 للعرض بس — التعديل من "بيانات المنشأة" فقط (بكود التعديل)</div>` + LOGIN_SYSTEMS.map(sys => {
     const d = logins[sys.key] || {};
     return `
       <div class="login-card">
         <h3>${sys.label}</h3>
         <div class="login-field-row">
           <label>الإيميل</label>
-          <input type="text" id="loginEmail_${sys.key}" placeholder="الإيميل / اليوزر" value="${escapeHtml(d.email||'')}" onchange="saveClientLoginField('${sys.key}','email',this.value)">
+          <input type="text" id="loginEmail_${sys.key}" readonly placeholder="—" value="${escapeHtml(d.email||'')}">
           <button class="act btn-ghost btn-small" onclick="copyLoginField('loginEmail_${sys.key}', this)">نسخ</button>
         </div>
         <div class="login-field-row">
           <label>الباسورد</label>
-          <input type="password" id="loginPass_${sys.key}" placeholder="الباسورد" value="${escapeHtml(d.password||'')}" onchange="saveClientLoginField('${sys.key}','password',this.value)">
+          <input type="password" id="loginPass_${sys.key}" readonly placeholder="—" value="${escapeHtml(d.password||'')}">
           <button class="act btn-ghost btn-small" onclick="toggleLoginPasswordVisibility('${sys.key}', this)">إظهار</button>
           <button class="act btn-ghost btn-small" onclick="copyLoginField('loginPass_${sys.key}', this)">نسخ</button>
         </div>
-        ${sys.fixedUrl ? '' : `
-        <div class="login-field-row">
-          <label>الرابط</label>
-          <input type="text" id="loginUrl_${sys.key}" placeholder="رابط صفحة تسجيل الدخول" value="${escapeHtml(d.url||'')}" onchange="saveClientLoginField('${sys.key}','url',this.value)">
-        </div>`}
         <div class="row-actions" style="margin-top:0;">
           <button class="act btn-primary btn-small" onclick="openLoginUrl('${sys.key}')">فتح الموقع 🔗</button>
         </div>
