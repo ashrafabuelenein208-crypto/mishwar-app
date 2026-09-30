@@ -1044,37 +1044,35 @@
           <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
         </div>
       </div>
-      <div class="row-actions" style="margin-bottom:10px;">
-        <button type="button" class="act btn-ghost btn-small" id="cLoginUnlockBtn" onclick="unlockLoginFields()">🔒 بيانات الدخول مقفولة — دوس لفتحها بالكود</button>
-      </div>
-      <div id="cLoginFieldsWrap">
-      <div class="field" style="margin-bottom:14px;">
-        <label>منظومة الدخول (اختار واحدة)</label>
-        <div class="cat-choice" id="cLoginSystemChoice">
-          <button type="button" class="cat-btn" data-sys="new" onclick="pickLoginSystem('new')" disabled>منظومة جديدة</button>
-          <button type="button" class="cat-btn" data-sys="old" onclick="pickLoginSystem('old')" disabled>منظومة قديمة</button>
+      <div class="grid2">
+        <div class="field">
+          <label>اسم المستخدم / الإيميل (منظومة جديدة)</label>
+          <input type="text" id="cLoginNewUser" placeholder="اسم المستخدم أو الإيميل">
+        </div>
+        <div class="field">
+          <label>الباسورد (منظومة جديدة)</label>
+          <input type="text" id="cLoginNewPass" placeholder="الباسورد">
         </div>
       </div>
       <div class="grid2">
         <div class="field">
-          <label>اسم المستخدم / الإيميل (المنظومة)</label>
-          <input type="text" id="cLoginUser" placeholder="اسم المستخدم أو الإيميل" disabled>
+          <label>اسم المستخدم / الإيميل (منظومة قديمة)</label>
+          <input type="text" id="cLoginOldUser" placeholder="اسم المستخدم أو الإيميل">
         </div>
         <div class="field">
-          <label>الباسورد (المنظومة)</label>
-          <input type="text" id="cLoginPass" placeholder="الباسورد" disabled>
+          <label>الباسورد (منظومة قديمة)</label>
+          <input type="text" id="cLoginOldPass" placeholder="الباسورد">
         </div>
       </div>
       <div class="grid2">
         <div class="field">
           <label>إيميل الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل" disabled>
+          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل">
         </div>
         <div class="field">
           <label>باسورد الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoicePass" placeholder="الباسورد" disabled>
+          <input type="text" id="cEinvoicePass" placeholder="الباسورد">
         </div>
-      </div>
       </div>
       <div class="grid2">
         <div class="field" style="display:flex;align-items:end;">
@@ -3133,12 +3131,17 @@ function saveClient(){
     taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
     crNo: document.getElementById('cCrNo').value.trim(),
   };
-  if(cLoginSystem){
+  const newUser = document.getElementById('cLoginNewUser').value.trim();
+  const newPass = document.getElementById('cLoginNewPass').value;
+  if(newUser || newPass){
     data.logins = data.logins || {};
-    data.logins[cLoginSystem] = {
-      email: document.getElementById('cLoginUser').value.trim(),
-      password: document.getElementById('cLoginPass').value
-    };
+    data.logins.new = { email: newUser, password: newPass };
+  }
+  const oldUser = document.getElementById('cLoginOldUser').value.trim();
+  const oldPass = document.getElementById('cLoginOldPass').value;
+  if(oldUser || oldPass){
+    data.logins = data.logins || {};
+    data.logins.old = { email: oldUser, password: oldPass };
   }
   const einvoiceEmail = document.getElementById('cEinvoiceEmail').value.trim();
   const einvoicePass = document.getElementById('cEinvoicePass').value;
@@ -3168,17 +3171,21 @@ function resetClientForm(){
   document.getElementById('cCrOffice').value = '';
   document.getElementById('cTaxRegNo').value = '';
   document.getElementById('cCrNo').value = '';
-  pickLoginSystem('');
-  document.getElementById('cLoginUser').value = '';
-  document.getElementById('cLoginPass').value = '';
+  document.getElementById('cLoginNewUser').value = '';
+  document.getElementById('cLoginNewPass').value = '';
+  document.getElementById('cLoginOldUser').value = '';
+  document.getElementById('cLoginOldPass').value = '';
   document.getElementById('cEinvoiceEmail').value = '';
   document.getElementById('cEinvoicePass').value = '';
-  lockLoginFields();
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
 
+// Editing an existing client (any field) requires the edit PIN. Adding a brand-new client stays open.
 function editClient(id){
+  requirePin(()=> editClientAfterPin(id));
+}
+function editClientAfterPin(id){
   const c = loadClients().find(x=>x.id===id);
   if(!c) return;
   showClientsForm();
@@ -3197,14 +3204,12 @@ function editClient(id){
   document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
   document.getElementById('cCrNo').value = c.crNo || '';
   const cLogins = c.logins || {};
-  const activeSys = (cLogins.new && (cLogins.new.email || cLogins.new.password)) ? 'new'
-                   : (cLogins.old && (cLogins.old.email || cLogins.old.password)) ? 'old' : '';
-  pickLoginSystem(activeSys);
-  document.getElementById('cLoginUser').value = (activeSys && cLogins[activeSys] && cLogins[activeSys].email) || '';
-  document.getElementById('cLoginPass').value = (activeSys && cLogins[activeSys] && cLogins[activeSys].password) || '';
+  document.getElementById('cLoginNewUser').value = (cLogins.new && cLogins.new.email) || '';
+  document.getElementById('cLoginNewPass').value = (cLogins.new && cLogins.new.password) || '';
+  document.getElementById('cLoginOldUser').value = (cLogins.old && cLogins.old.email) || '';
+  document.getElementById('cLoginOldPass').value = (cLogins.old && cLogins.old.password) || '';
   document.getElementById('cEinvoiceEmail').value = (cLogins.einvoice && cLogins.einvoice.email) || '';
   document.getElementById('cEinvoicePass').value = (cLogins.einvoice && cLogins.einvoice.password) || '';
-  lockLoginFields();
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -3331,29 +3336,6 @@ function setClientCatFilter(cat){
   renderClientsTab();
 }
 let cClientCategory = '';
-let cLoginSystem = '';
-function lockLoginFields(){
-  ['cLoginUser','cLoginPass','cEinvoiceEmail','cEinvoicePass'].forEach(id=>{
-    const el = document.getElementById(id); if(el) el.disabled = true;
-  });
-  document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=> b.disabled = true);
-  const btn = document.getElementById('cLoginUnlockBtn');
-  if(btn) btn.textContent = '🔒 بيانات الدخول مقفولة — دوس لفتحها بالكود';
-}
-function unlockLoginFields(){
-  requirePin(()=>{
-    ['cLoginUser','cLoginPass','cEinvoiceEmail','cEinvoicePass'].forEach(id=>{
-      const el = document.getElementById(id); if(el) el.disabled = false;
-    });
-    document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=> b.disabled = false);
-    const btn = document.getElementById('cLoginUnlockBtn');
-    if(btn) btn.textContent = '🔓 بيانات الدخول متاحة للتعديل دلوقتي';
-  });
-}
-function pickLoginSystem(sys){
-  cLoginSystem = sys;
-  document.querySelectorAll('#cLoginSystemChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.sys===sys));
-}
 function pickClientCategory(cat){
   cClientCategory = cat;
   document.querySelectorAll('#cCategoryChoice .cat-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
