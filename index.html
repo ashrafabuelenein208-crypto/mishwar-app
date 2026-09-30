@@ -850,6 +850,11 @@
   <div class="panel" id="panel-trip">
     <section>
       <h2>إضافة مشوار جديد</h2>
+      <div class="field" style="margin-bottom:10px;">
+        <label>رقم التسجيل الضريبي (اختياري — يجيبلك العميل تلقائي)</label>
+        <input type="text" id="tripTaxNo" inputmode="numeric" placeholder="اكتب الرقم الضريبي" oninput="onTripTaxInput()">
+        <div id="tripTaxResult" style="margin-top:6px;font-size:13.5px;font-weight:700;"></div>
+      </div>
       <div class="grid2">
         <div class="field">
           <label>نوع العميل</label>
@@ -3136,6 +3141,45 @@ function clientName(id){
   return c ? c.name : '—';
 }
 
+/* ---- Trip form: lookup client by tax registration number ---- */
+function normTaxNo(v){
+  return String(v||'')
+    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/\D/g, '');
+}
+function findClientsByTaxNo(raw){
+  const n = normTaxNo(raw);
+  if(!n) return [];
+  return loadClients().filter(c => normTaxNo(c.taxRegNo) === n);
+}
+function getTripTaxClient(){
+  const el = document.getElementById('tripTaxNo');
+  if(!el || !el.value.trim()) return null;
+  const found = findClientsByTaxNo(el.value);
+  return found.length ? found[0] : null;
+}
+function onTripTaxInput(){
+  const box = document.getElementById('tripTaxResult');
+  const raw = document.getElementById('tripTaxNo').value;
+  if(!normTaxNo(raw)){ box.textContent = ''; return; }
+  const found = findClientsByTaxNo(raw);
+  if(!found.length){
+    box.style.color = 'var(--navy-dim)';
+    box.textContent = 'مفيش عميل بالرقم ده (كمّل الكتابة أو اختار العميل يدوي)';
+    return;
+  }
+  const c = found[0];
+  box.style.color = 'var(--green)';
+  box.textContent = '✅ ' + c.name + (c.category ? ' — ' + c.category : ' — (نوعه مش متحدد)')
+    + (found.length > 1 ? ` (في ${found.length} عملاء بنفس الرقم، اتاخد الأول)` : '');
+  // sync the dropdowns to the matched client when it has a category
+  if(c.category){
+    document.getElementById('tripClientCat').value = c.category;
+    refreshTripClientOptions(c.id);
+  }
+}
+
 /* ---- Trip form: category -> client dropdowns ---- */
 function refreshTripClientOptions(selectedId){
   const cat = document.getElementById('tripClientCat').value;
@@ -4222,14 +4266,21 @@ function resolveNewClientChoice(choice){
 }
 
 async function saveTrip(){
-  const cat = document.getElementById('tripClientCat').value;
-  if(!cat){ alert('اختار نوع العميل الأول (شركات / فردي / غير مسجل)'); return; }
-  const selVal = document.getElementById('tripClientSel').value;
+  const taxClient = getTripTaxClient();
+  if(document.getElementById('tripTaxNo').value.trim() && !taxClient){
+    alert('مفيش عميل بالرقم الضريبي ده. صحّح الرقم أو امسحه واختار العميل يدوي');
+    return;
+  }
+  const cat = taxClient ? (taxClient.category || '') : document.getElementById('tripClientCat').value;
+  if(!taxClient && !cat){ alert('اختار نوع العميل الأول (شركات / فردي / غير مسجل)'); return; }
+  const selVal = taxClient ? taxClient.id : document.getElementById('tripClientSel').value;
   if(!selVal){ alert('اختار العميل من القائمة'); return; }
   let clients = loadClients();
   let client = null;
   let skipLedger = false;
-  if(selVal === '__new__'){
+  if(taxClient){
+    client = taxClient;
+  } else if(selVal === '__new__'){
     const typedName = document.getElementById('tripClientName').value.trim();
     if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
     client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
@@ -4288,6 +4339,8 @@ function startEditTrip(id){
   const t = loadTrips().find(x=>x.id===id);
   if(!t) return;
   editingTripId = id;
+  document.getElementById('tripTaxNo').value = '';
+  document.getElementById('tripTaxResult').textContent = '';
   const _c = loadClients().find(x=>x.id===t.clientId);
   const _nameInput = document.getElementById('tripClientName');
   if(_c){
@@ -4319,6 +4372,8 @@ function resetTripForm(){
   editingTripId = null;
   document.getElementById('tripClientName').value = '';
   document.getElementById('tripClientCat').value = '';
+  document.getElementById('tripTaxNo').value = '';
+  document.getElementById('tripTaxResult').textContent = '';
   refreshTripClientOptions();
   document.getElementById('tripPlace').value = '';
   document.getElementById('tripCost').value = '';
