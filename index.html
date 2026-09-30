@@ -852,10 +852,24 @@
       <h2>إضافة مشوار جديد</h2>
       <div class="grid2">
         <div class="field">
-          <label>العميل (اكتب علشان تدور)</label>
-          <input list="clientNamesList" id="tripClientName" placeholder="اسم الشركة أو العميل">
+          <label>نوع العميل</label>
+          <select id="tripClientCat" onchange="onTripCatChange()">
+            <option value="">اختار النوع</option>
+            <option value="شركات">شركات</option>
+            <option value="فردي">فردي</option>
+            <option value="غير مسجل">غير مسجل</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>العميل</label>
+          <select id="tripClientSel" onchange="onTripClientChange()" disabled>
+            <option value="">اختار نوع العميل الأول</option>
+          </select>
+          <input type="text" id="tripClientName" placeholder="اكتب اسم العميل الجديد" style="display:none;margin-top:6px;">
           <datalist id="clientNamesList"></datalist>
         </div>
+      </div>
+      <div class="grid2">
         <div class="field">
           <label>نوع المشوار</label>
           <select id="tripType">
@@ -3122,8 +3136,74 @@ function clientName(id){
   return c ? c.name : '—';
 }
 
+/* ---- Trip form: category -> client dropdowns ---- */
+function refreshTripClientOptions(selectedId){
+  const cat = document.getElementById('tripClientCat').value;
+  const sel = document.getElementById('tripClientSel');
+  const nameInput = document.getElementById('tripClientName');
+  if(!cat){
+    sel.innerHTML = '<option value="">اختار نوع العميل الأول</option>';
+    sel.disabled = true; nameInput.style.display = 'none';
+    return;
+  }
+  const list = loadClients()
+    .filter(c => c.category === cat || !c.category)
+    .sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  sel.innerHTML = '<option value="">اختار العميل</option>'
+    + list.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
+    + '<option value="__new__">➕ اسم جديد (مش في القائمة)</option>';
+  sel.disabled = false;
+  if(selectedId && list.some(c=>c.id===selectedId)) sel.value = selectedId;
+  onTripClientChange();
+}
+function onTripCatChange(){ refreshTripClientOptions(); }
+function onTripClientChange(){
+  const isNew = document.getElementById('tripClientSel').value === '__new__';
+  document.getElementById('tripClientName').style.display = isNew ? 'block' : 'none';
+}
+
+/* ---- Owner ledger auto-sync: every trip becomes an expense entry on the client's account ---- */
+async function syncTripToOwnerLedger(trip){
+  if(currentUserRole !== 'owner' || !trip || !trip.clientId) return;
+  const col = ownerClientsCol();
+  if(!col) return;
+  try{
+    const clientRef = col.doc(trip.clientId);
+    const snap = await clientRef.get();
+    if(!snap.exists){
+      await clientRef.set({ name: trip.clientName || clientName(trip.clientId), createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    const noteParts = [`مشوار ${trip.type||''}`];
+    if(trip.place) noteParts.push(trip.place);
+    if(trip.note) noteParts.push(`(${trip.note})`);
+    await clientRef.collection('entries').doc('trip_' + trip.id).set({
+      type: 'expense',
+      date: trip.date,
+      amount: Number(trip.cost) || 0,
+      note: noteParts.join(' — '),
+      tripId: trip.id,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    if(currentOwnerClientId === trip.clientId) renderOwnerClientDetail();
+  }catch(err){ console.warn('owner ledger sync failed', err); }
+}
+async function removeTripFromOwnerLedger(clientId, tripId){
+  if(currentUserRole !== 'owner' || !clientId) return;
+  const col = ownerClientsCol();
+  if(!col) return;
+  try{
+    await col.doc(clientId).collection('entries').doc('trip_' + tripId).delete();
+    if(currentOwnerClientId === clientId) renderOwnerClientDetail();
+  }catch(err){ console.warn('owner ledger remove failed', err); }
+}
+
 function populateClientHelpers(){
   const clients = loadClients();
+  if(document.getElementById('tripClientCat')){
+    const sel = document.getElementById('tripClientSel');
+    const keep = sel && sel.value && sel.value !== '__new__' ? sel.value : '';
+    refreshTripClientOptions(keep);
+  }
   document.getElementById('clientNamesList').innerHTML = clients.map(c=>`<option value="${escapeHtml(c.name)}">`).join('');
   const filterSel = document.getElementById('filterClient');
   const prev = filterSel.value;
@@ -4142,25 +4222,37 @@ function resolveNewClientChoice(choice){
 }
 
 async function saveTrip(){
-  const typedName = document.getElementById('tripClientName').value.trim();
-  if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
+  const cat = document.getElementById('tripClientCat').value;
+  if(!cat){ alert('اختار نوع العميل الأول (شركات / فردي / غير مسجل)'); return; }
+  const selVal = document.getElementById('tripClientSel').value;
+  if(!selVal){ alert('اختار العميل من القائمة'); return; }
   let clients = loadClients();
-  let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
-  if(!client){
-    const choice = await askNewClientChoice(typedName);
-    if(choice === 'cancel' || !choice) return;
-    if(choice === 'add'){
-      const col = officeClientsCol();
-      if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
-      client = {id: uid(), name: typedName, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
-      col.doc(client.id).set({
-        name: client.name, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
-        companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
-      }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
-    } else {
-      // 'once': just use this name for this one trip only, don't save it to the shared client list
-      client = {id: uid(), name: typedName};
+  let client = null;
+  let skipLedger = false;
+  if(selVal === '__new__'){
+    const typedName = document.getElementById('tripClientName').value.trim();
+    if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
+    client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
+    if(!client){
+      const choice = await askNewClientChoice(typedName);
+      if(choice === 'cancel' || !choice) return;
+      if(choice === 'add'){
+        const col = officeClientsCol();
+        if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+        client = {id: uid(), name: typedName, category: cat, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
+        col.doc(client.id).set({
+          name: client.name, category: cat, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
+          companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
+        }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+      } else {
+        // 'once': just use this name for this one trip only, don't save it to the shared client list
+        client = {id: uid(), name: typedName};
+        skipLedger = true;
+      }
     }
+  } else {
+    client = clients.find(c => c.id === selVal);
+    if(!client){ alert('العميل ده مش موجود، جرب تختاره تاني'); return; }
   }
 
   const type = document.getElementById('tripType').value;
@@ -4170,13 +4262,23 @@ async function saveTrip(){
   const note = document.getElementById('tripNote').value.trim();
 
   const trips = loadTrips();
+  let saved, oldClientId = null;
   if(editingTripId){
     const t = trips.find(x=>x.id===editingTripId);
-    if(t) Object.assign(t, {clientId: client.id, clientName: client.name, type, place, date, cost, note});
+    if(t){
+      oldClientId = t.clientId;
+      Object.assign(t, {clientId: client.id, clientName: client.name, type, place, date, cost, note});
+      saved = t;
+    }
   } else {
-    trips.push({id: uid(), clientId: client.id, clientName: client.name, type, place, date, cost, note});
+    saved = {id: uid(), clientId: client.id, clientName: client.name, type, place, date, cost, note};
+    trips.push(saved);
   }
   saveTrips(trips);
+  if(saved){
+    if(oldClientId && oldClientId !== saved.clientId) removeTripFromOwnerLedger(oldClientId, saved.id);
+    if(!skipLedger) syncTripToOwnerLedger(saved);
+  }
   resetTripForm();
   renderHomeTab();
   renderLogTab();
@@ -4186,7 +4288,20 @@ function startEditTrip(id){
   const t = loadTrips().find(x=>x.id===id);
   if(!t) return;
   editingTripId = id;
-  document.getElementById('tripClientName').value = t.clientName || clientName(t.clientId);
+  const _c = loadClients().find(x=>x.id===t.clientId);
+  const _nameInput = document.getElementById('tripClientName');
+  if(_c){
+    document.getElementById('tripClientCat').value = _c.category || 'غير مسجل';
+    refreshTripClientOptions(_c.id);
+    _nameInput.value = '';
+  } else {
+    // one-off name that isn't in the client list
+    document.getElementById('tripClientCat').value = 'غير مسجل';
+    refreshTripClientOptions();
+    document.getElementById('tripClientSel').value = '__new__';
+    onTripClientChange();
+    _nameInput.value = t.clientName || '';
+  }
   document.getElementById('tripType').value = t.type;
   document.getElementById('tripPlace').value = t.place || '';
   document.getElementById('tripDate').value = t.date;
@@ -4203,6 +4318,8 @@ function startEditTrip(id){
 function resetTripForm(){
   editingTripId = null;
   document.getElementById('tripClientName').value = '';
+  document.getElementById('tripClientCat').value = '';
+  refreshTripClientOptions();
   document.getElementById('tripPlace').value = '';
   document.getElementById('tripCost').value = '';
   document.getElementById('tripNote').value = '';
@@ -4212,6 +4329,8 @@ function resetTripForm(){
 }
 
 function doDeleteTrip(id){
+  const _t = loadTrips().find(t=>t.id===id);
+  if(_t) removeTripFromOwnerLedger(_t.clientId, id);
   saveTrips(loadTrips().filter(t=>t.id!==id));
   renderLogTab();
   renderHomeTab();
