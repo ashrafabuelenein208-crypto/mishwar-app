@@ -3147,7 +3147,7 @@ function refreshTripClientOptions(selectedId){
     return;
   }
   const list = loadClients()
-    .filter(c => c.category === cat || !c.category)
+    .filter(c => c.category === cat)
     .sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''),'ar'));
   sel.innerHTML = '<option value="">اختار العميل</option>'
     + list.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
