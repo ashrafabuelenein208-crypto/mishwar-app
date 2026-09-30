@@ -3935,6 +3935,42 @@ function normalizePoaLetter(name){
 
 function poaLetterOf(p){ return p.letter || normalizePoaLetter(p.name); }
 
+/* توحيد الكتابة العربية للبحث والمقارنة (الهمزات، ى/ي، ة/ه، التشكيل، المسافات) */
+function normalizeArabic(str){
+  return String(str || '').toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* الحروف المقبولة للاسم: أول حرف، أو الحرف اللي بعد "ال" */
+function poaExpectedLetters(name){
+  const s = normalizeArabic(name);
+  const out = [];
+  if(s && POA_LETTERS.includes(s.charAt(0))) out.push(s.charAt(0));
+  if(s.startsWith('ال') && s.length > 2 && POA_LETTERS.includes(s.charAt(2))) out.push(s.charAt(2));
+  return out;
+}
+
+function poaIsMisfiled(p){
+  const exp = poaExpectedLetters(p.name);
+  return !!(p.letter && exp.length && !exp.includes(p.letter));
+}
+
+async function movePoaLetter(poaId, letter){
+  const col = poasCol();
+  if(!col) return;
+  try{
+    await col.doc(poaId).update({ letter });
+    await refreshPoaLetterView();
+  }catch(err){
+    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
+  }
+}
+
 function poaRowsHtml(items, emptyMsg){
   if(!items.length) return '<div class="empty">' + emptyMsg + '</div>';
   return items.map(p => {
@@ -3944,6 +3980,7 @@ function poaRowsHtml(items, emptyMsg){
       : `<button class="act btn-ghost btn-small" onclick="takePoa('${p.id}')">📤 سحب</button>`;
     return `<div class="poa-row">
       <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}${poaHolderLine(p)}</div>
+      ${poaIsMisfiled(p) ? `<button class="act btn-ghost btn-small" onclick="movePoaLetter('${p.id}','${poaExpectedLetters(p.name)[0]}')">⚠️ انقل لحرف ${poaExpectedLetters(p.name)[0]}</button>` : ''}
       ${custodyBtn}
       ${n ? `<button class="act btn-primary btn-small" onclick="downloadPoaAll('${p.id}')">تحميل</button>` : '<span class="poa-nofile">بدون ملف</span>'}
       <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaById('${p.id}'))">حذف</button>
@@ -3986,7 +4023,8 @@ function renderPoaHome(){
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
   if(q){
     bar.style.display = 'none'; sl.style.display = 'block';
-    const items = poasCache.filter(p=>(p.name||'').toLowerCase().includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    const nq = normalizeArabic(q);
+    const items = poasCache.filter(p=>normalizeArabic(p.name).startsWith(nq)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
     sl.innerHTML = poaRowsHtml(items, 'مفيش توكيل باسم كده');
     return;
   }
@@ -4095,9 +4133,31 @@ async function importPoa(inputEl){
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   try{
     for(const f of files){
-      const name = f.name.replace(/\.[^.]+$/, '').trim() || 'توكيل';
-      const ex = poasCache.find(p=>(p.name||'').trim() === name && poaLetterOf(p) === currentPoaLetter);
-      const id = ex ? ex.id : (await col.add({ name, letter: currentPoaLetter, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
+      const name = f.name.replace(/\.[^.]+$/, '').replace(/\s+/g, ' ').trim() || 'توكيل';
+      const key = normalizeArabic(name);
+
+      // 1) منع التكرار: نفس الاسم (بغض النظر عن الهمزات والحرف)
+      const ex = poasCache.find(p => normalizeArabic(p.name) === key);
+      if(ex){
+        const already = (poaFilesCache[ex.id] || []).some(x => x.name === f.name);
+        if(already){
+          alert('التوكيل "' + ex.name + '" موجود بالفعل والملف ده مرفوع عليه قبل كده — اتخطّى.');
+          continue;
+        }
+        if(!confirm('التوكيل "' + ex.name + '" موجود بالفعل في حرف "' + poaLetterOf(ex) + '".\n\nموافق = أضيف الملف على نفس التوكيل (من غير تكرار)\nإلغاء = أتخطى الملف ده')) continue;
+        await handlePoaFileUpload({ files:[f], value:'' }, ex.id);
+        continue;
+      }
+
+      // 2) منع الغلط في الحرف: لو الاسم مش بيبدأ بالحرف المفتوح
+      let letter = currentPoaLetter;
+      const exp = poaExpectedLetters(name);
+      if(exp.length && !exp.includes(currentPoaLetter)){
+        if(!confirm('الاسم "' + name + '" بيبدأ بحرف "' + exp[0] + '" لكن إنت فاتح حرف "' + currentPoaLetter + '".\n\nموافق = أحطه في حرف "' + exp[0] + '" الصح\nإلغاء = أتخطى الملف ده')) continue;
+        letter = exp[0];
+      }
+
+      const id = (await col.add({ name, letter, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
       await handlePoaFileUpload({ files:[f], value:'' }, id);
     }
     inputEl.value = '';
