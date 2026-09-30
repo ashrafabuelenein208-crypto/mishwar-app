@@ -578,6 +578,21 @@
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
   #imgLightbox .lb-close{ background:var(--panel); color:var(--navy); }
 
+  #pdfLightbox{
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(10,14,20,.92); align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    padding:16px;
+  }
+  #pdfLightbox.show{ display:flex; }
+  #pdfLightbox iframe{ width:100%; max-width:900px; height:76vh; border:none; border-radius:10px; background:#fff; }
+  #pdfLightbox .lightbox-actions{ display:flex; gap:12px; }
+  #pdfLightbox .lightbox-actions button{
+    border:none; border-radius:12px; padding:10px 22px; font-weight:800; font-size:14px; cursor:pointer;
+    font-family:inherit;
+  }
+  #pdfLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
+  #pdfLightbox .lb-close{ background:var(--panel); color:var(--navy); }
+
   #waPickerModal{
     display:none; position:fixed; inset:0; z-index:10001;
     background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
@@ -681,6 +696,14 @@
   <div class="lightbox-actions">
     <button class="lb-download" onclick="downloadLightboxImage()">تحميل الصورة</button>
     <button class="lb-close" onclick="closeImgLightbox()">إغلاق</button>
+  </div>
+</div>
+
+<div id="pdfLightbox">
+  <iframe id="lightboxPdf" src=""></iframe>
+  <div class="lightbox-actions">
+    <button class="lb-download" onclick="downloadLightboxPdf()">تحميل الملف</button>
+    <button class="lb-close" onclick="closePdfLightbox()">إغلاق</button>
   </div>
 </div>
 
@@ -3680,6 +3703,14 @@ async function downloadTaxYearFile(fileId){
   const doc = await col.doc(fileId).get();
   if(!doc.exists) return;
   const f = doc.data();
+  if((f.type||'').startsWith('image/')){
+    openImgLightbox(f.dataUrl);
+    return;
+  }
+  if(isPdfFile(f)){
+    openPdfLightbox(f.dataUrl, f.name);
+    return;
+  }
   const a = document.createElement('a');
   a.href = f.dataUrl; a.download = f.name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -4082,9 +4113,8 @@ async function viewPoaFile(fileId){
   const files = await getFilesForPoa(currentPoaId);
   const f = files.find(x=>x.id===fileId);
   if(!f) return;
-  if(f.fileType === 'pdf'){
-    const w = window.open();
-    if(w) w.document.write('<iframe src="'+f.dataUrl+'" style="position:fixed;inset:0;width:100%;height:100%;border:none;"></iframe>');
+  if(isPdfFile(f)){
+    openPdfLightbox(f.dataUrl, f.name);
   } else {
     openImgLightbox(f.dataUrl);
   }
@@ -4686,6 +4716,10 @@ async function downloadClientFile(id, clientId){
     openImgLightbox(f.dataUrl);
     return;
   }
+  if(isPdfFile(f)){
+    openPdfLightbox(f.dataUrl, f.name);
+    return;
+  }
   const a = document.createElement('a');
   a.href = f.dataUrl; a.download = f.name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -4805,6 +4839,10 @@ async function downloadOwnerEntryFile(id, clientId, entryId){
   const files = await getFilesForOwnerEntry(clientId, entryId);
   const f = files.find(x=>x.id===id);
   if(!f) return;
+  if(isPdfFile(f)){
+    openPdfLightbox(f.dataUrl, f.name);
+    return;
+  }
   openImgLightbox(f.dataUrl);
 }
 
@@ -5375,6 +5413,30 @@ function downloadLightboxImage(){
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+let pdfLightboxFileName = 'ملف.pdf';
+function openPdfLightbox(dataUrl, fileName){
+  pdfLightboxFileName = fileName || 'ملف.pdf';
+  document.getElementById('lightboxPdf').src = dataUrl;
+  document.getElementById('pdfLightbox').classList.add('show');
+}
+function closePdfLightbox(){
+  document.getElementById('pdfLightbox').classList.remove('show');
+  document.getElementById('lightboxPdf').src = '';
+}
+function downloadLightboxPdf(){
+  const url = document.getElementById('lightboxPdf').src;
+  if(!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pdfLightboxFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+function isPdfFile(f){
+  return (f.type === 'application/pdf') || (f.fileType === 'pdf') || /\.pdf$/i.test(f.name||'');
 }
 
 function fileToDataUrl(file){
