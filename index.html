@@ -3926,11 +3926,9 @@ function poaFilesCol(poaId){
 }
 
 function normalizePoaLetter(name){
-  const s = (name || '').trim();
+  const s = poaCoreName(name);
   if(!s) return '';
-  const alefMap = {'أ':'ا','إ':'ا','آ':'ا','ٱ':'ا'};
-  const ch = s.charAt(0);
-  return alefMap[ch] || ch;
+  return s.charAt(0);
 }
 
 function poaLetterOf(p){ return p.letter || normalizePoaLetter(p.name); }
@@ -3946,14 +3944,23 @@ function normalizeArabic(str){
     .trim();
 }
 
+/* الاسم الفعلي للتوكيل من غير كلمة "توكيل" في أوله (مثلاً "توكيل احمد محمد" -> "احمد محمد") */
+function poaCoreName(name){
+  const n = normalizeArabic(name);
+  const core = n.replace(/^(?:توكيل(?:ات)?[\s\-_:.]*)+/, '').trim();
+  return core || n;
+}
+
 /* الحروف المقبولة للاسم: أول حرف، أو الحرف اللي بعد "ال" */
 function poaExpectedLetters(name){
-  const s = normalizeArabic(name);
+  const s = poaCoreName(name);
   const out = [];
   if(s && POA_LETTERS.includes(s.charAt(0))) out.push(s.charAt(0));
   if(s.startsWith('ال') && s.length > 2 && POA_LETTERS.includes(s.charAt(2))) out.push(s.charAt(2));
   return out;
 }
+
+function poaSortFn(a,b){ return poaCoreName(a.name).localeCompare(poaCoreName(b.name),'ar'); }
 
 function poaIsMisfiled(p){
   const exp = poaExpectedLetters(p.name);
@@ -4023,8 +4030,8 @@ function renderPoaHome(){
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
   if(q){
     bar.style.display = 'none'; sl.style.display = 'block';
-    const nq = normalizeArabic(q);
-    const items = poasCache.filter(p=>normalizeArabic(p.name).startsWith(nq)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    const nq = poaCoreName(q);
+    const items = poasCache.filter(p=>poaCoreName(p.name).startsWith(nq)).sort(poaSortFn);
     sl.innerHTML = poaRowsHtml(items, 'مفيش توكيل باسم كده');
     return;
   }
@@ -4043,7 +4050,7 @@ function openPoaLetter(l){
 }
 
 function renderPoaLetterPage(){
-  const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort(poaSortFn);
   document.getElementById('poaLetterTitle').textContent = 'حرف "' + currentPoaLetter + '"' + (items.length ? ' (' + items.length + ')' : '');
   document.getElementById('poaList').innerHTML = poaRowsHtml(items, 'لسه مفيش توكيلات في الحرف ده — دوس استيراد وارفع التوكيلات');
 }
@@ -4134,10 +4141,10 @@ async function importPoa(inputEl){
   try{
     for(const f of files){
       const name = f.name.replace(/\.[^.]+$/, '').replace(/\s+/g, ' ').trim() || 'توكيل';
-      const key = normalizeArabic(name);
+      const key = poaCoreName(name);
 
       // 1) منع التكرار: نفس الاسم (بغض النظر عن الهمزات والحرف)
-      const ex = poasCache.find(p => normalizeArabic(p.name) === key);
+      const ex = poasCache.find(p => poaCoreName(p.name) === key);
       if(ex){
         const already = (poaFilesCache[ex.id] || []).some(x => x.name === f.name);
         if(already){
