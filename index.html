@@ -678,6 +678,41 @@
   .login-field-row input{flex:1;min-width:0;}
   .login-field-row label{font-size:12px;color:var(--navy-dim);white-space:nowrap;}
 
+
+  /* ===== أنيميشن الأزرار ===== */
+  button.act,.file-upload-btn,.add-title-pill,.year-btn,.landing-cat-btn,.cat-btn,.cat-filter button,.poa-letters button,nav.tabs button{
+    transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s ease,background-color .2s ease,filter .2s ease,border-color .2s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button.act,.file-upload-btn{position:relative;overflow:hidden;}
+  button.act::before,.file-upload-btn::before{
+    content:"";position:absolute;top:0;bottom:0;width:45%;right:-60%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
+    transform:skewX(-20deg);pointer-events:none;
+  }
+  @media (hover:hover){
+    button.act:hover,.file-upload-btn:hover,.add-title-pill:hover,.year-btn:hover,.landing-cat-btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0 8px 18px rgba(0,105,156,.28);
+      filter:brightness(1.05);
+    }
+    button.act:hover::before,.file-upload-btn:hover::before{right:130%;transition:right .6s ease;}
+    .btn-danger:hover{box-shadow:0 8px 18px rgba(200,60,40,.25)!important;}
+    .cat-btn:hover,.cat-filter button:hover,.poa-letters button:not(:disabled):hover{
+      transform:translateY(-3px) scale(1.04);
+      box-shadow:0 6px 14px rgba(0,105,156,.22);
+      border-color:var(--navy);
+    }
+    nav.tabs button:hover{transform:translateX(-4px);}
+    nav.tabs button.active:hover{transform:none;}
+  }
+  button.act:active,.file-upload-btn:active,.add-title-pill:active,.year-btn:active,.landing-cat-btn:active,.cat-btn:active,.cat-filter button:active,.poa-letters button:not(:disabled):active{
+    transform:scale(.94);box-shadow:none;filter:brightness(.95);
+  }
+  @media (prefers-reduced-motion:reduce){
+    button.act,.file-upload-btn,.add-title-pill,.year-btn,.landing-cat-btn,.cat-btn,.cat-filter button,.poa-letters button,nav.tabs button{transition:none!important;}
+    button.act::before,.file-upload-btn::before{display:none;}
+  }
 </style>
 <script>
   (function(){
