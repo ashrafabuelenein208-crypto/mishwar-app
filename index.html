@@ -158,6 +158,79 @@
     nav.tabs button.active,nav.tabs button.active:hover{background:var(--panel);}
   }
 
+
+  /* ===== إخفاء/إظهار القائمة + المشغّل السريع ===== */
+  .nav-toggle{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:12px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.16);color:#fff;flex:none;
+  }
+  .nav-toggle:hover{background:rgba(255,255,255,.28);}
+  .nav-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+
+  nav.tabs{transition:max-height .35s ease,opacity .25s ease,padding .35s ease,transform .35s ease;max-height:900px;}
+  @media (max-width:899px){
+    body.nav-hidden nav.tabs{max-height:0;opacity:0;padding-top:0;padding-bottom:0;overflow:hidden;pointer-events:none;}
+    body.nav-hidden header.top .wrap{padding-bottom:16px;}
+  }
+  @media (min-width:900px){
+    body{transition:padding-right .35s ease;}
+    body.nav-hidden{padding-right:0;}
+    body.nav-hidden nav.tabs{transform:translateX(105%);box-shadow:none;pointer-events:none;}
+  }
+
+  /* الزر العائم */
+  #launchFab{
+    position:fixed;left:18px;bottom:20px;z-index:900;
+    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--navy);color:#fff;
+    box-shadow:0 8px 22px rgba(0,0,0,.28);
+    display:none;align-items:center;justify-content:center;
+    transition:transform .25s ease,opacity .25s ease;opacity:.9;
+  }
+  #launchFab:hover{transform:scale(1.1) rotate(90deg);opacity:1;}
+  #launchFab svg{width:26px;height:26px;fill:currentColor;}
+  body.nav-hidden #launchFab{display:flex;animation:fabIn .4s ease;}
+  @keyframes fabIn{from{transform:scale(0);}to{transform:scale(1);}}
+
+  /* شاشة الاختيار */
+  #launcher{
+    position:fixed;inset:0;z-index:10002;display:none;
+    background:rgba(8,24,38,.62);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  #launcher.open{display:flex;animation:lFade .25s ease;}
+  @keyframes lFade{from{opacity:0;}to{opacity:1;}}
+  #launcher .l-box{width:100%;max-width:560px;text-align:center;}
+  #launcher .l-title{color:#fff;font-weight:900;font-size:18px;margin:0 0 16px;opacity:.9;}
+  #launcher .l-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  #launcher .l-tile{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+    background:var(--panel);color:var(--ink);border:none;border-radius:20px;
+    padding:18px 8px;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    opacity:0;transform:translateY(18px) scale(.9);
+    animation:tileIn .38s cubic-bezier(.2,.9,.3,1.2) forwards;
+    transition:transform .18s ease,box-shadow .18s ease;
+  }
+  #launcher .l-tile:hover{transform:translateY(-4px) scale(1.05)!important;box-shadow:0 12px 26px rgba(0,0,0,.35);}
+  #launcher .l-tile.cur{background:var(--navy);color:#fff;}
+  #launcher .l-tile .ic-wrap{
+    width:46px;height:46px;border-radius:14px;background:rgba(0,105,156,.12);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #launcher .l-tile.cur .ic-wrap{background:rgba(255,255,255,.2);}
+  #launcher .l-tile .ic{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  #launcher .l-tile .lbl{line-height:1.3;}
+  @keyframes tileIn{to{opacity:1;transform:none;}}
+  #launcher .l-close{
+    margin-top:18px;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:20px;
+    padding:9px 22px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;
+  }
+  @media (max-width:420px){#launcher .l-grid{gap:9px;}#launcher .l-tile{padding:14px 4px;font-size:12px;}}
+  @media (prefers-reduced-motion:reduce){#launcher .l-tile,#launcher.open,body.nav-hidden #launchFab{animation:none;opacity:1;transform:none;}}
+
   .panel{display:none;}
   .panel.active{display:block;}
 
@@ -832,6 +905,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
+      <button type="button" class="nav-toggle" id="navToggleBtn" title="إخفاء / إظهار القائمة" aria-label="إخفاء أو إظهار القائمة"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <button type="button" class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
       <div class="today-badge" id="todayBadge"></div>
     </div>
@@ -5917,7 +5991,51 @@ populateClientHelpers();
 
 
 
+
+
+/* ---------- إخفاء القائمة + المشغّل السريع ---------- */
+(function(){
+  const body=document.body, launcher=document.getElementById('launcher'), grid=document.getElementById('launcherGrid');
+  function setHidden(h){
+    body.classList.toggle('nav-hidden',h);
+    try{localStorage.setItem('mishwar_nav_hidden',h?'1':'0');}catch(e){}
+  }
+  try{ if(localStorage.getItem('mishwar_nav_hidden')==='1') body.classList.add('nav-hidden'); }catch(e){}
+
+  function openLauncher(){
+    grid.innerHTML='';
+    let i=0;
+    document.querySelectorAll('#tabsNav button[data-tab]').forEach(b=>{
+      if(b.style.display==='none') return;
+      const t=document.createElement('button');
+      t.type='button';
+      t.className='l-tile'+(b.classList.contains('active')?' cur':'');
+      t.style.animationDelay=(i++*45)+'ms';
+      t.innerHTML=b.querySelector('.ic-wrap').outerHTML+'<span class="lbl">'+b.querySelector('.lbl').textContent.trim()+'</span>';
+      t.onclick=()=>{ closeLauncher(); activateTab(b.dataset.tab); window.scrollTo({top:0,behavior:'smooth'}); };
+      grid.appendChild(t);
+    });
+    launcher.classList.add('open');
+  }
+  function closeLauncher(){ launcher.classList.remove('open'); }
+
+  document.getElementById('navToggleBtn').addEventListener('click',()=>setHidden(!body.classList.contains('nav-hidden')));
+  document.getElementById('launchFab').addEventListener('click',openLauncher);
+  document.getElementById('launcherClose').addEventListener('click',closeLauncher);
+  launcher.addEventListener('click',e=>{ if(e.target===launcher) closeLauncher(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLauncher(); });
+})();
+
 </script>
+
+<button type="button" id="launchFab" title="القائمة" aria-label="فتح القائمة"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
+<div id="launcher" role="dialog" aria-modal="true" aria-label="اختار صفحة">
+  <div class="l-box">
+    <h3 class="l-title">رايح فين؟</h3>
+    <div class="l-grid" id="launcherGrid"></div>
+    <button type="button" class="l-close" id="launcherClose">إغلاق</button>
+  </div>
+</div>
 
 </body>
 </html>
