@@ -5993,6 +5993,18 @@ populateClientHelpers();
 
 
 
+</script>
+
+<button type="button" id="launchFab" title="القائمة" aria-label="فتح القائمة"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
+<div id="launcher" role="dialog" aria-modal="true" aria-label="اختار صفحة">
+  <div class="l-box">
+    <h3 class="l-title">رايح فين؟</h3>
+    <div class="l-grid" id="launcherGrid"></div>
+    <button type="button" class="l-close" id="launcherClose">إغلاق</button>
+  </div>
+</div>
+
+<script>
 /* ---------- إخفاء القائمة + المشغّل السريع ---------- */
 (function(){
   const body=document.body, launcher=document.getElementById('launcher'), grid=document.getElementById('launcherGrid');
@@ -6027,15 +6039,5 @@ populateClientHelpers();
 })();
 
 </script>
-
-<button type="button" id="launchFab" title="القائمة" aria-label="فتح القائمة"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
-<div id="launcher" role="dialog" aria-modal="true" aria-label="اختار صفحة">
-  <div class="l-box">
-    <h3 class="l-title">رايح فين؟</h3>
-    <div class="l-grid" id="launcherGrid"></div>
-    <button type="button" class="l-close" id="launcherClose">إغلاق</button>
-  </div>
-</div>
-
 </body>
 </html>
