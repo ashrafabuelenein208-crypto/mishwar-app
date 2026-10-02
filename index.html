@@ -713,14 +713,6 @@
     button.act,.file-upload-btn,.add-title-pill,.year-btn,.landing-cat-btn,.cat-btn,.cat-filter button,.poa-letters button,nav.tabs button{transition:none!important;}
     button.act::before,.file-upload-btn::before{display:none;}
   }
-
-  /* ===== الإقرارات الضريبية ===== */
-  .ret-quarter{margin:0 0 22px;}
-  .ret-quarter h3{margin:0 0 10px;font-size:17px;color:var(--navy);}
-  .ret-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px;}
-  .ret-card>b{display:block;margin-bottom:4px;font-size:14.5px;}
-  .ret-card-q{border:2px solid var(--navy);}
-  .ret-field{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:7px;text-align:right;}
 </style>
 <script>
   (function(){
@@ -855,7 +847,6 @@
     <button data-tab="chat"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span><span class="lbl">الشات <span id="chatUnreadDot" style="display:none;"></span></span></button>
     <button data-tab="owner" id="ownerTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span><span class="lbl">لوحة صاحب المكتب</span></button>
     <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg></span><span class="lbl">حساب عميل</span></button>
-    <button data-tab="settings"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="lbl">الإعدادات</span></button>
   </nav>
 </header>
 
@@ -869,10 +860,6 @@
       <h2>أكثر العملاء تكلفة (الشهر الحالي)</h2>
       <div id="clientBars"></div>
     </section>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="panel" id="panel-settings">
     <section>
       <h2>الحساب</h2>
       <div id="accountSectionBox"></div>
@@ -890,12 +877,6 @@
         <input type="file" id="restoreFileInput" accept="application/json" style="display:none;" onchange="handleRestoreFile(this)">
       </div>
       <div id="backupStatus" style="font-size:12.5px;color:var(--navy-dim);margin-top:8px;"></div>
-    </section>
-    <section>
-      <h2>المظهر</h2>
-      <div class="row-actions">
-        <button class="act btn-ghost" type="button" onclick="toggleTheme()">🌙 / ☀️ تبديل الوضع الليلي</button>
-      </div>
     </section>
   </div>
 
@@ -1025,7 +1006,6 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('بيانات المنشأة')">بيانات المنشأة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
-        <button type="button" class="landing-cat-btn" onclick="openCategorySection('الإقرارات الضريبية')">الإقرارات الضريبية</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('حسابات الضرائب')">حسابات الضرائب</button>
       </div>
@@ -1049,10 +1029,10 @@
 
     <div id="clientsTaxYearDetailView" style="display:none;">
       <div class="row-actions" style="margin-bottom:8px;">
-        <button class="act btn-ghost btn-small" onclick="taxDetailBack()">‹ رجوع</button>
+        <button class="act btn-ghost btn-small" onclick="showTaxYearsList()">‹ رجوع</button>
       </div>
       <h2 id="taxYearDetailTitle" style="text-align:center;"></h2>
-      <label class="file-upload-btn" id="taxYearUploadLabel" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
+      <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
       <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
     </div>
@@ -3177,7 +3157,6 @@ function activateTab(tabName){
   if(tabName === 'chat') renderChatTab();
   if(tabName === 'owner') renderOwnerTab();
   if(tabName === 'ownerclients') renderOwnerClientsTab();
-  if(tabName === 'settings'){ try{ renderAccountSection(); }catch(e){} }
 }
 document.getElementById('tabsNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-tab]');
@@ -3582,7 +3561,7 @@ const TAX_YEARS = ['2020','2021','2022','2023','2024','2025','2026','2027'];
 let currentTaxSection = '';
 function openCategorySection(section){
   if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
-  if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة' || section === RETURNS_SECTION){ openTaxYearsList(section); return; }
+  if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
   if(section === 'مستندات'){ renderClientDocsSection(); return; }
   if(section === 'حسابات الضرائب'){ renderClientLoginsSection(); return; }
 }
@@ -3786,7 +3765,6 @@ function shareAllClientDocs(){
 
 function openTaxYearsList(section){
   currentTaxSection = section;
-  currentReturnSlot = null;
   const c = loadClients().find(x=>x.id===currentClientHubId);
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
@@ -3803,66 +3781,6 @@ function showTaxYearsList(){
 }
 
 let currentTaxYear = '';
-
-/* ===== الإقرارات الضريبية (ربع سنوية) ===== */
-const RETURNS_SECTION = 'الإقرارات الضريبية';
-const RETURN_FIELDS = { vat:'إقرارات القيمة المضافة', wht:'إقرارات الخصم والتحصيل', pay:'إقرارات المرتبات' };
-const RETURN_QUARTERS = [
-  { key:'q1', label:'الربع الأول',  months:[['jan','يناير'],['feb','فبراير']] },
-  { key:'q2', label:'الربع الثاني', months:[['apr','أبريل'],['may','مايو']] },
-  { key:'q3', label:'الربع الثالث', months:[['jul','يوليو'],['aug','أغسطس']] },
-  { key:'q4', label:'الربع الرابع', months:[['oct','أكتوبر'],['nov','نوفمبر']] },
-];
-let currentReturnSlot = null;
-
-function returnPeriodLabel(key){
-  for(const q of RETURN_QUARTERS){
-    if(q.key === key) return q.label;
-    for(const m of q.months) if(m[0] === key) return m[1];
-  }
-  return key;
-}
-function taxDetailBack(){
-  if(currentTaxSection === RETURNS_SECTION && currentReturnSlot){ renderReturnsGrid(); return; }
-  showTaxYearsList();
-}
-async function renderReturnsGrid(){
-  currentReturnSlot = null;
-  const c = loadClients().find(x=>x.id===currentClientHubId);
-  document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + RETURNS_SECTION + ' — ' + currentTaxYear;
-  document.getElementById('taxYearUploadLabel').style.display = 'none';
-  const listEl = document.getElementById('taxYearFilesList');
-  let meta = {};
-  const col = poasCol();
-  if(col){
-    try{ const d = await col.doc('retmeta_' + currentClientHubId + '_' + currentTaxYear).get(); if(d.exists) meta = d.data() || {}; }catch(e){}
-  }
-  const fieldBtn = (period, field) => {
-    const n = Number(meta[period + '_' + field]) || 0;
-    return `<button type="button" class="act ${n ? 'btn-primary' : 'btn-ghost'} ret-field" onclick="openReturnSlot('${period}','${field}')"><span>${RETURN_FIELDS[field]}</span><span>${n ? '✓ ' + n : '＋'}</span></button>`;
-  };
-  listEl.innerHTML = RETURN_QUARTERS.map(q => `
-    <div class="ret-quarter">
-      <h3>${q.label}</h3>
-      ${q.months.map(m => `
-        <div class="ret-card"><b>${m[1]}</b>${fieldBtn(m[0],'vat')}${fieldBtn(m[0],'wht')}</div>`).join('')}
-      <div class="ret-card ret-card-q"><b>${q.label} (إقرار الربع)</b>${fieldBtn(q.key,'vat')}${fieldBtn(q.key,'wht')}${fieldBtn(q.key,'pay')}</div>
-    </div>`).join('');
-}
-function openReturnSlot(period, field){
-  currentReturnSlot = { period, field };
-  const c = loadClients().find(x=>x.id===currentClientHubId);
-  document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + returnPeriodLabel(period) + ' ' + currentTaxYear + ' — ' + RETURN_FIELDS[field];
-  document.getElementById('taxYearUploadLabel').style.display = 'block';
-  renderTaxYearFilesList();
-}
-async function updateReturnMeta(n){
-  const col = poasCol();
-  if(!col || !currentReturnSlot) return;
-  try{
-    await col.doc('retmeta_' + currentClientHubId + '_' + currentTaxYear).set({ [currentReturnSlot.period + '_' + currentReturnSlot.field]: n }, { merge: true });
-  }catch(e){}
-}
 function taxFileIcon(f){
   const t = f.type || '';
   const n = (f.name || '').toLowerCase();
@@ -3873,27 +3791,16 @@ function taxFileIcon(f){
   if(t.includes('powerpoint') || t.includes('presentation') || n.endsWith('.ppt') || n.endsWith('.pptx')) return '📽️';
   return '📎';
 }
-function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : (section === RETURNS_SECTION ? 'returns' : 'vat'); }
+function taxSectionKey(section){ return section === 'ضرائب الدخل' ? 'income' : 'vat'; }
 function taxYearFilesCol(){
   const col = poasCol();
   if(!col || !currentClientHubId || !currentTaxSection || !currentTaxYear) return null;
-  let docId = 'taxyear_' + currentClientHubId + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
-  if(currentTaxSection === RETURNS_SECTION){
-    if(!currentReturnSlot) return null;
-    docId += '_' + currentReturnSlot.period + '_' + currentReturnSlot.field;
-  }
+  const docId = 'taxyear_' + currentClientHubId + '_' + taxSectionKey(currentTaxSection) + '_' + currentTaxYear;
   return col.doc(docId).collection('files');
 }
 
 function openTaxYear(year){
   currentTaxYear = year;
-  if(currentTaxSection === RETURNS_SECTION){
-    document.getElementById('clientsTaxYearsView').style.display = 'none';
-    document.getElementById('clientsTaxYearDetailView').style.display = 'block';
-    renderReturnsGrid();
-    return;
-  }
-  document.getElementById('taxYearUploadLabel').style.display = 'block';
   const c = loadClients().find(x=>x.id===currentClientHubId);
   document.getElementById('clientsTaxYearsView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'block';
@@ -3908,7 +3815,6 @@ async function renderTaxYearFilesList(){
   listEl.innerHTML = '<div class="empty" style="padding:14px;">جارٍ التحميل...</div>';
   let files = [];
   try{ const snap = await col.get(); files = snap.docs.map(d=>Object.assign({ id: d.id }, d.data())); }catch(err){}
-  if(currentTaxSection === RETURNS_SECTION) updateReturnMeta(files.length);
   if(!files.length){ listEl.innerHTML = '<div class="empty" style="padding:14px;">مفيش ملفات مرفوعة لسنة ' + currentTaxYear + ' لسه</div>'; return; }
   listEl.innerHTML = files.map(f => `
     <div class="attach-row">
