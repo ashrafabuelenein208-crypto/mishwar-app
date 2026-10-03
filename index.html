@@ -231,6 +231,38 @@
   @media (max-width:420px){#launcher .l-grid{gap:9px;}#launcher .l-tile{padding:14px 4px;font-size:12px;}}
   @media (prefers-reduced-motion:reduce){#launcher .l-tile,#launcher.open,body.nav-hidden #launchFab{animation:none;opacity:1;transform:none;}}
 
+  /* ===== تحسين الوضع الليلي + ألوان الأيقونات ===== */
+  #launcher .l-tile{border:1px solid var(--line);}
+  #launcher .l-tile .ic-wrap{background:var(--tc,#00699c);box-shadow:0 4px 12px rgba(0,0,0,.25);}
+  #launcher .l-tile .ic{color:#fff;stroke-width:2.1;}
+  #launcher .l-tile:nth-child(1){--tc:linear-gradient(135deg,#2a9fd6,#0b6fa8);}
+  #launcher .l-tile:nth-child(2){--tc:linear-gradient(135deg,#ff8a5c,#e0483a);}
+  #launcher .l-tile:nth-child(3){--tc:linear-gradient(135deg,#a98bff,#6c4bd8);}
+  #launcher .l-tile:nth-child(4){--tc:linear-gradient(135deg,#3fc98a,#1f9d6c);}
+  #launcher .l-tile:nth-child(5){--tc:linear-gradient(135deg,#ffd84d,#e0a800);}
+  #launcher .l-tile:nth-child(6){--tc:linear-gradient(135deg,#ff7eb6,#d6336c);}
+  #launcher .l-tile:nth-child(7){--tc:linear-gradient(135deg,#5ce0e0,#1c9fb0);}
+  #launcher .l-tile:nth-child(8){--tc:linear-gradient(135deg,#8fa8ff,#4264d0);}
+  #launcher .l-tile:nth-child(9){--tc:linear-gradient(135deg,#ffb066,#e07a1f);}
+  #launcher .l-tile.cur{outline:3px solid #ffd300;outline-offset:2px;}
+  #launcher .l-tile.cur .ic-wrap{background:var(--tc);}
+  :root[data-theme="dark"] #launcher{background:rgba(4,12,20,.78);}
+  :root[data-theme="dark"] #launcher .l-tile{
+    background:#243647;color:#f2f6fa;border-color:rgba(255,255,255,.16);
+  }
+  :root[data-theme="dark"] #launcher .l-tile:hover{background:#2d445a;}
+  :root[data-theme="dark"] #launcher .l-tile.cur{background:#1d4f6e;color:#fff;border-color:#2a9fd6;}
+  :root[data-theme="dark"] #launcher .l-close{background:#2a9fd6;color:#fff;}
+  :root[data-theme="dark"] #launcher .l-title{color:#fff;opacity:1;}
+  /* الزر العائم واضح في الوضعين */
+  #launchFab{background:linear-gradient(135deg,#2a9fd6,#00699c);border:3px solid #fff;opacity:1;}
+  :root[data-theme="dark"] #launchFab{box-shadow:0 0 0 4px rgba(42,159,214,.35),0 8px 24px rgba(0,0,0,.6);}
+  /* القائمة الجانبية في الوضع الليلي */
+  :root[data-theme="dark"] nav.tabs button.active,
+  :root[data-theme="dark"] nav.tabs button.active:hover{background:#2a9fd6;color:#fff;}
+  :root[data-theme="dark"] nav.tabs button.active .ic-wrap{background:rgba(255,255,255,.25);}
+  :root[data-theme="dark"] nav.tabs button .ic-wrap{background:rgba(255,255,255,.14);}
+
   .panel{display:none;}
   .panel.active{display:block;}
 
