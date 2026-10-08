@@ -158,134 +158,6 @@
     nav.tabs button.active,nav.tabs button.active:hover{background:var(--panel);}
   }
 
-
-  /* ===== إخفاء/إظهار القائمة + المشغّل السريع ===== */
-  .nav-toggle{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:38px;height:38px;border-radius:12px;border:none;cursor:pointer;
-    background:rgba(255,255,255,.16);color:#fff;flex:none;
-  }
-  .nav-toggle:hover{background:rgba(255,255,255,.28);}
-  .nav-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
-
-  nav.tabs{transition:max-height .35s ease,opacity .25s ease,padding .35s ease,transform .35s ease;max-height:900px;}
-  @media (max-width:899px){
-    body.nav-hidden nav.tabs{max-height:0;opacity:0;padding-top:0;padding-bottom:0;overflow:hidden;pointer-events:none;}
-    body.nav-hidden header.top .wrap{padding-bottom:16px;}
-  }
-  @media (min-width:900px){
-    body{transition:padding-right .35s ease;}
-    body.nav-hidden{padding-right:0;}
-    body.nav-hidden nav.tabs{transform:translateX(105%);box-shadow:none;pointer-events:none;}
-  }
-
-  /* الزر العائم */
-  #launchFab{
-    position:fixed;left:18px;bottom:20px;z-index:900;
-    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-    background:var(--navy);color:#fff;
-    box-shadow:0 8px 22px rgba(0,0,0,.28);
-    display:none;align-items:center;justify-content:center;
-    transition:transform .25s ease,opacity .25s ease;opacity:.9;
-  }
-  #launchFab:hover{transform:scale(1.1) rotate(90deg);opacity:1;}
-  #launchFab svg{width:26px;height:26px;fill:currentColor;}
-  body.nav-hidden #launchFab{display:flex;animation:fabIn .4s ease;}
-  @keyframes fabIn{from{transform:scale(0);}to{transform:scale(1);}}
-
-  /* شاشة الاختيار */
-  #launcher{
-    position:fixed;inset:0;z-index:10002;display:none;
-    background:rgba(8,24,38,.62);
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-    align-items:center;justify-content:center;padding:20px;
-  }
-  #launcher.open{display:flex;animation:lFade .25s ease;}
-  @keyframes lFade{from{opacity:0;}to{opacity:1;}}
-  #launcher .l-box{width:100%;max-width:560px;text-align:center;}
-  #launcher .l-title{color:#fff;font-weight:900;font-size:18px;margin:0 0 16px;opacity:.9;}
-  #launcher .l-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-  #launcher .l-tile{
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
-    background:var(--panel);color:var(--ink);border:none;border-radius:20px;
-    padding:18px 8px;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.25);
-    opacity:0;transform:translateY(18px) scale(.9);
-    animation:tileIn .38s cubic-bezier(.2,.9,.3,1.2) forwards;
-    transition:transform .18s ease,box-shadow .18s ease;
-  }
-  #launcher .l-tile:hover{transform:translateY(-4px) scale(1.05)!important;box-shadow:0 12px 26px rgba(0,0,0,.35);}
-  #launcher .l-tile.cur{background:var(--navy);color:#fff;}
-  #launcher .l-tile .ic-wrap{
-    width:46px;height:46px;border-radius:14px;background:rgba(0,105,156,.12);
-    display:flex;align-items:center;justify-content:center;
-  }
-  #launcher .l-tile.cur .ic-wrap{background:rgba(255,255,255,.2);}
-  #launcher .l-tile .ic{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
-  #launcher .l-tile .lbl{line-height:1.3;}
-  @keyframes tileIn{to{opacity:1;transform:none;}}
-  #launcher .l-close{
-    margin-top:18px;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:20px;
-    padding:9px 22px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;
-  }
-  @media (max-width:420px){#launcher .l-grid{gap:9px;}#launcher .l-tile{padding:14px 4px;font-size:12px;}}
-  @media (prefers-reduced-motion:reduce){#launcher .l-tile,#launcher.open,body.nav-hidden #launchFab{animation:none;opacity:1;transform:none;}}
-
-  /* ===== تحسين الوضع الليلي + ألوان الأيقونات ===== */
-  #launcher .l-tile{border:1px solid var(--line);}
-  #launcher .l-tile .ic-wrap{background:var(--tc,#00699c);box-shadow:0 4px 12px rgba(0,0,0,.25);}
-  #launcher .l-tile .ic{color:#fff;stroke-width:2.1;}
-  #launcher .l-tile:nth-child(1){--tc:linear-gradient(135deg,#2a9fd6,#0b6fa8);}
-  #launcher .l-tile:nth-child(2){--tc:linear-gradient(135deg,#ff8a5c,#e0483a);}
-  #launcher .l-tile:nth-child(3){--tc:linear-gradient(135deg,#a98bff,#6c4bd8);}
-  #launcher .l-tile:nth-child(4){--tc:linear-gradient(135deg,#3fc98a,#1f9d6c);}
-  #launcher .l-tile:nth-child(5){--tc:linear-gradient(135deg,#ffd84d,#e0a800);}
-  #launcher .l-tile:nth-child(6){--tc:linear-gradient(135deg,#ff7eb6,#d6336c);}
-  #launcher .l-tile:nth-child(7){--tc:linear-gradient(135deg,#5ce0e0,#1c9fb0);}
-  #launcher .l-tile:nth-child(8){--tc:linear-gradient(135deg,#8fa8ff,#4264d0);}
-  #launcher .l-tile:nth-child(9){--tc:linear-gradient(135deg,#ffb066,#e07a1f);}
-  #launcher .l-tile.cur{outline:3px solid #ffd300;outline-offset:2px;}
-  #launcher .l-tile.cur .ic-wrap{background:var(--tc);}
-  :root[data-theme="dark"] #launcher{background:rgba(4,12,20,.78);}
-  :root[data-theme="dark"] #launcher .l-tile{
-    background:#243647;color:#f2f6fa;border-color:rgba(255,255,255,.16);
-  }
-  :root[data-theme="dark"] #launcher .l-tile:hover{background:#2d445a;}
-  :root[data-theme="dark"] #launcher .l-tile.cur{background:#1d4f6e;color:#fff;border-color:#2a9fd6;}
-  :root[data-theme="dark"] #launcher .l-close{background:#2a9fd6;color:#fff;}
-  :root[data-theme="dark"] #launcher .l-title{color:#fff;opacity:1;}
-  /* الزر العائم واضح في الوضعين */
-  #launchFab{background:linear-gradient(135deg,#2a9fd6,#00699c);border:3px solid #fff;opacity:1;}
-  :root[data-theme="dark"] #launchFab{box-shadow:0 0 0 4px rgba(42,159,214,.35),0 8px 24px rgba(0,0,0,.6);}
-  /* القائمة الجانبية في الوضع الليلي */
-  :root[data-theme="dark"] nav.tabs button.active,
-  :root[data-theme="dark"] nav.tabs button.active:hover{background:#2a9fd6;color:#fff;}
-  :root[data-theme="dark"] nav.tabs button.active .ic-wrap{background:rgba(255,255,255,.25);}
-  :root[data-theme="dark"] nav.tabs button .ic-wrap{background:rgba(255,255,255,.14);}
-
-  /* ===== تباين الأزرار والبادجات في الوضع الليلي ===== */
-  :root[data-theme="dark"] .btn-ghost{background:#355673;color:#fff;border:1px solid rgba(255,255,255,.25);}
-  :root[data-theme="dark"] .btn-ghost:hover{background:var(--bronze);color:#1a1400;}
-  :root[data-theme="dark"] .tag,
-  :root[data-theme="dark"] .cat-badge{background:#4d4214;color:#ffe08a;border:1px solid rgba(255,224,138,.35);}
-  :root[data-theme="dark"] [style*="#8a6f00"]{color:#ffe08a!important;}
-  :root[data-theme="dark"] .file-upload-btn,
-  :root[data-theme="dark"] .poa-letters button{background:#2c4a63;color:#fff;border:1px solid rgba(255,255,255,.22);}
-  :root[data-theme="dark"] .file-upload-btn:hover,
-  :root[data-theme="dark"] .poa-letters button:hover{background:var(--bronze);color:#1a1400;}
-
-  /* ===== إصلاح الخلفيات الفاتحة الثابتة في الوضع الليلي ===== */
-  :root[data-theme="dark"] tbody tr:hover{background:rgba(42,159,214,.16);}
-  :root[data-theme="dark"] tbody tr:hover td{color:var(--ink);}
-  :root[data-theme="dark"] input,
-  :root[data-theme="dark"] select,
-  :root[data-theme="dark"] textarea{background:#0f1c28;color:var(--ink);}
-  :root[data-theme="dark"] .btn-danger:hover{background:#5a2824;color:#fff;}
-  :root[data-theme="dark"] .poa-import{background:#3a3320;border-color:#a8892a;color:var(--ink);}
-  :root[data-theme="dark"] .cd-year-head{background:#1f3040;color:var(--navy);}
-  :root[data-theme="dark"] .login-card{background:var(--panel);}
-  :root[data-theme="dark"] [style*="#eceeec"]{background:#2a3a47!important;}
-
   .panel{display:none;}
   .panel.active{display:block;}
 
@@ -496,7 +368,6 @@
   .login-box input{text-align:center;font-size:18px;letter-spacing:3px;margin-bottom:12px;}
   .login-err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:8px;}
 
-  header.top h1.office-title{font-size:clamp(22px,6vw,32px);line-height:1.3;margin:0;}
   .office-name{font-size:12.5px;color:var(--bronze);font-weight:800;letter-spacing:.3px;margin-bottom:2px;}
   .office-logo{height:42px;width:42px;object-fit:contain;border-radius:14px;background:var(--panel);padding:3px;}
   .office-brand{display:flex;align-items:center;gap:11px;}
@@ -707,21 +578,6 @@
   #imgLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
   #imgLightbox .lb-close{ background:var(--panel); color:var(--navy); }
 
-  #pdfLightbox{
-    display:none; position:fixed; inset:0; z-index:10000;
-    background:rgba(10,14,20,.92); align-items:center; justify-content:center; flex-direction:column; gap:14px;
-    padding:16px;
-  }
-  #pdfLightbox.show{ display:flex; }
-  #pdfLightbox iframe{ width:100%; max-width:900px; height:76vh; border:none; border-radius:10px; background:#fff; }
-  #pdfLightbox .lightbox-actions{ display:flex; gap:12px; }
-  #pdfLightbox .lightbox-actions button{
-    border:none; border-radius:12px; padding:10px 22px; font-weight:800; font-size:14px; cursor:pointer;
-    font-family:inherit;
-  }
-  #pdfLightbox .lb-download{ background:var(--bronze); color:var(--navy); }
-  #pdfLightbox .lb-close{ background:var(--panel); color:var(--navy); }
-
   #waPickerModal{
     display:none; position:fixed; inset:0; z-index:10001;
     background:rgba(10,14,20,.75); align-items:center; justify-content:center; padding:20px;
@@ -800,46 +656,46 @@
   .landing-cat-btn{flex:1 1 220px;min-height:110px;background:var(--navy);color:#fff;font-weight:900;font-size:19px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
   .landing-cat-btn:active{filter:brightness(1.1);}
   @media (max-width:640px){ .landing-cat-btn{flex:1 1 100%;min-height:80px;font-size:17px;} }
-  .login-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
-  .login-card h3{margin:0 0 12px;font-size:15px;color:var(--navy);}
-  .login-field-row{display:flex;gap:8px;margin-bottom:9px;align-items:center;}
-  .login-field-row input{flex:1;min-width:0;}
-  .login-field-row label{font-size:12px;color:var(--navy-dim);white-space:nowrap;}
 
-
-  /* ===== أنيميشن الأزرار ===== */
-  button.act,.file-upload-btn,.add-title-pill,.year-btn,.landing-cat-btn,.cat-btn,.cat-filter button,.poa-letters button,nav.tabs button{
-    transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s ease,background-color .2s ease,filter .2s ease,border-color .2s ease;
-    -webkit-tap-highlight-color:transparent;
+  #splashScreen{
+    position:fixed; inset:0; z-index:99999;
+    background:linear-gradient(160deg, var(--navy), #0d2a4a 75%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    transition:opacity .5s ease, visibility .5s ease;
   }
-  button.act,.file-upload-btn{position:relative;overflow:hidden;}
-  button.act::before,.file-upload-btn::before{
-    content:"";position:absolute;top:0;bottom:0;width:45%;right:-60%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
-    transform:skewX(-20deg);pointer-events:none;
+  #splashScreen.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  #splashLogo{
+    width:92px; height:92px; border-radius:24px; object-fit:contain; background:#fff; padding:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    animation:splashPop .7s ease;
   }
-  @media (hover:hover){
-    button.act:hover,.file-upload-btn:hover,.add-title-pill:hover,.year-btn:hover,.landing-cat-btn:hover{
-      transform:translateY(-3px);
-      box-shadow:0 8px 18px rgba(0,105,156,.28);
-      filter:brightness(1.05);
-    }
-    button.act:hover::before,.file-upload-btn:hover::before{right:130%;transition:right .6s ease;}
-    .btn-danger:hover{box-shadow:0 8px 18px rgba(200,60,40,.25)!important;}
-    .cat-btn:hover,.cat-filter button:hover,.poa-letters button:not(:disabled):hover{
-      transform:translateY(-3px) scale(1.04);
-      box-shadow:0 6px 14px rgba(0,105,156,.22);
-      border-color:var(--navy);
-    }
-    nav.tabs button:hover{transform:translateX(-4px);}
-    nav.tabs button.active:hover{transform:none;}
+  @keyframes splashPop{
+    0%{ transform:scale(.6); opacity:0; }
+    60%{ transform:scale(1.08); opacity:1; }
+    100%{ transform:scale(1); }
   }
-  button.act:active,.file-upload-btn:active,.add-title-pill:active,.year-btn:active,.landing-cat-btn:active,.cat-btn:active,.cat-filter button:active,.poa-letters button:not(:disabled):active{
-    transform:scale(.94);box-shadow:none;filter:brightness(.95);
+  .splash-title{ font-size:19px; font-weight:900; color:#fff; text-align:center; padding:0 24px; }
+  .splash-shimmer{
+    font-size:13.5px; font-weight:700; text-align:center;
+    background:linear-gradient(90deg, rgba(255,255,255,.35) 0%, #fff 50%, rgba(255,255,255,.35) 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:splashShimmer 2s linear infinite;
   }
-  @media (prefers-reduced-motion:reduce){
-    button.act,.file-upload-btn,.add-title-pill,.year-btn,.landing-cat-btn,.cat-btn,.cat-filter button,.poa-letters button,nav.tabs button{transition:none!important;}
-    button.act::before,.file-upload-btn::before{display:none;}
+  @keyframes splashShimmer{
+    0%{ background-position:200% center; }
+    100%{ background-position:-200% center; }
+  }
+  .splash-dots{ margin-top:4px; }
+  .splash-dots span{
+    display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--bronze);
+    margin:0 3px; animation:splashDot 1.1s ease-in-out infinite;
+  }
+  .splash-dots span:nth-child(2){ animation-delay:.15s; }
+  .splash-dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes splashDot{
+    0%,80%,100%{ transform:translateY(0); opacity:.5; }
+    40%{ transform:translateY(-6px); opacity:1; }
   }
 </style>
 <script>
@@ -853,6 +709,28 @@
 </head>
 <body>
 
+<div id="splashScreen">
+  <img id="splashLogo" src="" alt="شعار المكتب">
+  <div class="splash-title">مكتب الغريب للمحاسبة والمراجعة</div>
+  <div class="splash-shimmer">بنجهزلك سجل مشاوير العملاء...</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+<script>
+  (function(){
+    window.addEventListener('DOMContentLoaded', function(){
+      var existingLogo = document.querySelector('.office-logo');
+      var splashLogo = document.getElementById('splashLogo');
+      if(existingLogo && splashLogo) splashLogo.src = existingLogo.src;
+    });
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        var el = document.getElementById('splashScreen');
+        if(el) el.classList.add('hide');
+      }, 1700);
+    });
+  })();
+</script>
+
 <div id="chatToast" onclick="handleChatToastClick()"></div>
 
 <div id="imgLightbox">
@@ -860,14 +738,6 @@
   <div class="lightbox-actions">
     <button class="lb-download" onclick="downloadLightboxImage()">تحميل الصورة</button>
     <button class="lb-close" onclick="closeImgLightbox()">إغلاق</button>
-  </div>
-</div>
-
-<div id="pdfLightbox">
-  <iframe id="lightboxPdf" src=""></iframe>
-  <div class="lightbox-actions">
-    <button class="lb-download" onclick="downloadLightboxPdf()">تحميل الملف</button>
-    <button class="lb-close" onclick="closePdfLightbox()">إغلاق</button>
   </div>
 </div>
 
@@ -956,11 +826,12 @@
     <div class="office-brand">
       <img src="data:image/jpeg;base64,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" alt="شعار المكتب" class="office-logo">
       <div>
-        <h1 class="office-title">مكتب الغريب للمحاسبة والمراجعة</h1>
+        <div class="office-name">مكتب الغريب للمحاسبة والمراجعة</div>
+        <h1>سجل مشاوير العملاء</h1>
+        <p>متابعة مصاريف المواصلات والحساب مع صاحب المكتب</p>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <button type="button" class="nav-toggle" id="navToggleBtn" title="إخفاء / إظهار القائمة" aria-label="إخفاء أو إظهار القائمة"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <button type="button" class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
       <div class="today-badge" id="todayBadge"></div>
     </div>
@@ -1013,31 +884,12 @@
   <div class="panel" id="panel-trip">
     <section>
       <h2>إضافة مشوار جديد</h2>
-      <div class="field" style="margin-bottom:10px;">
-        <label>رقم التسجيل الضريبي (اختياري — يجيبلك العميل تلقائي)</label>
-        <input type="text" id="tripTaxNo" inputmode="numeric" placeholder="اكتب الرقم الضريبي" oninput="onTripTaxInput()">
-        <div id="tripTaxResult" style="margin-top:6px;font-size:13.5px;font-weight:700;"></div>
-      </div>
       <div class="grid2">
         <div class="field">
-          <label>نوع العميل</label>
-          <select id="tripClientCat" onchange="onTripCatChange()">
-            <option value="">اختار النوع</option>
-            <option value="شركات">شركات</option>
-            <option value="فردي">فردي</option>
-            <option value="غير مسجل">غير مسجل</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>العميل</label>
-          <select id="tripClientSel" onchange="onTripClientChange()" disabled>
-            <option value="">اختار نوع العميل الأول</option>
-          </select>
-          <input type="text" id="tripClientName" placeholder="اكتب اسم العميل الجديد" style="display:none;margin-top:6px;">
+          <label>العميل (اكتب علشان تدور)</label>
+          <input list="clientNamesList" id="tripClientName" placeholder="اسم الشركة أو العميل">
           <datalist id="clientNamesList"></datalist>
         </div>
-      </div>
-      <div class="grid2">
         <div class="field">
           <label>نوع المشوار</label>
           <select id="tripType">
@@ -1136,7 +988,6 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب الدخل')">ضرائب الدخل</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
-        <button type="button" class="landing-cat-btn" onclick="openCategorySection('حسابات الضرائب')">حسابات الضرائب</button>
       </div>
     </div>
 
@@ -1247,36 +1098,6 @@
         <div class="field">
           <label>رقم الهاتف</label>
           <input type="text" id="cPhone" placeholder="01xxxxxxxxx">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>اسم المستخدم (منظومة جديدة)</label>
-          <input type="text" id="cLoginNewUser" placeholder="اسم المستخدم">
-        </div>
-        <div class="field">
-          <label>الباسورد (منظومة جديدة)</label>
-          <input type="text" id="cLoginNewPass" placeholder="الباسورد">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>اسم المستخدم (منظومة قديمة)</label>
-          <input type="text" id="cLoginOldUser" placeholder="اسم المستخدم">
-        </div>
-        <div class="field">
-          <label>الباسورد (منظومة قديمة)</label>
-          <input type="text" id="cLoginOldPass" placeholder="الباسورد">
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>إيميل الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoiceEmail" placeholder="الإيميل">
-        </div>
-        <div class="field">
-          <label>باسورد الفاتورة الإلكترونية</label>
-          <input type="text" id="cEinvoicePass" placeholder="الباسورد">
         </div>
       </div>
       <div class="grid2">
@@ -3304,113 +3125,8 @@ function clientName(id){
   return c ? c.name : '—';
 }
 
-/* ---- Trip form: lookup client by tax registration number ---- */
-function normTaxNo(v){
-  return String(v||'')
-    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
-    .replace(/\D/g, '');
-}
-function findClientsByTaxNo(raw){
-  const n = normTaxNo(raw);
-  if(!n) return [];
-  return loadClients().filter(c => normTaxNo(c.taxRegNo) === n);
-}
-function getTripTaxClient(){
-  const el = document.getElementById('tripTaxNo');
-  if(!el || !el.value.trim()) return null;
-  const found = findClientsByTaxNo(el.value);
-  return found.length ? found[0] : null;
-}
-function onTripTaxInput(){
-  const box = document.getElementById('tripTaxResult');
-  const raw = document.getElementById('tripTaxNo').value;
-  if(!normTaxNo(raw)){ box.textContent = ''; return; }
-  const found = findClientsByTaxNo(raw);
-  if(!found.length){
-    box.style.color = 'var(--navy-dim)';
-    box.textContent = 'مفيش عميل بالرقم ده (كمّل الكتابة أو اختار العميل يدوي)';
-    return;
-  }
-  const c = found[0];
-  box.style.color = 'var(--green)';
-  box.textContent = '✅ ' + c.name + (c.category ? ' — ' + c.category : ' — (نوعه مش متحدد)')
-    + (found.length > 1 ? ` (في ${found.length} عملاء بنفس الرقم، اتاخد الأول)` : '');
-  // sync the dropdowns to the matched client when it has a category
-  if(c.category){
-    document.getElementById('tripClientCat').value = c.category;
-    refreshTripClientOptions(c.id);
-  }
-}
-
-/* ---- Trip form: category -> client dropdowns ---- */
-function refreshTripClientOptions(selectedId){
-  const cat = document.getElementById('tripClientCat').value;
-  const sel = document.getElementById('tripClientSel');
-  const nameInput = document.getElementById('tripClientName');
-  if(!cat){
-    sel.innerHTML = '<option value="">اختار نوع العميل الأول</option>';
-    sel.disabled = true; nameInput.style.display = 'none';
-    return;
-  }
-  const list = loadClients()
-    .filter(c => c.category === cat)
-    .sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''),'ar'));
-  sel.innerHTML = '<option value="">اختار العميل</option>'
-    + list.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
-    + '<option value="__new__">➕ اسم جديد (مش في القائمة)</option>';
-  sel.disabled = false;
-  if(selectedId && list.some(c=>c.id===selectedId)) sel.value = selectedId;
-  onTripClientChange();
-}
-function onTripCatChange(){ refreshTripClientOptions(); }
-function onTripClientChange(){
-  const isNew = document.getElementById('tripClientSel').value === '__new__';
-  document.getElementById('tripClientName').style.display = isNew ? 'block' : 'none';
-}
-
-/* ---- Owner ledger auto-sync: every trip becomes an expense entry on the client's account ---- */
-async function syncTripToOwnerLedger(trip){
-  if(currentUserRole !== 'owner' || !trip || !trip.clientId) return;
-  const col = ownerClientsCol();
-  if(!col) return;
-  try{
-    const clientRef = col.doc(trip.clientId);
-    const snap = await clientRef.get();
-    if(!snap.exists){
-      await clientRef.set({ name: trip.clientName || clientName(trip.clientId), createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    }
-    const noteParts = [`مشوار ${trip.type||''}`];
-    if(trip.place) noteParts.push(trip.place);
-    if(trip.note) noteParts.push(`(${trip.note})`);
-    await clientRef.collection('entries').doc('trip_' + trip.id).set({
-      type: 'expense',
-      date: trip.date,
-      amount: Number(trip.cost) || 0,
-      note: noteParts.join(' — '),
-      tripId: trip.id,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    if(currentOwnerClientId === trip.clientId) renderOwnerClientDetail();
-  }catch(err){ console.warn('owner ledger sync failed', err); }
-}
-async function removeTripFromOwnerLedger(clientId, tripId){
-  if(currentUserRole !== 'owner' || !clientId) return;
-  const col = ownerClientsCol();
-  if(!col) return;
-  try{
-    await col.doc(clientId).collection('entries').doc('trip_' + tripId).delete();
-    if(currentOwnerClientId === clientId) renderOwnerClientDetail();
-  }catch(err){ console.warn('owner ledger remove failed', err); }
-}
-
 function populateClientHelpers(){
   const clients = loadClients();
-  if(document.getElementById('tripClientCat')){
-    const sel = document.getElementById('tripClientSel');
-    const keep = sel && sel.value && sel.value !== '__new__' ? sel.value : '';
-    refreshTripClientOptions(keep);
-  }
   document.getElementById('clientNamesList').innerHTML = clients.map(c=>`<option value="${escapeHtml(c.name)}">`).join('');
   const filterSel = document.getElementById('filterClient');
   const prev = filterSel.value;
@@ -3441,24 +3157,6 @@ function saveClient(){
     taxRegNo: document.getElementById('cTaxRegNo').value.trim(),
     crNo: document.getElementById('cCrNo').value.trim(),
   };
-  const newUser = document.getElementById('cLoginNewUser').value.trim();
-  const newPass = document.getElementById('cLoginNewPass').value;
-  if(newUser || newPass){
-    data.logins = data.logins || {};
-    data.logins.new = { email: newUser, password: newPass };
-  }
-  const oldUser = document.getElementById('cLoginOldUser').value.trim();
-  const oldPass = document.getElementById('cLoginOldPass').value;
-  if(oldUser || oldPass){
-    data.logins = data.logins || {};
-    data.logins.old = { email: oldUser, password: oldPass };
-  }
-  const einvoiceEmail = document.getElementById('cEinvoiceEmail').value.trim();
-  const einvoicePass = document.getElementById('cEinvoicePass').value;
-  if(einvoiceEmail || einvoicePass){
-    data.logins = data.logins || {};
-    data.logins.einvoice = { email: einvoiceEmail, password: einvoicePass };
-  }
   const promise = editingClientId
     ? col.doc(editingClientId).set(data, { merge: true })
     : (()=>{ const newId = uid(); openClientDocsId = newId; return col.doc(newId).set(data); })();
@@ -3481,21 +3179,11 @@ function resetClientForm(){
   document.getElementById('cCrOffice').value = '';
   document.getElementById('cTaxRegNo').value = '';
   document.getElementById('cCrNo').value = '';
-  document.getElementById('cLoginNewUser').value = '';
-  document.getElementById('cLoginNewPass').value = '';
-  document.getElementById('cLoginOldUser').value = '';
-  document.getElementById('cLoginOldPass').value = '';
-  document.getElementById('cEinvoiceEmail').value = '';
-  document.getElementById('cEinvoicePass').value = '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ العميل';
   document.getElementById('clientCancelBtn').style.display = 'none';
 }
 
-// Editing an existing client (any field) requires the edit PIN. Adding a brand-new client stays open.
 function editClient(id){
-  requirePin(()=> editClientAfterPin(id));
-}
-function editClientAfterPin(id){
   const c = loadClients().find(x=>x.id===id);
   if(!c) return;
   showClientsForm();
@@ -3513,13 +3201,6 @@ function editClientAfterPin(id){
   document.getElementById('cCrOffice').value = c.crOffice || '';
   document.getElementById('cTaxRegNo').value = c.taxRegNo || '';
   document.getElementById('cCrNo').value = c.crNo || '';
-  const cLogins = c.logins || {};
-  document.getElementById('cLoginNewUser').value = (cLogins.new && cLogins.new.email) || '';
-  document.getElementById('cLoginNewPass').value = (cLogins.new && cLogins.new.password) || '';
-  document.getElementById('cLoginOldUser').value = (cLogins.old && cLogins.old.email) || '';
-  document.getElementById('cLoginOldPass').value = (cLogins.old && cLogins.old.password) || '';
-  document.getElementById('cEinvoiceEmail').value = (cLogins.einvoice && cLogins.einvoice.email) || '';
-  document.getElementById('cEinvoicePass').value = (cLogins.einvoice && cLogins.einvoice.password) || '';
   document.getElementById('clientSaveBtn').textContent = 'حفظ التعديلات';
   document.getElementById('clientCancelBtn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -3692,95 +3373,6 @@ function openCategorySection(section){
   if(section === 'بيانات المنشأة'){ renderClientInfoSection(); return; }
   if(section === 'ضرائب الدخل' || section === 'ضرائب القيمة المضافة'){ openTaxYearsList(section); return; }
   if(section === 'مستندات'){ renderClientDocsSection(); return; }
-  if(section === 'حسابات الضرائب'){ renderClientLoginsSection(); return; }
-}
-
-const LOGIN_SYSTEMS = [
-  { key: 'new', label: 'المنظومة الجديدة', fixedUrl: 'https://www.eta.gov.eg' },
-  { key: 'old', label: 'المنظومة القديمة', fixedUrl: 'https://eservice.incometax.gov.eg/etax' },
-  { key: 'einvoice', label: 'الفاتورة الإلكترونية', fixedUrl: 'https://invoicing.eta.gov.eg' },
-];
-
-function renderClientLoginsSection(){
-  document.getElementById('clientsCategoryHubView').style.display = 'none';
-  document.getElementById('clientsCategorySectionView').style.display = 'block';
-  document.getElementById('categorySectionTitle').textContent = 'حسابات الضرائب';
-  const c = loadClients().find(x=>x.id===currentClientHubId);
-  const logins = (c && c.logins) || {};
-  const body = document.getElementById('categorySectionBody');
-  body.innerHTML = `<div style="font-size:12.5px;color:var(--navy-dim);margin-bottom:12px;">🔒 للعرض بس — التعديل من "بيانات المنشأة" فقط (بكود التعديل)</div>` + LOGIN_SYSTEMS.map(sys => {
-    const d = logins[sys.key] || {};
-    return `
-      <div class="login-card">
-        <h3>${sys.label}</h3>
-        <div class="login-field-row">
-          <label>${sys.key === 'einvoice' ? 'الإيميل' : 'اسم المستخدم'}</label>
-          <input type="text" id="loginEmail_${sys.key}" readonly placeholder="—" value="${escapeHtml(d.email||'')}">
-          <button class="act btn-ghost btn-small" onclick="copyLoginField('loginEmail_${sys.key}', this)">نسخ</button>
-        </div>
-        <div class="login-field-row">
-          <label>الباسورد</label>
-          <input type="password" id="loginPass_${sys.key}" readonly placeholder="—" value="${escapeHtml(d.password||'')}">
-          <button class="act btn-ghost btn-small" onclick="toggleLoginPasswordVisibility('${sys.key}', this)">إظهار</button>
-          <button class="act btn-ghost btn-small" onclick="copyLoginField('loginPass_${sys.key}', this)">نسخ</button>
-        </div>
-        <div class="row-actions" style="margin-top:0;">
-          <button class="act btn-primary btn-small" onclick="openLoginUrl('${sys.key}')">فتح الموقع 🔗</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function saveClientLoginField(sysKey, field, value){
-  const col = officeClientsCol();
-  if(!col || !currentClientHubId) return;
-  try{
-    await col.doc(currentClientHubId).set({ logins: { [sysKey]: { [field]: value } } }, { merge: true });
-  }catch(err){
-    alert('حصل خطأ في حفظ البيانات: ' + (err && err.message ? err.message : 'غير معروف'));
-  }
-}
-
-function copyLoginField(inputId, btnEl){
-  const el = document.getElementById(inputId);
-  if(!el || !el.value){ return; }
-  const finish = ()=>{
-    const original = btnEl.textContent;
-    btnEl.textContent = '✅ اتنسخ';
-    setTimeout(()=>{ btnEl.textContent = original; }, 1500);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(el.value).then(finish).catch(()=>{
-      el.select();
-      try{ document.execCommand('copy'); finish(); }catch(e){}
-    });
-  } else {
-    el.select();
-    try{ document.execCommand('copy'); finish(); }catch(e){}
-  }
-}
-
-function toggleFieldVisibility(inputId, btnEl){
-  const el = document.getElementById(inputId);
-  if(!el) return;
-  if(el.type === 'password'){ el.type = 'text'; btnEl.textContent = 'إخفاء'; }
-  else { el.type = 'password'; btnEl.textContent = 'إظهار'; }
-}
-function toggleLoginPasswordVisibility(sysKey, btnEl){
-  const el = document.getElementById('loginPass_' + sysKey);
-  if(!el) return;
-  if(el.type === 'password'){ el.type = 'text'; btnEl.textContent = 'إخفاء'; }
-  else { el.type = 'password'; btnEl.textContent = 'إظهار'; }
-}
-
-function openLoginUrl(sysKey){
-  const sys = LOGIN_SYSTEMS.find(s => s.key === sysKey);
-  if(sys && sys.fixedUrl){ window.open(sys.fixedUrl, '_blank'); return; }
-  const el = document.getElementById('loginUrl_' + sysKey);
-  const url = el ? el.value.trim() : '';
-  if(!url){ alert('محطوطش رابط لصفحة تسجيل الدخول لسه — اكتبه في الخانة فوق'); return; }
-  window.open(/^https?:\/\//i.test(url) ? url : 'https://' + url, '_blank');
 }
 
 function renderClientInfoSection(){
@@ -3990,14 +3582,6 @@ async function downloadTaxYearFile(fileId){
   const doc = await col.doc(fileId).get();
   if(!doc.exists) return;
   const f = doc.data();
-  if((f.type||'').startsWith('image/')){
-    openImgLightbox(f.dataUrl);
-    return;
-  }
-  if(isPdfFile(f)){
-    openPdfLightbox(f.dataUrl, f.name);
-    return;
-  }
   const a = document.createElement('a');
   a.href = f.dataUrl; a.download = f.name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -4089,57 +3673,14 @@ function poaFilesCol(poaId){
 }
 
 function normalizePoaLetter(name){
-  const s = poaCoreName(name);
+  const s = (name || '').trim();
   if(!s) return '';
-  return s.charAt(0);
+  const alefMap = {'أ':'ا','إ':'ا','آ':'ا','ٱ':'ا'};
+  const ch = s.charAt(0);
+  return alefMap[ch] || ch;
 }
 
 function poaLetterOf(p){ return p.letter || normalizePoaLetter(p.name); }
-
-/* توحيد الكتابة العربية للبحث والمقارنة (الهمزات، ى/ي، ة/ه، التشكيل، المسافات) */
-function normalizeArabic(str){
-  return String(str || '').toLowerCase()
-    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/* الاسم الفعلي للتوكيل من غير كلمة "توكيل" في أوله (مثلاً "توكيل احمد محمد" -> "احمد محمد") */
-function poaCoreName(name){
-  const n = normalizeArabic(name);
-  const core = n.replace(/^(?:توكيل(?:ات)?[\s\-_:.]*)+/, '').trim();
-  return core || n;
-}
-
-/* الحروف المقبولة للاسم: أول حرف، أو الحرف اللي بعد "ال" */
-function poaExpectedLetters(name){
-  const s = poaCoreName(name);
-  const out = [];
-  if(s && POA_LETTERS.includes(s.charAt(0))) out.push(s.charAt(0));
-  if(s.startsWith('ال') && s.length > 2 && POA_LETTERS.includes(s.charAt(2))) out.push(s.charAt(2));
-  return out;
-}
-
-function poaSortFn(a,b){ return poaCoreName(a.name).localeCompare(poaCoreName(b.name),'ar'); }
-
-function poaIsMisfiled(p){
-  const exp = poaExpectedLetters(p.name);
-  return !!(p.letter && exp.length && !exp.includes(p.letter));
-}
-
-async function movePoaLetter(poaId, letter){
-  const col = poasCol();
-  if(!col) return;
-  try{
-    await col.doc(poaId).update({ letter });
-    await refreshPoaLetterView();
-  }catch(err){
-    alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف'));
-  }
-}
 
 function poaRowsHtml(items, emptyMsg){
   if(!items.length) return '<div class="empty">' + emptyMsg + '</div>';
@@ -4150,7 +3691,6 @@ function poaRowsHtml(items, emptyMsg){
       : `<button class="act btn-ghost btn-small" onclick="takePoa('${p.id}')">📤 سحب</button>`;
     return `<div class="poa-row">
       <div class="poa-card-name" style="cursor:default;">${escapeHtml(p.name)}${poaHolderLine(p)}</div>
-      ${poaIsMisfiled(p) ? `<button class="act btn-ghost btn-small" onclick="movePoaLetter('${p.id}','${poaExpectedLetters(p.name)[0]}')">⚠️ انقل لحرف ${poaExpectedLetters(p.name)[0]}</button>` : ''}
       ${custodyBtn}
       ${n ? `<button class="act btn-primary btn-small" onclick="downloadPoaAll('${p.id}')">تحميل</button>` : '<span class="poa-nofile">بدون ملف</span>'}
       <button class="act btn-danger btn-small" onclick="requirePin(()=>deletePoaById('${p.id}'))">حذف</button>
@@ -4193,8 +3733,7 @@ function renderPoaHome(){
   const q = (document.getElementById('poaSearch').value || '').trim().toLowerCase();
   if(q){
     bar.style.display = 'none'; sl.style.display = 'block';
-    const nq = poaCoreName(q);
-    const items = poasCache.filter(p=>poaCoreName(p.name).startsWith(nq)).sort(poaSortFn);
+    const items = poasCache.filter(p=>(p.name||'').toLowerCase().includes(q)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
     sl.innerHTML = poaRowsHtml(items, 'مفيش توكيل باسم كده');
     return;
   }
@@ -4213,7 +3752,7 @@ function openPoaLetter(l){
 }
 
 function renderPoaLetterPage(){
-  const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort(poaSortFn);
+  const items = poasCache.filter(p=>poaLetterOf(p)===currentPoaLetter).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
   document.getElementById('poaLetterTitle').textContent = 'حرف "' + currentPoaLetter + '"' + (items.length ? ' (' + items.length + ')' : '');
   document.getElementById('poaList').innerHTML = poaRowsHtml(items, 'لسه مفيش توكيلات في الحرف ده — دوس استيراد وارفع التوكيلات');
 }
@@ -4303,31 +3842,9 @@ async function importPoa(inputEl){
   if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
   try{
     for(const f of files){
-      const name = f.name.replace(/\.[^.]+$/, '').replace(/\s+/g, ' ').trim() || 'توكيل';
-      const key = poaCoreName(name);
-
-      // 1) منع التكرار: نفس الاسم (بغض النظر عن الهمزات والحرف)
-      const ex = poasCache.find(p => poaCoreName(p.name) === key);
-      if(ex){
-        const already = (poaFilesCache[ex.id] || []).some(x => x.name === f.name);
-        if(already){
-          alert('التوكيل "' + ex.name + '" موجود بالفعل والملف ده مرفوع عليه قبل كده — اتخطّى.');
-          continue;
-        }
-        if(!confirm('التوكيل "' + ex.name + '" موجود بالفعل في حرف "' + poaLetterOf(ex) + '".\n\nموافق = أضيف الملف على نفس التوكيل (من غير تكرار)\nإلغاء = أتخطى الملف ده')) continue;
-        await handlePoaFileUpload({ files:[f], value:'' }, ex.id);
-        continue;
-      }
-
-      // 2) منع الغلط في الحرف: لو الاسم مش بيبدأ بالحرف المفتوح
-      let letter = currentPoaLetter;
-      const exp = poaExpectedLetters(name);
-      if(exp.length && !exp.includes(currentPoaLetter)){
-        if(!confirm('الاسم "' + name + '" بيبدأ بحرف "' + exp[0] + '" لكن إنت فاتح حرف "' + currentPoaLetter + '".\n\nموافق = أحطه في حرف "' + exp[0] + '" الصح\nإلغاء = أتخطى الملف ده')) continue;
-        letter = exp[0];
-      }
-
-      const id = (await col.add({ name, letter, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
+      const name = f.name.replace(/\.[^.]+$/, '').trim() || 'توكيل';
+      const ex = poasCache.find(p=>(p.name||'').trim() === name && poaLetterOf(p) === currentPoaLetter);
+      const id = ex ? ex.id : (await col.add({ name, letter: currentPoaLetter, createdAt: firebase.firestore.FieldValue.serverTimestamp() })).id;
       await handlePoaFileUpload({ files:[f], value:'' }, id);
     }
     inputEl.value = '';
@@ -4467,8 +3984,9 @@ async function viewPoaFile(fileId){
   const files = await getFilesForPoa(currentPoaId);
   const f = files.find(x=>x.id===fileId);
   if(!f) return;
-  if(isPdfFile(f)){
-    openPdfLightbox(f.dataUrl, f.name);
+  if(f.fileType === 'pdf'){
+    const w = window.open();
+    if(w) w.document.write('<iframe src="'+f.dataUrl+'" style="position:fixed;inset:0;width:100%;height:100%;border:none;"></iframe>');
   } else {
     openImgLightbox(f.dataUrl);
   }
@@ -4496,44 +4014,25 @@ function resolveNewClientChoice(choice){
 }
 
 async function saveTrip(){
-  const taxClient = getTripTaxClient();
-  if(document.getElementById('tripTaxNo').value.trim() && !taxClient){
-    alert('مفيش عميل بالرقم الضريبي ده. صحّح الرقم أو امسحه واختار العميل يدوي');
-    return;
-  }
-  const cat = taxClient ? (taxClient.category || '') : document.getElementById('tripClientCat').value;
-  if(!taxClient && !cat){ alert('اختار نوع العميل الأول (شركات / فردي / غير مسجل)'); return; }
-  const selVal = taxClient ? taxClient.id : document.getElementById('tripClientSel').value;
-  if(!selVal){ alert('اختار العميل من القائمة'); return; }
+  const typedName = document.getElementById('tripClientName').value.trim();
+  if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
   let clients = loadClients();
-  let client = null;
-  let skipLedger = false;
-  if(taxClient){
-    client = taxClient;
-  } else if(selVal === '__new__'){
-    const typedName = document.getElementById('tripClientName').value.trim();
-    if(!typedName){ alert('اكتب اسم العميل الأول'); return; }
-    client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
-    if(!client){
-      const choice = await askNewClientChoice(typedName);
-      if(choice === 'cancel' || !choice) return;
-      if(choice === 'add'){
-        const col = officeClientsCol();
-        if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
-        client = {id: uid(), name: typedName, category: cat, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
-        col.doc(client.id).set({
-          name: client.name, category: cat, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
-          companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
-        }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
-      } else {
-        // 'once': just use this name for this one trip only, don't save it to the shared client list
-        client = {id: uid(), name: typedName};
-        skipLedger = true;
-      }
+  let client = clients.find(c => c.name.toLowerCase() === typedName.toLowerCase());
+  if(!client){
+    const choice = await askNewClientChoice(typedName);
+    if(choice === 'cancel' || !choice) return;
+    if(choice === 'add'){
+      const col = officeClientsCol();
+      if(!col){ alert('لسه بيتحمّل بيانات المكتب، استنى ثانية وجرب تاني'); return; }
+      client = {id: uid(), name: typedName, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'', companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''};
+      col.doc(client.id).set({
+        name: client.name, tradeName:'', taxOffice:'', phone:'', crExpiry:'', taxCardExpiry:'', tokenExpiry:'',
+        companyType:'', vatExpiry:'', crOffice:'', taxRegNo:'', crNo:''
+      }).catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
+    } else {
+      // 'once': just use this name for this one trip only, don't save it to the shared client list
+      client = {id: uid(), name: typedName};
     }
-  } else {
-    client = clients.find(c => c.id === selVal);
-    if(!client){ alert('العميل ده مش موجود، جرب تختاره تاني'); return; }
   }
 
   const type = document.getElementById('tripType').value;
@@ -4543,23 +4042,13 @@ async function saveTrip(){
   const note = document.getElementById('tripNote').value.trim();
 
   const trips = loadTrips();
-  let saved, oldClientId = null;
   if(editingTripId){
     const t = trips.find(x=>x.id===editingTripId);
-    if(t){
-      oldClientId = t.clientId;
-      Object.assign(t, {clientId: client.id, clientName: client.name, type, place, date, cost, note});
-      saved = t;
-    }
+    if(t) Object.assign(t, {clientId: client.id, clientName: client.name, type, place, date, cost, note});
   } else {
-    saved = {id: uid(), clientId: client.id, clientName: client.name, type, place, date, cost, note};
-    trips.push(saved);
+    trips.push({id: uid(), clientId: client.id, clientName: client.name, type, place, date, cost, note});
   }
   saveTrips(trips);
-  if(saved){
-    if(oldClientId && oldClientId !== saved.clientId) removeTripFromOwnerLedger(oldClientId, saved.id);
-    if(!skipLedger) syncTripToOwnerLedger(saved);
-  }
   resetTripForm();
   renderHomeTab();
   renderLogTab();
@@ -4569,22 +4058,7 @@ function startEditTrip(id){
   const t = loadTrips().find(x=>x.id===id);
   if(!t) return;
   editingTripId = id;
-  document.getElementById('tripTaxNo').value = '';
-  document.getElementById('tripTaxResult').textContent = '';
-  const _c = loadClients().find(x=>x.id===t.clientId);
-  const _nameInput = document.getElementById('tripClientName');
-  if(_c){
-    document.getElementById('tripClientCat').value = _c.category || 'غير مسجل';
-    refreshTripClientOptions(_c.id);
-    _nameInput.value = '';
-  } else {
-    // one-off name that isn't in the client list
-    document.getElementById('tripClientCat').value = 'غير مسجل';
-    refreshTripClientOptions();
-    document.getElementById('tripClientSel').value = '__new__';
-    onTripClientChange();
-    _nameInput.value = t.clientName || '';
-  }
+  document.getElementById('tripClientName').value = t.clientName || clientName(t.clientId);
   document.getElementById('tripType').value = t.type;
   document.getElementById('tripPlace').value = t.place || '';
   document.getElementById('tripDate').value = t.date;
@@ -4601,10 +4075,6 @@ function startEditTrip(id){
 function resetTripForm(){
   editingTripId = null;
   document.getElementById('tripClientName').value = '';
-  document.getElementById('tripClientCat').value = '';
-  document.getElementById('tripTaxNo').value = '';
-  document.getElementById('tripTaxResult').textContent = '';
-  refreshTripClientOptions();
   document.getElementById('tripPlace').value = '';
   document.getElementById('tripCost').value = '';
   document.getElementById('tripNote').value = '';
@@ -4614,8 +4084,6 @@ function resetTripForm(){
 }
 
 function doDeleteTrip(id){
-  const _t = loadTrips().find(t=>t.id===id);
-  if(_t) removeTripFromOwnerLedger(_t.clientId, id);
   saveTrips(loadTrips().filter(t=>t.id!==id));
   renderLogTab();
   renderHomeTab();
@@ -5120,10 +4588,6 @@ async function downloadClientFile(id, clientId){
     openImgLightbox(f.dataUrl);
     return;
   }
-  if(isPdfFile(f)){
-    openPdfLightbox(f.dataUrl, f.name);
-    return;
-  }
   const a = document.createElement('a');
   a.href = f.dataUrl; a.download = f.name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -5243,10 +4707,6 @@ async function downloadOwnerEntryFile(id, clientId, entryId){
   const files = await getFilesForOwnerEntry(clientId, entryId);
   const f = files.find(x=>x.id===id);
   if(!f) return;
-  if(isPdfFile(f)){
-    openPdfLightbox(f.dataUrl, f.name);
-    return;
-  }
   openImgLightbox(f.dataUrl);
 }
 
@@ -5819,30 +5279,6 @@ function downloadLightboxImage(){
   document.body.removeChild(a);
 }
 
-let pdfLightboxFileName = 'ملف.pdf';
-function openPdfLightbox(dataUrl, fileName){
-  pdfLightboxFileName = fileName || 'ملف.pdf';
-  document.getElementById('lightboxPdf').src = dataUrl;
-  document.getElementById('pdfLightbox').classList.add('show');
-}
-function closePdfLightbox(){
-  document.getElementById('pdfLightbox').classList.remove('show');
-  document.getElementById('lightboxPdf').src = '';
-}
-function downloadLightboxPdf(){
-  const url = document.getElementById('lightboxPdf').src;
-  if(!url) return;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = pdfLightboxFileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-function isPdfFile(f){
-  return (f.type === 'application/pdf') || (f.fileType === 'pdf') || /\.pdf$/i.test(f.name||'');
-}
-
 function fileToDataUrl(file){
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
@@ -6046,53 +5482,7 @@ populateClientHelpers();
 
 
 
-
-
 </script>
 
-<button type="button" id="launchFab" title="القائمة" aria-label="فتح القائمة"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
-<div id="launcher" role="dialog" aria-modal="true" aria-label="اختار صفحة">
-  <div class="l-box">
-    <h3 class="l-title">رايح فين؟</h3>
-    <div class="l-grid" id="launcherGrid"></div>
-    <button type="button" class="l-close" id="launcherClose">إغلاق</button>
-  </div>
-</div>
-
-<script>
-/* ---------- إخفاء القائمة + المشغّل السريع ---------- */
-(function(){
-  const body=document.body, launcher=document.getElementById('launcher'), grid=document.getElementById('launcherGrid');
-  function setHidden(h){
-    body.classList.toggle('nav-hidden',h);
-    try{localStorage.setItem('mishwar_nav_hidden',h?'1':'0');}catch(e){}
-  }
-  try{ if(localStorage.getItem('mishwar_nav_hidden')==='1') body.classList.add('nav-hidden'); }catch(e){}
-
-  function openLauncher(){
-    grid.innerHTML='';
-    let i=0;
-    document.querySelectorAll('#tabsNav button[data-tab]').forEach(b=>{
-      if(b.style.display==='none') return;
-      const t=document.createElement('button');
-      t.type='button';
-      t.className='l-tile'+(b.classList.contains('active')?' cur':'');
-      t.style.animationDelay=(i++*45)+'ms';
-      t.innerHTML=b.querySelector('.ic-wrap').outerHTML+'<span class="lbl">'+b.querySelector('.lbl').textContent.trim()+'</span>';
-      t.onclick=()=>{ closeLauncher(); activateTab(b.dataset.tab); window.scrollTo({top:0,behavior:'smooth'}); };
-      grid.appendChild(t);
-    });
-    launcher.classList.add('open');
-  }
-  function closeLauncher(){ launcher.classList.remove('open'); }
-
-  document.getElementById('navToggleBtn').addEventListener('click',()=>setHidden(!body.classList.contains('nav-hidden')));
-  document.getElementById('launchFab').addEventListener('click',openLauncher);
-  document.getElementById('launcherClose').addEventListener('click',closeLauncher);
-  launcher.addEventListener('click',e=>{ if(e.target===launcher) closeLauncher(); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLauncher(); });
-})();
-
-</script>
 </body>
 </html>
