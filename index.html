@@ -6227,10 +6227,11 @@ populateClientHelpers();
       const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer());
       const ws=wb.worksheets[0]; const hdr={};
       ws.getRow(1).eachCell((c,i)=>{ hdr[nz(cv(c.value))]=i; });
-      const col={};
-      for(const k in HDR){ const i=hdr[nz(HDR[k])]; if(!i) throw new Error('العمود غير موجود في الشيت: '+HDR[k]); col[k]=i; }
+      const col={}, miss=[], OPT=['wh','tot','num'];
+      for(const k in HDR){ const i=hdr[nz(HDR[k])]; if(i) col[k]=i; else if(OPT.includes(k)) col[k]=0; else miss.push(HDR[k]); }
+      if(miss.length) throw new Error('الأعمدة دي مش موجودة في الشيت: '+miss.join('، '));
       const raw=[];
-      ws.eachRow((r,n)=>{ if(n===1) return; const o={}; for(const k in col) o[k]=cv(r.getCell(col[k]).value); raw.push(o); });
+      ws.eachRow((r,n)=>{ if(n===1) return; const o={}; for(const k in col) o[k]=col[k]?cv(r.getCell(col[k]).value):null; raw.push(o); });
       STATS={total:raw.length,bad:0,tel:0};
       ROWS=raw.filter(o=>{
         if(String(o.status||'').trim()!=='Valid'||!String(o.type||'').trim()){ STATS.bad++; return false; }
@@ -6238,7 +6239,7 @@ populateClientHelpers();
         return true;
       }).map(o=>{
         let d=o.date instanceof Date?o.date:(o.date?new Date(o.date):null); if(d&&isNaN(d)) d=null;
-        return {type:String(o.type).trim(),date:d,val:num(o.val),vat:num(o.vat),wh:num(o.wh),tot:num(o.tot),num:o.num==null?'':String(o.num),
+        return {type:String(o.type).trim(),date:d,val:num(o.val),vat:num(o.vat),wh:num(o.wh),tot:o.tot==null?num(o.val)+num(o.vat):num(o.tot),num:o.num==null?'':String(o.num),
                 sTax:String(o.sTax==null?'':o.sTax).trim(),sName:String(o.sName||''),bTax:String(o.bTax==null?'':o.bTax).trim(),bName:String(o.bName||'')};
       }).filter(r=>r.date);
       // العميل = اكتر رقم ضريبي تكرارا
