@@ -6152,6 +6152,7 @@ populateClientHelpers();
   const TEL=['المصريه للاتصالات','فودافون','اورنج','موبينيل','اتصالات مصر','vodafone','orange','etisalat','telecom egypt'];
   const nz=s=>String(s==null?'':s).trim().toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه');
   const isTel=n=>{const x=nz(n);return TEL.some(k=>x.includes(k))||/(^|[^a-z])we([^a-z]|$)/.test(x);};
+  const isCredit=t=>nz(t).includes('اشعار دائن')||nz(t).includes('اشعار دايه')||nz(t).includes('credit');
   const num=x=>{const n=Number(x);return isFinite(n)?n:0;};
   const $=id=>document.getElementById(id);
   const money=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -6212,27 +6213,30 @@ populateClientHelpers();
     rows.forEach(r=>{
       r.kind=r.sTax===tax?'sale':(r.bTax===tax?'buy':'other');
       r.flag=Math.abs(r.vat)<0.005?'exempt':(Math.abs(r.vat-rate*r.val)>0.02?'wrong':'');
+      r.cn=isCredit(r.type); r.sv=r.cn?-Math.abs(r.val):r.val;
     });
     rows.sort((a,b)=>((a.sTax===tax?0:1)-(b.sTax===tax?0:1))||a.sTax.localeCompare(b.sTax)||a.type.localeCompare(b.type)||(a.date-b.date));
     VIEW=rows;
     const sales=rows.filter(r=>r.kind==='sale'), buys=rows.filter(r=>r.kind==='buy');
-    const S=sales.reduce((a,r)=>a+r.val,0), P=buys.reduce((a,r)=>a+r.val,0);
+    const sum=a=>a.reduce((t,r)=>t+r.sv,0);
+    const S=sum(sales), P=sum(buys), SE=sum(sales.filter(r=>r.flag==='exempt')), PE=sum(buys.filter(r=>r.flag==='exempt'));
     const diff=S-P, due=diff*rate, net=due-credit;
     const nEx=rows.filter(r=>r.flag==='exempt').length, nWr=rows.filter(r=>r.flag==='wrong').length;
-    SUM={S,P,diff,due,credit,net,rate,tax,ns:sales.length,np:buys.length};
+    SUM={SE,PE,S,P,diff,due,credit,net,rate,tax,ns:sales.length,np:buys.length};
     const pay=net>0, col=pay?'var(--red)':'var(--green)', bg=pay?'var(--red-soft)':'var(--green-soft)';
     const card=(l,v,cls,sub)=>'<div class="card '+(cls||'')+'"><div class="label">'+l+'</div><div class="value">'+v+'</div>'+(sub?'<div style="font-size:11.5px;color:var(--navy-dim);margin-top:4px;">'+sub+'</div>':'')+'</div>';
     const fl={exempt:'background:rgba(255,211,0,.35);',wrong:'background:rgba(224,72,58,.28);'};
     const kindLbl={sale:'مبيعات',buy:'مشتريات',other:'—'};
     out.innerHTML=
-      '<div class="cards">'+card('إجمالي المبيعات',money(S),'','عدد الفواتير: '+sales.length)+card('إجمالي المشتريات',money(P),'','عدد الفواتير: '+buys.length)+card('الفرق (مبيعات − مشتريات)',money(diff),'','قبل الضريبة')+'</div>'+
+      '<div class="cards">'+card('إجمالي المبيعات',money(S),'','عدد الفواتير: '+sales.length)+card('إجمالي المشتريات',money(P),'','عدد الفواتير: '+buys.length)+card('الفرق (مبيعات − مشتريات)',money(diff),'','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
+      '<div class="cards">'+card('إجمالي المبيعات المعفاة',money(SE),'','عدد الفواتير: '+sales.filter(r=>r.flag==='exempt').length)+card('إجمالي المشتريات المعفاة',money(PE),'','عدد الفواتير: '+buys.filter(r=>r.flag==='exempt').length)+'</div>'+
       '<div class="cards">'+card('الضريبة المستحقة (الفرق × '+pct+'%)',money(due))+card('الرصيد الدائن',money(credit))+card('الصافي بعد الرصيد الدائن',money(net),pay?'warn':'good')+'</div>'+
       '<div style="border-radius:14px;padding:14px 18px;margin-bottom:16px;font-weight:900;font-size:16px;text-align:center;background:'+bg+';color:'+col+';">'+
         (net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل للشهر القادم: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
       '<p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">تم حذف '+STATS.bad+' فاتورة غير صحيحة و'+STATS.tel+' فاتورة شركات اتصالات من '+STATS.total+' صف.'+
         ' <span style="background:rgba(255,211,0,.45);padding:1px 8px;border-radius:8px;">معفاة: '+nEx+'</span> <span style="background:rgba(224,72,58,.35);padding:1px 8px;border-radius:8px;">ضريبة مش '+pct+'%: '+nWr+'</span></p>'+
       '<div style="overflow-x:auto;"><table><thead><tr><th>النوع</th><th>التاريخ</th><th>المستند</th><th>رقم الفاتورة</th><th>البائع</th><th>المشتري</th><th>القيمة</th><th>الضريبة</th><th>الإجمالي</th><th>ملاحظة</th></tr></thead><tbody>'+
-      rows.map(r=>'<tr style="'+(fl[r.flag]||'')+'"><td>'+kindLbl[r.kind]+'</td><td>'+fmtD(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.num)+'</td><td>'+escapeHtml(r.sName)+'</td><td>'+escapeHtml(r.bName)+'</td><td>'+money(r.val)+'</td><td>'+money(r.vat)+'</td><td>'+money(r.tot)+'</td><td>'+(r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':''))+'</td></tr>').join('')+
+      rows.map(r=>'<tr style="'+(fl[r.flag]||'')+'"><td>'+kindLbl[r.kind]+'</td><td>'+fmtD(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.num)+'</td><td>'+escapeHtml(r.sName)+'</td><td>'+escapeHtml(r.bName)+'</td><td>'+money(r.sv)+'</td><td>'+money(r.cn?-Math.abs(r.vat):r.vat)+'</td><td>'+money(r.cn?-Math.abs(r.tot):r.tot)+'</td><td>'+[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')+'</td></tr>').join('')+
       '</tbody></table></div>';
     $('einvActions').style.display='flex';
   }
@@ -6246,14 +6250,14 @@ populateClientHelpers();
     ws.getRow(1).eachCell(c=>{ c.font={name:'Arial',bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}}; c.alignment={horizontal:'center',vertical:'middle'}; });
     const kl={sale:'مبيعات',buy:'مشتريات',other:'—'};
     VIEW.forEach(r=>{
-      const row=ws.addRow([kl[r.kind],r.date,r.type,r.num,r.sTax,r.sName,r.bTax,r.bName,r.val,r.vat,r.wh||null,r.tot,r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')]);
+      const row=ws.addRow([kl[r.kind],r.date,r.type,r.num,r.sTax,r.sName,r.bTax,r.bName,r.val,r.vat,r.wh||null,r.tot,[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')]);
       row.eachCell({includeEmpty:true},c=>{ c.font=F; if(r.flag) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:r.flag==='exempt'?'FFFFFF00':'FFFF9999'}}; });
       row.getCell(2).numFmt='yyyy-mm-dd'; [9,10,11,12].forEach(i=>row.getCell(i).numFmt='#,##0.00');
     });
     [10,12,12,16,16,34,16,38,15,14,16,15,20].forEach((w,i)=>ws.getColumn(i+1).width=w);
     ws.autoFilter={from:'A1',to:{row:1,column:heads.length}};
     const s2=wb.addWorksheet('الملخص',{views:[{rightToLeft:true}]});
-    [['الرقم الضريبي للعميل',SUM.tax],['إجمالي المبيعات',SUM.S],['إجمالي المشتريات',SUM.P],['الفرق',SUM.diff],['نسبة الضريبة',SUM.rate],['الضريبة المستحقة',SUM.due],['الرصيد الدائن',SUM.credit],['الصافي (موجب = مستحق السداد ، سالب = رصيد مرحل)',SUM.net]].forEach(r=>{ const x=s2.addRow(r); x.eachCell(c=>c.font={name:'Arial',size:11}); x.getCell(1).font={name:'Arial',size:11,bold:true}; if(typeof r[1]==='number') x.getCell(2).numFmt=r[0]==='نسبة الضريبة'?'0%':'#,##0.00'; });
+    [['الرقم الضريبي للعميل',SUM.tax],['إجمالي المبيعات',SUM.S],['إجمالي المشتريات',SUM.P],['إجمالي المبيعات المعفاة',SUM.SE],['إجمالي المشتريات المعفاة',SUM.PE],['الفرق',SUM.diff],['نسبة الضريبة',SUM.rate],['الضريبة المستحقة',SUM.due],['الرصيد الدائن',SUM.credit],['الصافي (موجب = مستحق السداد ، سالب = رصيد مرحل)',SUM.net]].forEach(r=>{ const x=s2.addRow(r); x.eachCell(c=>c.font={name:'Arial',size:11}); x.getCell(1).font={name:'Arial',size:11,bold:true}; if(typeof r[1]==='number') x.getCell(2).numFmt=r[0]==='نسبة الضريبة'?'0%':'#,##0.00'; });
     const last=s2.lastRow; last.getCell(2).font={name:'Arial',size:12,bold:true,color:{argb:SUM.net>0?'FFC00000':'FF00A650'}};
     s2.getColumn(1).width=46; s2.getColumn(2).width=20;
     await xlDownload(wb,'فواتير_منظفة_'+todayStr()+'.xlsx');
