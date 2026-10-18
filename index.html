@@ -841,6 +841,50 @@
     button.act::before,.file-upload-btn::before{display:none;}
   }
 
+/* ===== الفواتير الإلكترونية: تصميم ===== */
+#panel-einvoice .ev-drop{display:flex;align-items:center;gap:14px;padding:18px 20px;border:2px dashed var(--line,rgba(120,140,170,.45));border-radius:16px;cursor:pointer;transition:.25s;background:linear-gradient(135deg,rgba(0,105,156,.07),rgba(0,105,156,0));margin-bottom:16px}
+#panel-einvoice .ev-drop:hover,#panel-einvoice .ev-drop.drag{border-color:#2f8fd0;background:linear-gradient(135deg,rgba(47,143,208,.18),rgba(47,143,208,.03));transform:translateY(-2px);box-shadow:0 10px 26px rgba(47,143,208,.18)}
+#panel-einvoice .ev-drop .ev-up{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,#2f8fd0,#1b5e9b);box-shadow:0 6px 16px rgba(27,94,155,.35);animation:evFloat 3s ease-in-out infinite}
+#panel-einvoice .ev-drop b{display:block;font-size:15px}
+#panel-einvoice .ev-drop span.sub{font-size:12px;opacity:.7}
+@keyframes evFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#panel-einvoice .ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:14px}
+#panel-einvoice .ev-card{position:relative;overflow:hidden;border-radius:18px;padding:16px 18px 14px;background-color:var(--card,var(--panel,#fff));border:1px solid rgba(120,140,170,.25);box-shadow:0 4px 14px rgba(20,40,80,.08);transition:transform .25s,box-shadow .25s}
+#panel-einvoice .ev-card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--acc)}
+#panel-einvoice .ev-card::after{content:"";position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);pointer-events:none}
+#panel-einvoice .ev-card:hover{transform:translateY(-5px);box-shadow:0 16px 34px rgba(20,40,80,.18)}
+#panel-einvoice .ev-card:hover::after{left:130%;transition:left .8s ease}
+#panel-einvoice .ev-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;margin-bottom:10px;background:var(--acc);box-shadow:0 5px 12px rgba(0,0,0,.18)}
+#panel-einvoice .ev-l{font-size:12.5px;font-weight:700;opacity:.78}
+#panel-einvoice .ev-v{font-size:26px;font-weight:900;margin-top:2px;letter-spacing:.3px;font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
+#panel-einvoice .ev-s{font-size:11.5px;opacity:.65;margin-top:3px}
+#panel-einvoice .t-sale{--acc:linear-gradient(90deg,#16a085,#2ecc71)} #panel-einvoice .t-buy{--acc:linear-gradient(90deg,#e67e22,#f1c40f)}
+#panel-einvoice .t-diff{--acc:linear-gradient(90deg,#6c5ce7,#a29bfe)} #panel-einvoice .t-ex{--acc:linear-gradient(90deg,#f39c12,#ffd32a)}
+#panel-einvoice .t-tax{--acc:linear-gradient(90deg,#0984e3,#74b9ff)} #panel-einvoice .t-cr{--acc:linear-gradient(90deg,#00b894,#55efc4)}
+#panel-einvoice .ev-card.net{color:#fff;border:none}
+#panel-einvoice .ev-card.net.pay{background:linear-gradient(135deg,#e5382d,#a8140d);animation:evGlowR 2.4s ease-in-out infinite}
+#panel-einvoice .ev-card.net.ok{background:linear-gradient(135deg,#12b76a,#067647);animation:evGlowG 2.4s ease-in-out infinite}
+#panel-einvoice .ev-card.net::before{display:none} #panel-einvoice .ev-card.net .ev-ic{background:rgba(255,255,255,.22)}
+#panel-einvoice .ev-card.net::after{animation:evSheen 3.6s ease-in-out infinite}
+@keyframes evSheen{0%{left:-80%}55%,100%{left:140%}}
+@keyframes evGlowR{0%,100%{box-shadow:0 6px 18px rgba(229,56,45,.35)}50%{box-shadow:0 8px 34px rgba(229,56,45,.65)}}
+@keyframes evGlowG{0%,100%{box-shadow:0 6px 18px rgba(18,183,106,.35)}50%{box-shadow:0 8px 34px rgba(18,183,106,.6)}}
+#panel-einvoice .ev-banner{border-radius:16px;padding:16px 20px;margin:4px 0 16px;font-weight:900;font-size:17px;text-align:center;color:#fff;position:relative;overflow:hidden}
+#panel-einvoice .ev-banner.pay{background:linear-gradient(100deg,#e5382d,#b3170f)} #panel-einvoice .ev-banner.ok{background:linear-gradient(100deg,#12b76a,#067647)} #panel-einvoice .ev-banner.zero{background:linear-gradient(100deg,#667085,#475467)}
+#panel-einvoice .ev-banner::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-18deg);animation:evSheen 3.6s ease-in-out infinite}
+#panel-einvoice .ev-bars{border-radius:16px;padding:14px 18px;margin-bottom:16px;border:1px solid rgba(120,140,170,.25);background:var(--card,var(--panel,#fff))}
+#panel-einvoice .ev-bar{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12.5px;font-weight:700}
+#panel-einvoice .ev-bar i{display:block;height:12px;border-radius:8px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+#panel-einvoice .ev-bar .bl{width:70px;flex:none}
+#panel-einvoice .ev-chip{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:700;font-size:12px;margin-inline-start:6px}
+#panel-einvoice .ev-tbl{overflow:auto;max-height:520px;border-radius:14px;border:1px solid rgba(120,140,170,.25)}
+#panel-einvoice .ev-tbl table{margin:0;width:100%;border-collapse:separate;border-spacing:0}
+#panel-einvoice .ev-tbl th{position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#1f3864,#2f5597);color:#fff;white-space:nowrap}
+#panel-einvoice .ev-tbl tbody tr{transition:filter .15s} #panel-einvoice .ev-tbl tbody tr:hover{filter:brightness(.94) saturate(1.2)}
+#panel-einvoice .ev-enter{animation:evUp .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*70ms)}
+@keyframes evUp{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#panel-einvoice *,#panel-einvoice *::after{animation:none!important;transition:none!important}}
+#panel-einvoice .ev-tbl td:nth-child(2),#panel-einvoice .ev-tbl td:nth-child(4){white-space:nowrap}
 </style>
 <script>
   (function(){
@@ -1324,11 +1368,11 @@
     <section>
       <h2>الفواتير الإلكترونية: تنظيف وداش بورد الضريبة</h2>
       <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بيحذف الأعمدة غير المهمة والفواتير غير الصحيحة وفواتير شركات الاتصالات، بيرتّب الشيت، بيلوّن الفواتير المعفاة أو اللي ضريبتها مش النسبة، وبيحسب الضريبة المستحقة.</p>
-      <div class="row-actions" style="margin-bottom:14px;">
-        <label class="act btn-primary" for="einvFile" style="cursor:pointer;">📄 رفع شيت الفواتير</label>
+      <label class="ev-drop" for="einvFile" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="einvDrop(event)">
+        <div class="ev-up">📄</div>
+        <div><b>اسحب شيت الفواتير هنا أو اضغط للاختيار</b><span class="sub" id="einvMsg">ملف Excel (xlsx) زي ما نازل من البوابة</span></div>
         <input type="file" id="einvFile" accept=".xlsx" style="display:none;" onchange="einvLoad(this)">
-        <span id="einvMsg" style="font-size:12.5px;color:var(--navy-dim);align-self:center;"></span>
-      </div>
+      </label>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px;">
         <div class="field"><label>الرقم الضريبي للعميل</label><input id="einvTax" inputmode="numeric" onchange="einvTaxOrMonthChanged()"></div>
         <div class="field"><label>الشهر</label><select id="einvMonth" onchange="einvTaxOrMonthChanged()"><option value="0">كل الفترة</option></select></div>
@@ -1337,7 +1381,7 @@
       </div>
       <div id="einvOut"></div>
       <div class="row-actions" id="einvActions" style="display:none;margin-top:14px;">
-        <button class="act btn-ghost" onclick="einvExport()">⬇️ تنزيل الشيت المنظف (Excel)</button>
+        <button class="act btn-primary" onclick="einvExport()">⬇️ تنزيل الشيت المنظف (Excel)</button>
       </div>
     </section>
   </div>
@@ -6164,7 +6208,17 @@ populateClientHelpers();
     if(typeof v==='object'){ if('result' in v) return cv(v.result); if(v.richText) return v.richText.map(t=>t.text).join(''); if(v.text!=null) return v.text; }
     return v;
   }
-  let ROWS=[], STATS={total:0,bad:0,tel:0}, VIEW=[], SUM=null;
+  let ROWS=[], STATS={total:0,bad:0,tel:0}, VIEW=[], SUM=null, ENTER=true; const PREV={};
+  function animate(){
+    document.querySelectorAll('#einvOut .ev-v').forEach(el=>{
+      const to=Number(el.dataset.val), from=PREV[el.dataset.id]==null?0:PREV[el.dataset.id]; PREV[el.dataset.id]=to;
+      if(from===to||!window.requestAnimationFrame) return;
+      const t0=performance.now(), D=800;
+      (function step(t){ const k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=money(from+(to-from)*e); if(k<1) requestAnimationFrame(step); })(t0);
+    });
+    const bars=document.querySelectorAll('#einvOut .ev-bar i');
+    const raf=window.requestAnimationFrame; const setW=()=>bars.forEach(b=>b.style.width=b.dataset.w+'%'); raf?raf(()=>raf(setW)):setW();
+  }
 
   async function load(input){
     const f=input.files&&input.files[0]; if(!f) return;
@@ -6195,7 +6249,7 @@ populateClientHelpers();
       $('einvMonth').innerHTML='<option value="0">كل الفترة</option>'+months.map(m=>'<option value="'+m+'">'+String(m).slice(0,4)+'-'+String(m).slice(4)+'</option>').join('');
       if(months.length) $('einvMonth').value=String(months[0]);
       msg.textContent='تم تحميل: '+f.name;
-      loadCredit(); render();
+      loadCredit(); ENTER=true; render();
     }catch(e){ console.error(e); msg.textContent='تعذّر قراءة الشيت: '+e.message; }
     input.value='';
   }
@@ -6224,21 +6278,26 @@ populateClientHelpers();
     const diff=S-P, due=diff*rate, net=due-credit;
     const nEx=rows.filter(r=>r.flag==='exempt').length, nWr=rows.filter(r=>r.flag==='wrong').length;
     SUM={SE,PE,S,P,diff,due,credit,net,rate,tax,ns:sales.length,np:buys.length};
-    const pay=net>0, col=pay?'var(--red)':'var(--green)', bg=pay?'var(--red-soft)':'var(--green-soft)';
-    const card=(l,v,cls,sub)=>'<div class="card '+(cls||'')+'"><div class="label">'+l+'</div><div class="value">'+v+'</div>'+(sub?'<div style="font-size:11.5px;color:var(--navy-dim);margin-top:4px;">'+sub+'</div>':'')+'</div>';
+    const pay=net>0, st=pay?'pay':(net<0?'ok':'zero');
+    const kc=sales.filter(r=>r.flag==='exempt').length, kb=buys.filter(r=>r.flag==='exempt').length;
+    let n=0;
+    const card=(id,ic,l,v,tone,sub,extra)=>'<div class="ev-card '+tone+(extra||'')+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'"><div class="ev-ic">'+ic+'</div><div class="ev-l">'+l+'</div><div class="ev-v" data-id="'+id+'" data-val="'+v+'">'+money(v)+'</div>'+(sub?'<div class="ev-s">'+sub+'</div>':'')+'</div>';
+    const mx=Math.max(Math.abs(S),Math.abs(P),1);
+    const bar=(l,v,c)=>'<div class="ev-bar"><span class="bl">'+l+'</span><i data-w="'+Math.max(2,Math.abs(v)/mx*100)+'" style="background:'+c+'"></i><span style="direction:ltr">'+money(v)+'</span></div>';
     const fl={exempt:'background:rgba(255,211,0,.35);',wrong:'background:rgba(224,72,58,.28);'};
     const kindLbl={sale:'مبيعات',buy:'مشتريات',other:'—'};
     out.innerHTML=
-      '<div class="cards">'+card('إجمالي المبيعات',money(S),'','عدد الفواتير: '+sales.length)+card('إجمالي المشتريات',money(P),'','عدد الفواتير: '+buysTax.length+' (من غير المعفاة)')+card('الفرق (مبيعات − مشتريات)',money(diff),'','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
-      '<div class="cards">'+card('إجمالي المبيعات المعفاة',money(SE),'','عدد الفواتير: '+sales.filter(r=>r.flag==='exempt').length)+card('إجمالي المشتريات المعفاة',money(PE),'','عدد الفواتير: '+buys.filter(r=>r.flag==='exempt').length)+'</div>'+
-      '<div class="cards">'+card('الضريبة المستحقة (الفرق × '+pct+'%)',money(due))+card('الرصيد الدائن',money(credit))+card('الصافي بعد الرصيد الدائن',money(net),pay?'warn':'good')+'</div>'+
-      '<div style="border-radius:14px;padding:14px 18px;margin-bottom:16px;font-weight:900;font-size:16px;text-align:center;background:'+bg+';color:'+col+';">'+
-        (net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل للشهر القادم: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
-      '<p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">تم حذف '+STATS.bad+' فاتورة غير صحيحة و'+STATS.tel+' فاتورة شركات اتصالات من '+STATS.total+' صف.'+
-        ' <span style="background:rgba(255,211,0,.45);padding:1px 8px;border-radius:8px;">معفاة: '+nEx+'</span> <span style="background:rgba(224,72,58,.35);padding:1px 8px;border-radius:8px;">ضريبة مش '+pct+'%: '+nWr+'</span></p>'+
-      '<div style="overflow-x:auto;"><table><thead><tr><th>النوع</th><th>التاريخ</th><th>المستند</th><th>رقم الفاتورة</th><th>البائع</th><th>المشتري</th><th>القيمة</th><th>الضريبة</th><th>الإجمالي</th><th>ملاحظة</th></tr></thead><tbody>'+
+      '<div class="ev-grid">'+card('S','💰','إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+sales.length)+card('P','🧾','إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+buysTax.length+' (من غير المعفاة)')+card('D','⚖️','الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
+      '<div class="ev-grid">'+card('SE','🏷️','إجمالي المبيعات المعفاة',SE,'t-ex','عدد الفواتير: '+kc)+card('PE','🏷️','إجمالي المشتريات المعفاة',PE,'t-ex','عدد الفواتير: '+kb+' (بتتجمع لوحدها)')+'</div>'+
+      '<div class="ev-grid">'+card('T','🧮','الضريبة المستحقة (الفرق × '+pct+'%)',due,'t-tax')+card('C','💳','الرصيد الدائن',credit,'t-cr')+card('N',pay?'⚠️':'✅','الصافي بعد الرصيد الدائن',net,'net '+st,pay?'مستحق السداد':'رصيد مرحّل',' ')+'</div>'+
+      '<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل للشهر القادم: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
+      '<div class="ev-bars">'+bar('المبيعات',S,'linear-gradient(90deg,#16a085,#2ecc71)')+bar('المشتريات',P,'linear-gradient(90deg,#e67e22,#f1c40f)')+'</div>'+
+      '<p style="font-size:12.5px;opacity:.75;margin:0 0 10px;">تم حذف '+STATS.bad+' فاتورة غير صحيحة و'+STATS.tel+' فاتورة شركات اتصالات من '+STATS.total+' صف.'+
+        '<span class="ev-chip" style="background:rgba(255,211,0,.45)">معفاة: '+nEx+'</span><span class="ev-chip" style="background:rgba(224,72,58,.35)">ضريبة مش '+pct+'%: '+nWr+'</span></p>'+
+      '<div class="ev-tbl"><table><thead><tr><th>النوع</th><th>التاريخ</th><th>المستند</th><th>رقم الفاتورة</th><th>البائع</th><th>المشتري</th><th>القيمة</th><th>الضريبة</th><th>الإجمالي</th><th>ملاحظة</th></tr></thead><tbody>'+
       rows.map(r=>'<tr style="'+(fl[r.flag]||'')+'"><td>'+kindLbl[r.kind]+'</td><td>'+fmtD(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.num)+'</td><td>'+escapeHtml(r.sName)+'</td><td>'+escapeHtml(r.bName)+'</td><td>'+money(r.sv)+'</td><td>'+money(r.cn?-Math.abs(r.vat):r.vat)+'</td><td>'+money(r.cn?-Math.abs(r.tot):r.tot)+'</td><td>'+[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')+'</td></tr>').join('')+
       '</tbody></table></div>';
+    animate(); ENTER=false;
     $('einvActions').style.display='flex';
   }
 
@@ -6265,7 +6324,8 @@ populateClientHelpers();
   }
 
   window.einvLoad=load; window.einvRender=render; window.einvExport=exportXlsx;
-  window.einvTaxOrMonthChanged=()=>{ loadCredit(); render(); };
+  window.einvTaxOrMonthChanged=()=>{ loadCredit(); ENTER=true; render(); };
+  window.einvDrop=e=>{ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files.length) load({files:e.dataTransfer.files,value:''}); };
   window.einvCreditChanged=()=>{ saveCredit(); render(); };
   document.addEventListener('DOMContentLoaded',render);
   if(document.readyState!=='loading') render();
