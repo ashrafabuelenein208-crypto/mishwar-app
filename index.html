@@ -842,50 +842,51 @@
   }
 
 /* ===== الفواتير الإلكترونية: تصميم ===== */
-#panel-einvoice .ev-drop{display:flex;align-items:center;gap:14px;padding:18px 20px;border:2px dashed var(--line,rgba(120,140,170,.45));border-radius:16px;cursor:pointer;transition:.25s;background:linear-gradient(135deg,rgba(0,105,156,.07),rgba(0,105,156,0));margin-bottom:16px}
-#panel-einvoice .ev-drop:hover,#panel-einvoice .ev-drop.drag{border-color:#2f8fd0;background:linear-gradient(135deg,rgba(47,143,208,.18),rgba(47,143,208,.03));transform:translateY(-2px);box-shadow:0 10px 26px rgba(47,143,208,.18)}
-#panel-einvoice .ev-drop .ev-up{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,#2f8fd0,#1b5e9b);box-shadow:0 6px 16px rgba(27,94,155,.35);animation:evFloat 3s ease-in-out infinite}
-#panel-einvoice .ev-drop b{display:block;font-size:15px}
-#panel-einvoice .ev-drop span.sub{font-size:12px;opacity:.7}
+#clientsFinView .ev-drop{display:flex;align-items:center;gap:14px;padding:18px 20px;border:2px dashed var(--line,rgba(120,140,170,.45));border-radius:16px;cursor:pointer;transition:.25s;background:linear-gradient(135deg,rgba(0,105,156,.07),rgba(0,105,156,0));margin-bottom:16px}
+#clientsFinView .ev-drop:hover,#clientsFinView .ev-drop.drag{border-color:#2f8fd0;background:linear-gradient(135deg,rgba(47,143,208,.18),rgba(47,143,208,.03));transform:translateY(-2px);box-shadow:0 10px 26px rgba(47,143,208,.18)}
+#clientsFinView .ev-drop .ev-up{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,#2f8fd0,#1b5e9b);box-shadow:0 6px 16px rgba(27,94,155,.35);animation:evFloat 3s ease-in-out infinite}
+#clientsFinView .ev-drop b{display:block;font-size:15px}
+#clientsFinView .ev-drop span.sub{font-size:12px;opacity:.7}
 @keyframes evFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-#panel-einvoice .ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:14px}
-#panel-einvoice .ev-card{position:relative;overflow:hidden;border-radius:18px;padding:16px 18px 14px;background-color:var(--card,var(--panel,#fff));border:1px solid rgba(120,140,170,.25);box-shadow:0 4px 14px rgba(20,40,80,.08);transition:transform .25s,box-shadow .25s}
-#panel-einvoice .ev-card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--acc)}
-#panel-einvoice .ev-card::after{content:"";position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);pointer-events:none}
-#panel-einvoice .ev-card:hover{transform:translateY(-5px);box-shadow:0 16px 34px rgba(20,40,80,.18)}
-#panel-einvoice .ev-card:hover::after{left:130%;transition:left .8s ease}
-#panel-einvoice .ev-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;margin-bottom:10px;background:var(--acc);box-shadow:0 5px 12px rgba(0,0,0,.18)}
-#panel-einvoice .ev-l{font-size:12.5px;font-weight:700;opacity:.78}
-#panel-einvoice .ev-v{font-size:26px;font-weight:900;margin-top:2px;letter-spacing:.3px;font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
-#panel-einvoice .ev-s{font-size:11.5px;opacity:.65;margin-top:3px}
-#panel-einvoice .t-sale{--acc:linear-gradient(90deg,#16a085,#2ecc71)} #panel-einvoice .t-buy{--acc:linear-gradient(90deg,#e67e22,#f1c40f)}
-#panel-einvoice .t-diff{--acc:linear-gradient(90deg,#6c5ce7,#a29bfe)} #panel-einvoice .t-ex{--acc:linear-gradient(90deg,#f39c12,#ffd32a)}
-#panel-einvoice .t-tax{--acc:linear-gradient(90deg,#0984e3,#74b9ff)} #panel-einvoice .t-cr{--acc:linear-gradient(90deg,#00b894,#55efc4)}
-#panel-einvoice .ev-card.net{color:#fff;border:none}
-#panel-einvoice .ev-card.net.pay{background:linear-gradient(135deg,#e5382d,#a8140d);animation:evGlowR 2.4s ease-in-out infinite}
-#panel-einvoice .ev-card.net.ok{background:linear-gradient(135deg,#12b76a,#067647);animation:evGlowG 2.4s ease-in-out infinite}
-#panel-einvoice .ev-card.net::before{display:none} #panel-einvoice .ev-card.net .ev-ic{background:rgba(255,255,255,.22)}
-#panel-einvoice .ev-card.net::after{animation:evSheen 3.6s ease-in-out infinite}
+#clientsFinView .ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:14px}
+#clientsFinView .ev-card{position:relative;overflow:hidden;border-radius:18px;padding:16px 18px 14px;background-color:var(--card,var(--panel,#fff));border:1px solid rgba(120,140,170,.25);box-shadow:0 4px 14px rgba(20,40,80,.08);transition:transform .25s,box-shadow .25s}
+#clientsFinView .ev-card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--acc)}
+#clientsFinView .ev-card::after{content:"";position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);pointer-events:none}
+#clientsFinView .ev-card:hover{transform:translateY(-5px);box-shadow:0 16px 34px rgba(20,40,80,.18)}
+#clientsFinView .ev-card:hover::after{left:130%;transition:left .8s ease}
+#clientsFinView .ev-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;margin-bottom:10px;background:var(--acc);box-shadow:0 5px 12px rgba(0,0,0,.18)}
+#clientsFinView .ev-l{font-size:12.5px;font-weight:700;opacity:.78}
+#clientsFinView .ev-v{font-size:26px;font-weight:900;margin-top:2px;letter-spacing:.3px;font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
+#clientsFinView .ev-s{font-size:11.5px;opacity:.65;margin-top:3px}
+#clientsFinView .t-sale{--acc:linear-gradient(90deg,#16a085,#2ecc71)} #clientsFinView .t-buy{--acc:linear-gradient(90deg,#e67e22,#f1c40f)}
+#clientsFinView .t-diff{--acc:linear-gradient(90deg,#6c5ce7,#a29bfe)} #clientsFinView .t-ex{--acc:linear-gradient(90deg,#f39c12,#ffd32a)}
+#clientsFinView .t-tax{--acc:linear-gradient(90deg,#0984e3,#74b9ff)} #clientsFinView .t-cr{--acc:linear-gradient(90deg,#00b894,#55efc4)}
+#clientsFinView .ev-card.net{color:#fff;border:none}
+#clientsFinView .ev-card.net.pay{background:linear-gradient(135deg,#e5382d,#a8140d);animation:evGlowR 2.4s ease-in-out infinite}
+#clientsFinView .ev-card.net.ok{background:linear-gradient(135deg,#12b76a,#067647);animation:evGlowG 2.4s ease-in-out infinite}
+#clientsFinView .ev-card.net::before{display:none} #clientsFinView .ev-card.net .ev-ic{background:rgba(255,255,255,.22)}
+#clientsFinView .ev-card.net::after{animation:evSheen 3.6s ease-in-out infinite}
 @keyframes evSheen{0%{left:-80%}55%,100%{left:140%}}
 @keyframes evGlowR{0%,100%{box-shadow:0 6px 18px rgba(229,56,45,.35)}50%{box-shadow:0 8px 34px rgba(229,56,45,.65)}}
 @keyframes evGlowG{0%,100%{box-shadow:0 6px 18px rgba(18,183,106,.35)}50%{box-shadow:0 8px 34px rgba(18,183,106,.6)}}
-#panel-einvoice .ev-banner{border-radius:16px;padding:16px 20px;margin:4px 0 16px;font-weight:900;font-size:17px;text-align:center;color:#fff;position:relative;overflow:hidden}
-#panel-einvoice .ev-banner.pay{background:linear-gradient(100deg,#e5382d,#b3170f)} #panel-einvoice .ev-banner.ok{background:linear-gradient(100deg,#12b76a,#067647)} #panel-einvoice .ev-banner.zero{background:linear-gradient(100deg,#667085,#475467)}
-#panel-einvoice .ev-banner::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-18deg);animation:evSheen 3.6s ease-in-out infinite}
-#panel-einvoice .ev-bars{border-radius:16px;padding:14px 18px;margin-bottom:16px;border:1px solid rgba(120,140,170,.25);background:var(--card,var(--panel,#fff))}
-#panel-einvoice .ev-bar{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12.5px;font-weight:700}
-#panel-einvoice .ev-bar i{display:block;height:12px;border-radius:8px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
-#panel-einvoice .ev-bar .bl{width:70px;flex:none}
-#panel-einvoice .ev-chip{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:700;font-size:12px;margin-inline-start:6px}
-#panel-einvoice .ev-tbl{overflow:auto;max-height:520px;border-radius:14px;border:1px solid rgba(120,140,170,.25)}
-#panel-einvoice .ev-tbl table{margin:0;width:100%;border-collapse:separate;border-spacing:0}
-#panel-einvoice .ev-tbl th{position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#1f3864,#2f5597);color:#fff;white-space:nowrap}
-#panel-einvoice .ev-tbl tbody tr{transition:filter .15s} #panel-einvoice .ev-tbl tbody tr:hover{filter:brightness(.94) saturate(1.2)}
-#panel-einvoice .ev-enter{animation:evUp .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*70ms)}
+#clientsFinView .ev-banner{border-radius:16px;padding:16px 20px;margin:4px 0 16px;font-weight:900;font-size:17px;text-align:center;color:#fff;position:relative;overflow:hidden}
+#clientsFinView .ev-banner.pay{background:linear-gradient(100deg,#e5382d,#b3170f)} #clientsFinView .ev-banner.ok{background:linear-gradient(100deg,#12b76a,#067647)} #clientsFinView .ev-banner.zero{background:linear-gradient(100deg,#667085,#475467)}
+#clientsFinView .ev-banner::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-18deg);animation:evSheen 3.6s ease-in-out infinite}
+#clientsFinView .ev-bars{border-radius:16px;padding:14px 18px;margin-bottom:16px;border:1px solid rgba(120,140,170,.25);background:var(--card,var(--panel,#fff))}
+#clientsFinView .ev-bar{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12.5px;font-weight:700}
+#clientsFinView .ev-bar i{display:block;height:12px;border-radius:8px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+#clientsFinView .ev-bar .bl{width:70px;flex:none}
+#clientsFinView .ev-chip{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:700;font-size:12px;margin-inline-start:6px}
+#clientsFinView .ev-tbl{overflow:auto;max-height:520px;border-radius:14px;border:1px solid rgba(120,140,170,.25)}
+#clientsFinView .ev-tbl table{margin:0;width:100%;border-collapse:separate;border-spacing:0}
+#clientsFinView .ev-tbl th{position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#1f3864,#2f5597);color:#fff;white-space:nowrap}
+#clientsFinView .ev-tbl tbody tr{transition:filter .15s} #clientsFinView .ev-tbl tbody tr:hover{filter:brightness(.94) saturate(1.2)}
+#clientsFinView .ev-enter{animation:evUp .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*70ms)}
 @keyframes evUp{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){#panel-einvoice *,#panel-einvoice *::after{animation:none!important;transition:none!important}}
-#panel-einvoice .ev-tbl td:nth-child(2),#panel-einvoice .ev-tbl td:nth-child(4){white-space:nowrap}
-#panel-einvoice .ev-chip{white-space:nowrap}
+@media (prefers-reduced-motion:reduce){#clientsFinView *,#clientsFinView *::after{animation:none!important;transition:none!important}}
+#clientsFinView .ev-tbl td:nth-child(2),#clientsFinView .ev-tbl td:nth-child(4){white-space:nowrap}
+#clientsFinView .ev-chip{white-space:nowrap}
+#clientsFinView .fin-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}#clientsFinView .fin-bar .field{margin:0;min-width:140px}
 </style>
 <script>
   (function(){
@@ -1016,7 +1017,6 @@
     <button data-tab="log"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><span class="lbl">سجل المشاوير</span></button>
     <button data-tab="clients"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.6 3-6 7-6s7 2.4 7 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.8 0 5 1.8 5 4.5"/></svg></span><span class="lbl">العملاء</span></button>
     <button data-tab="poas"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">التوكيلات</span></button>
-    <button data-tab="einvoice"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 12l2 2 4-4M9 17h6"/></svg></span><span class="lbl">الفواتير الإلكترونية</span></button>
     <button data-tab="cash"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></svg></span><span class="lbl">الحساب مع صاحب المكتب</span></button>
     <button data-tab="alerts"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="lbl">التنبيهات</span></button>
     <button data-tab="chat"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span><span class="lbl">الشات <span id="chatUnreadDot" style="display:none;"></span></span></button>
@@ -1183,6 +1183,7 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('حسابات الضرائب')">حسابات الضرائب</button>
+        <button type="button" class="landing-cat-btn" onclick="openFinCenter()">المركز المالي</button>
       </div>
     </div>
 
@@ -1210,6 +1211,32 @@
       <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
       <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
+    </div>
+    <div id="clientsFinView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;">
+        <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
+      </div>
+      <h2 id="finTitle" style="text-align:center;"></h2>
+      <section>
+        <h3 style="margin:0 0 6px;font-size:15px;">➕ إضافة شهور جديدة</h3>
+        <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بينظّفه ويحسب كل شهر لوحده، وتراجعه وتدوس "حفظ في المركز المالي".</p>
+        <label class="ev-drop" for="finFile" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="finDrop(event)">
+          <div class="ev-up">📄</div>
+          <div><b>اسحب شيت الفواتير هنا أو اضغط للاختيار</b><span class="sub" id="finUpMsg">ملف Excel (xlsx)</span></div>
+          <input type="file" id="finFile" accept=".xlsx" style="display:none;" onchange="finLoad(this)">
+        </label>
+        <div id="finPre"></div>
+      </section>
+      <section>
+        <h3 style="margin:0 0 10px;font-size:15px;">📊 المركز المالي</h3>
+        <div id="finFilterBar" class="fin-bar" style="display:none;">
+          <div class="field"><label>السنة</label><select id="finYear" onchange="finYearChanged()"></select></div>
+          <div class="field"><label>الشهر</label><select id="finMonth" onchange="finMonthChanged()"></select></div>
+          <button class="act btn-ghost btn-small" onclick="finExportSummary()">⬇️ تنزيل ملخص الفترة</button>
+        </div>
+        <div id="finMsg" style="font-size:12.5px;opacity:.85;margin-bottom:8px;"></div>
+        <div id="finDash"></div>
+      </section>
     </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
@@ -1364,33 +1391,6 @@
   </div>
 
   <!-- CASH WITH OFFICE OWNER -->
-  <!-- E-INVOICES -->
-  <div class="panel" id="panel-einvoice">
-    <section>
-      <h2>الفواتير الإلكترونية: تنظيف وداش بورد الضريبة</h2>
-      <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بيحذف الأعمدة غير المهمة والفواتير غير الصحيحة وفواتير شركات الاتصالات، بيرتّب الشيت، بيلوّن الفواتير المعفاة أو اللي ضريبتها مش النسبة، وبيحسب الضريبة المستحقة.</p>
-      <label class="ev-drop" for="einvFile" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="einvDrop(event)">
-        <div class="ev-up">📄</div>
-        <div><b>اسحب شيت الفواتير هنا أو اضغط للاختيار</b><span class="sub" id="einvMsg">ملف Excel (xlsx) زي ما نازل من البوابة</span></div>
-        <input type="file" id="einvFile" accept=".xlsx" style="display:none;" onchange="einvLoad(this)">
-      </label>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px;">
-        <div class="field"><label>العميل (للحفظ)</label><select id="einvClient" onfocus="einvClientFocus()" onchange="einvClientChanged()"><option value="">— اختار العميل —</option></select><div id="einvClientNote" style="font-size:11.5px;color:var(--red);margin-top:3px;"></div></div>
-        <div class="field"><label>الرقم الضريبي للعميل</label><input id="einvTax" inputmode="numeric" onchange="einvTaxChanged()"></div>
-        <div class="field"><label>الشهر</label><select id="einvMonth" onchange="einvTaxOrMonthChanged()"><option value="0">كل الفترة</option></select></div>
-        <div class="field"><label>نسبة الضريبة %</label><input id="einvRate" type="number" value="14" step="0.5" oninput="einvRender()"></div>
-        <div class="field"><label>الرصيد الدائن (يدوي)</label><input id="einvCredit" type="number" step="0.01" placeholder="0" oninput="einvCreditChanged()"></div>
-      </div>
-      <div id="einvOut"></div>
-      <div class="row-actions" id="einvActions" style="display:none;margin-top:14px;">
-        <button class="act btn-primary" id="einvSaveBtn" onclick="einvSave()">💾 حفظ على التطبيق</button>
-        <button class="act btn-ghost" onclick="einvExport()">⬇️ تنزيل الشيت المنظف (Excel)</button>
-        <span id="einvSaveMsg" style="font-size:12.5px;opacity:.8;align-self:center;"></span>
-      </div>
-      <div id="einvSaved"></div>
-    </section>
-  </div>
-
   <div class="panel" id="panel-cash">
     <div class="cards" id="cashCards"></div>
     <section>
@@ -3782,7 +3782,7 @@ function openClientHub(clientId){
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'block';
   document.getElementById('categoryHubTitle').textContent = c ? c.name : '';
@@ -3793,7 +3793,7 @@ function showClientsCategoryHub(){
   document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'block';
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 const TAX_YEARS = ['2020','2021','2022','2023','2024','2025','2026','2027'];
@@ -4041,7 +4041,7 @@ function taxYearFilesCol(){
 function openTaxYear(year){
   currentTaxYear = year;
   const c = loadClients().find(x=>x.id===currentClientHubId);
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'block';
   document.getElementById('taxYearDetailTitle').textContent = (c ? c.name : '') + ' — ' + currentTaxSection + ' — ' + year;
   renderTaxYearFilesList();
@@ -4132,7 +4132,7 @@ function showClientsForm(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsFormView').style.display = 'block';
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsList(){
@@ -4142,7 +4142,7 @@ function showClientsList(){
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'block';
   renderClientsTab();
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsLanding(){
@@ -4151,7 +4151,7 @@ function showClientsLanding(){
   document.getElementById('clientsCategoryHubView').style.display = 'none';
   document.getElementById('clientsCategorySectionView').style.display = 'none';
   document.getElementById('clientsLandingView').style.display = 'block';
-  document.getElementById('clientsTaxYearsView').style.display = 'none';
+  document.getElementById('clientsTaxYearsView').style.display = 'none'; document.getElementById('clientsFinView').style.display = 'none';
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 
@@ -6195,10 +6195,12 @@ populateClientHelpers();
 
 </script>
 <script>
-/* ================= الفواتير الإلكترونية: تنظيف + داش بورد ================= */
+/* ================= المركز المالي للعميل: رفع الشيت + داش بورد + فلتر شهر/سنة =================
+   الحفظ: offices/{office}/clients/{client}/einvoices/{YYYYMM}  (+ rows/p0..)  */
 (function(){
   const HDR={type:'نوع المستند',status:'الحالة',date:'تاريخ الإصدار',val:'قيمة الفاتورة',vat:'ضريبة القيمة المضافة',wh:'الخصم تحت حساب الضريبة',tot:'إجمالى الفاتورة',num:'الرقم الداخلى',sTax:'الرقم الضريبى للبائع',sName:'إسم البائع',bTax:'الرقم الضريبى للمشترى',bName:'إسم المشترى'};
   const TEL=['المصريه للاتصالات','فودافون','اورنج','موبينيل','اتصالات مصر','vodafone','orange','etisalat','telecom egypt'];
+  const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   const nz=s=>String(s==null?'':s).trim().toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه');
   const isTel=n=>{const x=nz(n);return TEL.some(k=>x.includes(k))||/(^|[^a-z])we([^a-z]|$)/.test(x);};
   const isCredit=t=>nz(t).includes('اشعار دائن')||nz(t).includes('اشعار دايه')||nz(t).includes('credit');
@@ -6207,63 +6209,25 @@ populateClientHelpers();
   const money=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtD=d=>d?d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'):'';
   const ym=d=>d.getUTCFullYear()*100+d.getUTCMonth()+1;
+  const yOf=m=>Math.floor(m/100);
+  const ymLbl=m=>MN[(m%100)-1]+' '+yOf(m);
+  const digits=x=>String(x==null?'':x).replace(/\D/g,'');
+  const esc=s=>escapeHtml(s==null?'':s);
   function cv(v){
     if(v==null) return null;
     if(v instanceof Date) return v;
     if(typeof v==='object'){ if('result' in v) return cv(v.result); if(v.richText) return v.richText.map(t=>t.text).join(''); if(v.text!=null) return v.text; }
     return v;
   }
-  let FILE='', ROWS=[], STATS={total:0,bad:0,tel:0}, VIEW=[], SUM=null, ENTER=true; const PREV={};
-  function animate(){
-    document.querySelectorAll('#einvOut .ev-v').forEach(el=>{
-      const to=Number(el.dataset.val), from=PREV[el.dataset.id]==null?0:PREV[el.dataset.id]; PREV[el.dataset.id]=to;
-      if(from===to||!window.requestAnimationFrame) return;
-      const t0=performance.now(), D=800;
-      (function step(t){ const k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=money(from+(to-from)*e); if(k<1) requestAnimationFrame(step); })(t0);
-    });
-    const bars=document.querySelectorAll('#einvOut .ev-bar i');
-    const raf=window.requestAnimationFrame; const setW=()=>bars.forEach(b=>b.style.width=b.dataset.w+'%'); raf?raf(()=>raf(setW)):setW();
-  }
 
-  async function load(input){
-    const f=input.files&&input.files[0]; if(!f) return;
-    const msg=$('einvMsg'); msg.textContent='جاري قراءة الشيت...';
-    try{
-      const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer());
-      const ws=wb.worksheets[0]; const hdr={};
-      ws.getRow(1).eachCell((c,i)=>{ hdr[nz(cv(c.value))]=i; });
-      const col={}, miss=[], OPT=['wh','tot','num'];
-      for(const k in HDR){ const i=hdr[nz(HDR[k])]; if(i) col[k]=i; else if(OPT.includes(k)) col[k]=0; else miss.push(HDR[k]); }
-      if(miss.length) throw new Error('الأعمدة دي مش موجودة في الشيت: '+miss.join('، '));
-      const raw=[];
-      ws.eachRow((r,n)=>{ if(n===1) return; const o={}; for(const k in col) o[k]=col[k]?cv(r.getCell(col[k]).value):null; raw.push(o); });
-      STATS={total:raw.length,bad:0,tel:0};
-      ROWS=raw.filter(o=>{
-        if(String(o.status||'').trim()!=='Valid'||!String(o.type||'').trim()){ STATS.bad++; return false; }
-        if(isTel(o.sName)){ STATS.tel++; return false; }
-        return true;
-      }).map(o=>{
-        let d=o.date instanceof Date?o.date:(o.date?new Date(o.date):null); if(d&&isNaN(d)) d=null;
-        return {type:String(o.type).trim(),date:d,val:num(o.val),vat:num(o.vat),wh:num(o.wh),tot:o.tot==null?num(o.val)+num(o.vat):num(o.tot),num:o.num==null?'':String(o.num),
-                sTax:String(o.sTax==null?'':o.sTax).trim(),sName:String(o.sName||''),bTax:String(o.bTax==null?'':o.bTax).trim(),bName:String(o.bName||'')};
-      }).filter(r=>r.date);
-      // العميل = اكتر رقم ضريبي تكرارا
-      const cnt={}; ROWS.forEach(r=>{ [r.sTax,r.bTax].forEach(t=>{ if(t) cnt[t]=(cnt[t]||0)+1; }); });
-      const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||'';
-      $('einvTax').value=best; refreshClients(); matchClient(true);
-      const months=[...new Set(ROWS.map(r=>ym(r.date)))].sort((a,b)=>b-a);
-      $('einvMonth').innerHTML='<option value="0">كل الفترة</option>'+months.map(m=>'<option value="'+m+'">'+String(m).slice(0,4)+'-'+String(m).slice(4)+'</option>').join('');
-      if(months.length) $('einvMonth').value=String(months[0]);
-      msg.textContent='تم تحميل: '+f.name; FILE=f.name;
-      loadCredit(); ENTER=true; render();
-    }catch(e){ console.error(e); msg.textContent='تعذّر قراءة الشيت: '+e.message; }
-    input.value='';
-  }
+  let CID='', CNAME='', PRE=null, SAVED=[], FY=0, FM=0, DET={}, DETF='all', ENTER=true; const PREV={};
+  const clientObj=()=>{ try{ return loadClients().find(c=>c.id===CID)||null; }catch(e){ return null; } };
+  const savedCol=cid=>{ try{ const c=officeClientsCol(); return c&&cid?c.doc(cid).collection('einvoices'):null; }catch(e){ return null; } };
+  const who=()=>{ try{ return (auth.currentUser&&auth.currentUser.email)||''; }catch(e){ return ''; } };
+  const say=t=>{ const e=$('finMsg'); if(e) e.textContent=t||''; };
+  const preSay=t=>{ const e=$('finPreMsg'); if(e) e.textContent=t||''; };
 
-  const ckey=()=>'mishwar_einv_credit_'+$('einvTax').value.trim()+'_'+$('einvMonth').value;
-  function loadCredit(){ let v=''; try{ v=localStorage.getItem(ckey())||''; }catch(e){} $('einvCredit').value=v; }
-  function saveCredit(){ try{ localStorage.setItem(ckey(),$('einvCredit').value); }catch(e){} }
-
+  /* ---------- الحساب (نفس منطق الداش بورد القديم) ---------- */
   function calc(rows,tax,rate,credit){
     rows=rows.slice();
     rows.forEach(r=>{
@@ -6279,47 +6243,265 @@ populateClientHelpers();
     const diff=S-P, due=diff*rate, net=due-credit;
     return {rows,sales,buys,buysTax,S,P,SE,PE,diff,due,net,nEx:rows.filter(r=>r.flag==='exempt').length,nWr:rows.filter(r=>r.flag==='wrong').length};
   }
-  function render(){
-    const out=$('einvOut');
-    if(!ROWS.length){ out.innerHTML='<p style="color:var(--navy-dim);font-size:13.5px;margin:0;">ارفع شيت الفواتير الإلكترونية (xlsx) وهيتنظّف ويتحسب تلقائي.</p>'; $('einvActions').style.display='none'; return; }
-    const tax=$('einvTax').value.trim(), rate=num($('einvRate').value)/100, m=Number($('einvMonth').value), credit=num($('einvCredit').value);
-    const pct=+(rate*100).toFixed(2);
-    const C=calc(ROWS.filter(r=>!m||ym(r.date)===m),tax,rate,credit);
-    const {rows,sales,buys,buysTax,S,P,SE,PE,diff,due,net,nEx,nWr}=C;
-    VIEW=rows;
-    SUM={SE,PE,S,P,diff,due,credit,net,rate,tax,ns:sales.length,np:buys.length};
-    const pay=net>0, st=pay?'pay':(net<0?'ok':'zero');
-    const kc=sales.filter(r=>r.flag==='exempt').length, kb=buys.filter(r=>r.flag==='exempt').length;
-    let n=0;
-    const card=(id,ic,l,v,tone,sub,extra)=>'<div class="ev-card '+tone+(extra||'')+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'"><div class="ev-ic">'+ic+'</div><div class="ev-l">'+l+'</div><div class="ev-v" data-id="'+id+'" data-val="'+v+'">'+money(v)+'</div>'+(sub?'<div class="ev-s">'+sub+'</div>':'')+'</div>';
-    const mx=Math.max(Math.abs(S),Math.abs(P),1);
-    const bar=(l,v,c)=>'<div class="ev-bar"><span class="bl">'+l+'</span><i data-w="'+Math.max(2,Math.abs(v)/mx*100)+'" style="background:'+c+'"></i><span style="direction:ltr">'+money(v)+'</span></div>';
-    const fl={exempt:'background:rgba(255,211,0,.35);',wrong:'background:rgba(224,72,58,.28);'};
-    const kindLbl={sale:'مبيعات',buy:'مشتريات',other:'—'};
-    out.innerHTML=
-      '<div class="ev-grid">'+card('S','💰','إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+sales.length)+card('P','🧾','إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+buysTax.length+' (من غير المعفاة)')+card('D','⚖️','الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
-      '<div class="ev-grid">'+card('SE','🏷️','إجمالي المبيعات المعفاة',SE,'t-ex','عدد الفواتير: '+kc)+card('PE','🏷️','إجمالي المشتريات المعفاة',PE,'t-ex','عدد الفواتير: '+kb+' (بتتجمع لوحدها)')+'</div>'+
-      '<div class="ev-grid">'+card('T','🧮','الضريبة المستحقة (الفرق × '+pct+'%)',due,'t-tax')+card('C','💳','الرصيد الدائن',credit,'t-cr')+card('N',pay?'⚠️':'✅','الصافي بعد الرصيد الدائن',net,'net '+st,pay?'مستحق السداد':'رصيد مرحّل',' ')+'</div>'+
-      '<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل للشهر القادم: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
-      '<div class="ev-bars">'+bar('المبيعات',S,'linear-gradient(90deg,#16a085,#2ecc71)')+bar('المشتريات',P,'linear-gradient(90deg,#e67e22,#f1c40f)')+'</div>'+
-      '<p style="font-size:12.5px;opacity:.75;margin:0 0 10px;">'+(STATS.total?'تم حذف '+STATS.bad+' فاتورة غير صحيحة و'+STATS.tel+' فاتورة شركات اتصالات من '+STATS.total+' صف.':'بيانات محفوظة من قبل (متنظفة).')+
-        '<span class="ev-chip" style="background:rgba(255,211,0,.45)">معفاة: '+nEx+'</span><span class="ev-chip" style="background:rgba(224,72,58,.35)">ضريبة مش '+pct+'%: '+nWr+'</span></p>'+
-      '<div class="ev-tbl"><table><thead><tr><th>النوع</th><th>التاريخ</th><th>المستند</th><th>رقم الفاتورة</th><th>البائع</th><th>المشتري</th><th>القيمة</th><th>الضريبة</th><th>الإجمالي</th><th>ملاحظة</th></tr></thead><tbody>'+
-      rows.map(r=>'<tr style="'+(fl[r.flag]||'')+'"><td>'+kindLbl[r.kind]+'</td><td>'+fmtD(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.num)+'</td><td>'+escapeHtml(r.sName)+'</td><td>'+escapeHtml(r.bName)+'</td><td>'+money(r.sv)+'</td><td>'+money(r.cn?-Math.abs(r.vat):r.vat)+'</td><td>'+money(r.cn?-Math.abs(r.tot):r.tot)+'</td><td>'+[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')+'</td></tr>').join('')+
-      '</tbody></table></div>';
-    animate(); ENTER=false;
-    $('einvActions').style.display='flex';
+
+  /* ---------- أدوات العرض ---------- */
+  function animate(){
+    document.querySelectorAll('#finDash .ev-v').forEach(el=>{
+      const to=Number(el.dataset.val), from=PREV[el.dataset.id]==null?0:PREV[el.dataset.id]; PREV[el.dataset.id]=to;
+      if(from===to||!window.requestAnimationFrame) return;
+      const t0=performance.now(), D=700;
+      (function step(t){ const k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=money(from+(to-from)*e); if(k<1) requestAnimationFrame(step); })(t0);
+    });
+    const bars=document.querySelectorAll('#finDash .ev-bar i'), raf=window.requestAnimationFrame;
+    const setW=()=>bars.forEach(b=>b.style.width=b.dataset.w+'%'); raf?raf(()=>raf(setW)):setW();
+  }
+  const chip=(t,bg,col)=>'<span class="ev-chip" style="margin:0;background:'+bg+';color:'+(col||'#fff')+'">'+t+'</span>';
+  const netChip=v=>chip(money(v)+(v>0?' مستحق':' مرحّل'),v>0?'#c0261c':'#0a8f55');
+
+  /* ---------- فتح المركز المالي لعميل ---------- */
+  function showView(){
+    ['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView'].forEach(id=>{ const e=$(id); if(e) e.style.display='none'; });
+    $('clientsFinView').style.display='block';
+    window.scrollTo({top:0});
+  }
+  window.openFinCenter=function(){
+    CID=currentClientHubId; const c=clientObj(); if(!c) return;
+    CNAME=c.name||''; PRE=null; SAVED=[]; FY=0; FM=0; DET={}; DETF='all'; ENTER=true;
+    showView();
+    $('finTitle').textContent='المركز المالي — '+CNAME;
+    $('finUpMsg').textContent='ملف Excel (xlsx)';
+    say(''); renderPre(); loadSaved();
+  };
+
+  /* ---------- تحميل المحفوظ ---------- */
+  async function loadSaved(){
+    const col=savedCol(CID), box=$('finDash'), cid=CID;
+    if(!col){ $('finFilterBar').style.display='none'; box.innerHTML='<p style="opacity:.7;font-size:13px;">لسه بيتحمّل بيانات المكتب، افتح الخانة تاني بعد ثانية.</p>'; return; }
+    box.innerHTML='<p style="opacity:.7;font-size:13px;">جاري تحميل المركز المالي...</p>';
+    try{
+      const snap=await col.get();
+      if(cid!==CID) return;
+      SAVED=snap.docs.map(d=>d.data()).filter(d=>d&&d.ym).sort((a,b)=>a.ym-b.ym);
+    }catch(e){
+      console.error(e); $('finFilterBar').style.display='none';
+      box.innerHTML='<p style="color:var(--red);font-size:13px;">تعذّر التحميل: '+esc(e&&e.message?e.message:'')+'</p>'; return;
+    }
+    ENTER=true; renderFilters(); renderDash();
   }
 
-  async function exportXlsx(){
-    if(!VIEW.length) return;
+  /* ---------- الفلاتر ---------- */
+  function renderFilters(){
+    const years=[...new Set(SAVED.map(d=>yOf(d.ym)))].sort((a,b)=>b-a);
+    if(FY&&!years.includes(FY)) FY=0;
+    $('finYear').innerHTML='<option value="0">كل السنوات</option>'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+    $('finYear').value=String(FY);
+    const ms=SAVED.filter(d=>!FY||yOf(d.ym)===FY).map(d=>d.ym).sort((a,b)=>b-a);
+    if(FM&&!ms.includes(FM)) FM=0;
+    $('finMonth').innerHTML='<option value="0">'+(FY?'كل شهور '+FY:'كل الشهور')+'</option>'+ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
+    $('finMonth').value=String(FM);
+  }
+  window.finYearChanged=()=>{ FY=Number($('finYear').value); FM=0; DETF='all'; ENTER=true; renderFilters(); renderDash(); };
+  window.finMonthChanged=()=>{ FM=Number($('finMonth').value); DETF='all'; ENTER=true; renderDash(); };
+  window.finPick=m=>{ FM=m; FY=yOf(m); DETF='all'; ENTER=true; renderFilters(); renderDash(); const f=$('finFilterBar'); if(f&&f.scrollIntoView) f.scrollIntoView({behavior:'smooth',block:'start'}); };
+
+  /* ---------- الداش بورد ---------- */
+  function renderDash(){
+    const box=$('finDash'), bar=$('finFilterBar');
+    if(!SAVED.length){ bar.style.display='none'; box.innerHTML='<div class="empty">لسه مفيش بيانات محفوظة للعميل ده. ارفع شيت الفواتير من فوق وراجعه واضغط "حفظ في المركز المالي" وهتلاقي هنا كل شهر لوحده.</div>'; return; }
+    bar.style.display='flex';
+    const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY));
+    const sm=k=>L.reduce((t,d)=>t+num(d[k]),0);
+    const S=sm('S'),P=sm('P'),SE=sm('SE'),PE=sm('PE'),diff=sm('diff'),due=sm('due'),credit=sm('credit'),net=sm('net');
+    const nS=sm('nSales'),nB=sm('nBuys'),nInv=sm('nInvoices'),nEx=sm('nExempt'),nWr=sm('nWrong');
+    const one=FM?L[0]:null;
+    const pay=net>0, st=pay?'pay':(net<0?'ok':'zero');
+    const lbl=FM?ymLbl(FM):(FY?'سنة '+FY+' كاملة':'كل الفترات المحفوظة');
+    let n=0;
+    const card=(id,ic,l,v,tone,sub,extra)=>'<div class="ev-card '+tone+(extra||'')+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'"><div class="ev-ic">'+ic+'</div><div class="ev-l">'+l+'</div><div class="ev-v" data-id="'+id+'" data-val="'+v+'">'+money(v)+'</div>'+(sub?'<div class="ev-s">'+sub+'</div>':'')+'</div>';
+    const mx=Math.max(1,...L.map(d=>Math.max(Math.abs(num(d.S)),Math.abs(num(d.P)))));
+    const bar2=(l,v,c)=>'<div class="ev-bar"><span class="bl">'+l+'</span><i data-w="'+Math.max(2,Math.abs(v)/mx*100)+'" style="background:'+c+'"></i><span style="direction:ltr">'+money(v)+'</span></div>';
+    const G='linear-gradient(90deg,#16a085,#2ecc71)', O='linear-gradient(90deg,#e67e22,#f1c40f)';
+    const rateTxt=one?(' (الفرق × '+(+(num(one.rate)*100).toFixed(2))+'%)'):'';
+
+    let h='<div style="font-size:15px;font-weight:900;margin:0 0 12px;">'+lbl+(L.length>1?' <span style="font-size:12px;opacity:.65;font-weight:600;">('+L.length+' شهر)</span>':'')+'</div>'+
+      '<div class="ev-grid">'+card('S','💰','إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+nS)+card('P','🧾','إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+nB+' (شامل المعفاة)')+card('D','⚖️','الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
+      '<div class="ev-grid">'+card('SE','🏷️','إجمالي المبيعات المعفاة',SE,'t-ex')+card('PE','🏷️','إجمالي المشتريات المعفاة',PE,'t-ex','بتتجمع لوحدها')+'</div>'+
+      '<div class="ev-grid">'+card('T','🧮','الضريبة المستحقة'+rateTxt,due,'t-tax')+card('C','💳','الرصيد الدائن',credit,'t-cr')+card('N',pay?'⚠️':'✅','الصافي بعد الرصيد الدائن',net,'net '+st,pay?'مستحق السداد':'رصيد مرحّل',' ')+'</div>'+
+      '<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
+      '<p style="font-size:12.5px;opacity:.8;margin:0 0 12px;">إجمالي الفواتير: '+nInv+' <span class="ev-chip" style="background:rgba(255,211,0,.45)">معفاة: '+nEx+'</span><span class="ev-chip" style="background:rgba(224,72,58,.35)">ضريبة مش النسبة: '+nWr+'</span></p>';
+
+    if(!FM){
+      h+='<div class="ev-bars">'+L.map(d=>'<div style="margin:6px 0 10px;"><div style="font-size:12.5px;font-weight:900;margin-bottom:2px;">'+ymLbl(d.ym)+'</div>'+bar2('مبيعات',num(d.S),G)+bar2('مشتريات',num(d.P),O)+'</div>').join('')+'</div>';
+      h+='<h3 style="margin:18px 0 10px;font-size:15px;">📅 تفاصيل كل شهر</h3><div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الفرق</th><th>الضريبة</th><th>الرصيد الدائن</th><th>الصافي</th><th>آخر حفظ</th><th></th></tr></thead><tbody>'+
+        L.slice().sort((a,b)=>b.ym-a.ym).map(d=>{ const ts=d.updatedAt&&d.updatedAt.toDate?d.updatedAt.toDate().toLocaleDateString('en-GB'):'';
+          return '<tr><td style="white-space:nowrap"><b>'+ymLbl(d.ym)+'</b></td><td>'+money(d.S)+'</td><td>'+money(d.P)+'</td><td>'+money(d.diff)+'</td><td>'+money(d.due)+'</td><td>'+money(d.credit)+'</td><td>'+netChip(num(d.net))+'</td><td>'+ts+'</td><td style="white-space:nowrap"><button class="act btn-ghost btn-small" onclick="finPick('+d.ym+')">فتح</button> <button class="act btn-ghost btn-small" onclick="finDel('+d.ym+')">حذف</button></td></tr>'; }).join('')+
+        '</tbody></table></div>';
+    }else{
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 14px;"><div class="field" style="margin:0;min-width:200px;"><label>الرصيد الدائن لشهر '+ymLbl(FM)+'</label><input id="finCreditEdit" type="number" step="0.01" value="'+(num(one.credit)||'')+'" placeholder="0"></div><button class="act btn-primary btn-small" onclick="finSetCredit('+FM+')">تحديث الرصيد الدائن</button><button class="act btn-ghost btn-small" onclick="finExportMonth('+FM+')">⬇️ تنزيل شيت الشهر (Excel)</button><button class="act btn-ghost btn-small" onclick="finDel('+FM+')">🗑 حذف الشهر</button></div>'+
+        '<h3 style="margin:10px 0 10px;font-size:15px;">🧾 فواتير الشهر</h3><div id="finDetail"><p style="opacity:.7;font-size:13px;">جاري تحميل الفواتير...</p></div>';
+    }
+    box.innerHTML=h;
+    animate(); ENTER=false;
+    if(FM) loadDetail(FM);
+  }
+
+  /* ---------- فواتير شهر واحد ---------- */
+  async function loadDetail(m){
+    const d=SAVED.find(x=>x.ym===m); if(!d) return;
+    try{
+      if(!DET[m]){
+        const col=savedCol(CID); if(!col) throw new Error('بيانات المكتب لسه بتتحمّل');
+        const rs=await col.doc(String(m)).collection('rows').get();
+        const parts=rs.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i); let flat=[]; parts.forEach(p=>{ flat=flat.concat(JSON.parse(p.rows)); });
+        DET[m]=flat.map(a=>({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]}));
+      }
+      renderDetail(m);
+    }catch(e){ console.error(e); const b=$('finDetail'); if(b&&FM===m) b.innerHTML='<p style="color:var(--red);font-size:13px;">تعذّر تحميل الفواتير: '+esc(e&&e.message?e.message:'')+'</p>'; }
+  }
+  function renderDetail(m){
+    const box=$('finDetail'), d=SAVED.find(x=>x.ym===m); if(!box||FM!==m||!d||!DET[m]) return;
+    const C=calc(DET[m],d.taxId,num(d.rate),num(d.credit));
+    const f={all:()=>true,sale:r=>r.kind==='sale',buy:r=>r.kind==='buy',exempt:r=>r.flag==='exempt',wrong:r=>r.flag==='wrong'}[DETF]||(()=>true);
+    const rows=C.rows.filter(f);
+    const fl={exempt:'background:rgba(255,211,0,.35);',wrong:'background:rgba(224,72,58,.28);'}, kindLbl={sale:'مبيعات',buy:'مشتريات',other:'—'};
+    const tabs=[['all','الكل ('+C.rows.length+')'],['sale','مبيعات ('+C.sales.length+')'],['buy','مشتريات ('+C.buys.length+')'],['exempt','معفاة ('+C.nEx+')'],['wrong','ضريبة مش النسبة ('+C.nWr+')']];
+    box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'+tabs.map(t=>'<button class="act '+(DETF===t[0]?'btn-primary':'btn-ghost')+' btn-small" onclick="finDetFilter(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>'+
+      '<div class="ev-tbl"><table><thead><tr><th>النوع</th><th>التاريخ</th><th>المستند</th><th>رقم الفاتورة</th><th>البائع</th><th>المشتري</th><th>القيمة</th><th>الضريبة</th><th>الإجمالي</th><th>ملاحظة</th></tr></thead><tbody>'+
+      (rows.length?rows.map(r=>'<tr style="'+(fl[r.flag]||'')+'"><td>'+kindLbl[r.kind]+'</td><td>'+fmtD(r.date)+'</td><td>'+esc(r.type)+'</td><td>'+esc(r.num)+'</td><td>'+esc(r.sName)+'</td><td>'+esc(r.bName)+'</td><td>'+money(r.sv)+'</td><td>'+money(r.cn?-Math.abs(r.vat):r.vat)+'</td><td>'+money(r.cn?-Math.abs(r.tot):r.tot)+'</td><td>'+[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')+'</td></tr>').join(''):'<tr><td colspan="10" style="text-align:center;opacity:.7;">مفيش فواتير في الفلتر ده</td></tr>')+
+      '</tbody></table></div>';
+  }
+  window.finDetFilter=k=>{ DETF=k; renderDetail(FM); };
+
+  /* ---------- تعديل الرصيد الدائن / حذف شهر ---------- */
+  window.finSetCredit=async function(m){
+    const d=SAVED.find(x=>x.ym===m), col=savedCol(CID); if(!d||!col) return;
+    const credit=num($('finCreditEdit').value), net=num(d.due)-credit;
+    try{
+      await col.doc(String(m)).update({credit,net,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      d.credit=credit; d.net=net; ENTER=false; renderDash(); say('تم تحديث الرصيد الدائن لشهر '+ymLbl(m)+'.');
+    }catch(e){ console.error(e); say('تعذّر التحديث: '+(e&&e.message?e.message:'')); }
+  };
+  window.finDel=function(m){
+    const run=async()=>{
+      if(!confirm('تمسح شهر '+ymLbl(m)+' من المركز المالي؟')) return;
+      const col=savedCol(CID); if(!col) return;
+      try{
+        const mref=col.doc(String(m)), rs=await mref.collection('rows').get(), b=db.batch();
+        rs.docs.forEach(x=>b.delete(x.ref)); b.delete(mref); await b.commit();
+        delete DET[m]; if(FM===m) FM=0; say('تم مسح '+ymLbl(m)+'.'); await loadSaved();
+      }catch(e){ console.error(e); say('تعذّر المسح: '+(e&&e.message?e.message:'')); }
+    };
+    try{ requirePin(run); }catch(e){ run(); }
+  };
+
+  /* ---------- رفع الشيت (معاينة قبل الحفظ) ---------- */
+  async function load(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    const msg=$('finUpMsg'); msg.textContent='جاري قراءة الشيت...';
+    try{
+      const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer());
+      const ws=wb.worksheets[0]; const hdr={};
+      ws.getRow(1).eachCell((c,i)=>{ hdr[nz(cv(c.value))]=i; });
+      const col={}, miss=[], OPT=['wh','tot','num'];
+      for(const k in HDR){ const i=hdr[nz(HDR[k])]; if(i) col[k]=i; else if(OPT.includes(k)) col[k]=0; else miss.push(HDR[k]); }
+      if(miss.length) throw new Error('الأعمدة دي مش موجودة في الشيت: '+miss.join('، '));
+      const raw=[];
+      ws.eachRow((r,n)=>{ if(n===1) return; const o={}; for(const k in col) o[k]=col[k]?cv(r.getCell(col[k]).value):null; raw.push(o); });
+      const stats={total:raw.length,bad:0,tel:0};
+      const rows=raw.filter(o=>{
+        if(String(o.status||'').trim()!=='Valid'||!String(o.type||'').trim()){ stats.bad++; return false; }
+        if(isTel(o.sName)){ stats.tel++; return false; }
+        return true;
+      }).map(o=>{
+        let d=o.date instanceof Date?o.date:(o.date?new Date(o.date):null); if(d&&isNaN(d)) d=null;
+        return {type:String(o.type).trim(),date:d,val:num(o.val),vat:num(o.vat),wh:num(o.wh),tot:o.tot==null?num(o.val)+num(o.vat):num(o.tot),num:o.num==null?'':String(o.num),
+                sTax:String(o.sTax==null?'':o.sTax).trim(),sName:String(o.sName||''),bTax:String(o.bTax==null?'':o.bTax).trim(),bName:String(o.bName||'')};
+      }).filter(r=>r.date);
+      if(!rows.length) throw new Error('مفيش فواتير صالحة في الشيت');
+      // الرقم الضريبي: رقم العميل المسجّل لو موجود في الشيت، غير كده أكتر رقم تكرارًا
+      const cnt={}; rows.forEach(r=>{ [r.sTax,r.bTax].forEach(t=>{ if(t) cnt[t]=(cnt[t]||0)+1; }); });
+      let tax=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||'';
+      const cl=clientObj(), ct=digits(cl&&cl.taxRegNo);
+      if(ct){ const hit=rows.find(r=>digits(r.sTax)===ct)||rows.find(r=>digits(r.bTax)===ct); if(hit) tax=digits(hit.sTax)===ct?hit.sTax:hit.bTax; }
+      const credits={}; SAVED.forEach(d=>{ credits[d.ym]=num(d.credit); });
+      PRE={file:f.name,rows,stats,tax,rate:14,credits};
+      msg.textContent='تم تحميل: '+f.name;
+      renderPre();
+    }catch(e){ console.error(e); msg.textContent='تعذّر قراءة الشيت: '+e.message; }
+    input.value='';
+  }
+  window.finLoad=load;
+  window.finDrop=e=>{ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files.length) load({files:e.dataTransfer.files,value:''}); };
+
+  function preCalc(){
+    const tax=$('finTax').value.trim(), rate=num($('finRate').value)/100, byM={};
+    PRE.rows.forEach(r=>{ (byM[ym(r.date)]=byM[ym(r.date)]||[]).push(r); });
+    return Object.keys(byM).map(Number).sort((a,b)=>b-a).map(m=>({m,c:calc(byM[m],tax,rate,num(PRE.credits[m])),rows:byM[m]}));
+  }
+  function renderPre(){
+    const box=$('finPre'); if(!box) return;
+    if(!PRE){ box.innerHTML=''; return; }
+    const cl=clientObj(), ct=digits(cl&&cl.taxRegNo), st=PRE.stats;
+    box.innerHTML='<div style="border:1px solid rgba(120,140,170,.35);border-radius:16px;padding:14px 16px;margin-top:4px;">'+
+      '<div style="font-weight:900;margin-bottom:6px;">معاينة: '+esc(PRE.file)+'</div>'+
+      '<p style="font-size:12.5px;opacity:.8;margin:0 0 10px;">تم حذف '+st.bad+' فاتورة غير صحيحة و'+st.tel+' فاتورة شركات اتصالات من '+st.total+' صف.</p>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:10px;">'+
+      '<div class="field"><label>الرقم الضريبي للعميل</label><input id="finTax" inputmode="numeric" value="'+esc(PRE.tax)+'" oninput="finPreChanged()"></div>'+
+      '<div class="field"><label>نسبة الضريبة %</label><input id="finRate" type="number" step="0.5" value="'+PRE.rate+'" oninput="finPreChanged()"></div></div>'+
+      '<div id="finPreWarn" style="font-size:12px;color:var(--red);margin-bottom:8px;"></div>'+
+      '<div id="finPreTbl"></div>'+
+      '<div class="row-actions" style="margin-top:12px;"><button class="act btn-primary" id="finSaveBtn" onclick="finSave()">💾 حفظ في المركز المالي</button><button class="act btn-ghost" onclick="finCancelPre()">إلغاء</button><span id="finPreMsg" style="font-size:12.5px;opacity:.85;align-self:center;"></span></div></div>';
+    renderPreTbl();
+  }
+  function renderPreTbl(){
+    const tax=$('finTax').value.trim(), cl=clientObj(), ct=digits(cl&&cl.taxRegNo);
+    $('finPreWarn').textContent=(ct&&digits(tax)!==ct)?'⚠️ الرقم الضريبي ده مختلف عن رقم العميل المسجّل ('+cl.taxRegNo+').':'';
+    PRE.rate=num($('finRate').value);
+    const L=preCalc(), saved=new Set(SAVED.map(d=>d.ym));
+    $('finPreTbl').innerHTML='<div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>رصيد دائن</th><th>الصافي</th></tr></thead><tbody>'+
+      L.map(x=>'<tr><td style="white-space:nowrap"><b>'+ymLbl(x.m)+'</b>'+(saved.has(x.m)?'<div style="font-size:11px;color:var(--red);">محفوظ قبل كده — هيتحدّث</div>':'')+'</td><td>'+money(x.c.S)+'</td><td>'+money(x.c.P)+'</td><td>'+money(x.c.due)+'</td><td><input type="number" step="0.01" style="width:110px;" value="'+(num(PRE.credits[x.m])||'')+'" placeholder="0" oninput="finPreCredit('+x.m+',this)"></td><td id="finPreNet'+x.m+'">'+netChip(x.c.net)+'</td></tr>').join('')+'</tbody></table></div>';
+  }
+  window.finPreChanged=()=>{ if(PRE) renderPreTbl(); };
+  window.finPreCredit=(m,el)=>{
+    PRE.credits[m]=num(el.value);
+    const x=preCalc().find(z=>z.m===m), c=$('finPreNet'+m); if(x&&c) c.innerHTML=netChip(x.c.net);
+  };
+  window.finCancelPre=()=>{ PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre(); };
+
+  /* ---------- الحفظ في المركز المالي ---------- */
+  window.finSave=async function(){
+    if(!PRE) return;
+    const col=savedCol(CID); if(!col){ preSay('لسه بيتحمّل بيانات المكتب، جرب تاني بعد ثانية.'); return; }
+    const tax=$('finTax').value.trim(), rate=num($('finRate').value)/100;
+    if(!tax){ preSay('اكتب الرقم الضريبي للعميل.'); return; }
+    const cl=clientObj();
+    if(cl&&cl.taxRegNo&&digits(cl.taxRegNo)!==digits(tax)&&!confirm('الرقم الضريبي ('+tax+') مختلف عن رقم العميل '+cl.name+' ('+cl.taxRegNo+'). تحفظ برضه؟')) return;
+    const L=preCalc(), btn=$('finSaveBtn'); btn.disabled=true; preSay('جاري الحفظ...');
+    try{
+      for(const x of L){
+        const c=x.c, mref=col.doc(String(x.m)), old=await mref.collection('rows').get(), batch=db.batch();
+        old.docs.forEach(d=>batch.delete(d.ref));
+        const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName]), parts=Math.ceil(flat.length/400);
+        for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
+        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:num(PRE.credits[x.m]),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:PRE.file,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await batch.commit(); delete DET[x.m];
+      }
+      const n=L.length; PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre();
+      FY=0; FM=0; await loadSaved(); say('تم الحفظ في المركز المالي ('+n+' شهر).');
+    }catch(e){ console.error(e); preSay('تعذّر الحفظ: '+(e&&e.message?e.message:'غير معروف')); btn.disabled=false; }
+  };
+
+  /* ---------- التصدير ---------- */
+  const HF={name:'Arial',bold:true,color:{argb:'FFFFFFFF'}}, HFILL={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}};
+  window.finExportMonth=async function(m){
+    const d=SAVED.find(x=>x.ym===m); if(!d||!DET[m]){ say('استنى الفواتير تتحمّل الأول.'); return; }
+    const C=calc(DET[m],d.taxId,num(d.rate),num(d.credit));
     const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('الفواتير',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
     const heads=['النوع','التاريخ','نوع المستند','رقم الفاتورة','الرقم الضريبي للبائع','اسم البائع','الرقم الضريبي للمشتري','اسم المشتري','القيمة','الضريبة','الخصم تحت حساب الضريبة','الإجمالي','ملاحظة'];
     ws.addRow(heads);
-    const F={name:'Arial',size:10};
-    ws.getRow(1).eachCell(c=>{ c.font={name:'Arial',bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}}; c.alignment={horizontal:'center',vertical:'middle'}; });
-    const kl={sale:'مبيعات',buy:'مشتريات',other:'—'};
-    VIEW.forEach(r=>{
+    ws.getRow(1).eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center',vertical:'middle'}; });
+    const kl={sale:'مبيعات',buy:'مشتريات',other:'—'}, F={name:'Arial',size:10};
+    C.rows.forEach(r=>{
       const row=ws.addRow([kl[r.kind],r.date,r.type,r.num,r.sTax,r.sName,r.bTax,r.bName,r.val,r.vat,r.wh||null,r.tot,[r.cn?'إشعار دائن (يُخصم)':'',r.flag==='exempt'?'معفاة':(r.flag==='wrong'?'نسبة الضريبة مختلفة':'')].filter(Boolean).join(' - ')]);
       row.eachCell({includeEmpty:true},c=>{ c.font=F; if(r.flag) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:r.flag==='exempt'?'FFFFFF00':'FFFF9999'}}; });
       row.getCell(2).numFmt='yyyy-mm-dd'; [9,10,11,12].forEach(i=>row.getCell(i).numFmt='#,##0.00');
@@ -6327,97 +6509,21 @@ populateClientHelpers();
     [10,12,12,16,16,34,16,38,15,14,16,15,20].forEach((w,i)=>ws.getColumn(i+1).width=w);
     ws.autoFilter={from:'A1',to:{row:1,column:heads.length}};
     const s2=wb.addWorksheet('الملخص',{views:[{rightToLeft:true}]});
-    [['الرقم الضريبي للعميل',SUM.tax],['إجمالي المبيعات',SUM.S],['إجمالي المشتريات',SUM.P],['إجمالي المبيعات المعفاة',SUM.SE],['إجمالي المشتريات المعفاة',SUM.PE],['الفرق',SUM.diff],['نسبة الضريبة',SUM.rate],['الضريبة المستحقة',SUM.due],['الرصيد الدائن',SUM.credit],['الصافي (موجب = مستحق السداد ، سالب = رصيد مرحل)',SUM.net]].forEach(r=>{ const x=s2.addRow(r); x.eachCell(c=>c.font={name:'Arial',size:11}); x.getCell(1).font={name:'Arial',size:11,bold:true}; if(typeof r[1]==='number') x.getCell(2).numFmt=r[0]==='نسبة الضريبة'?'0%':'#,##0.00'; });
-    const last=s2.lastRow; last.getCell(2).font={name:'Arial',size:12,bold:true,color:{argb:SUM.net>0?'FFC00000':'FF00A650'}};
-    s2.getColumn(1).width=46; s2.getColumn(2).width=20;
-    await xlDownload(wb,'فواتير_منظفة_'+todayStr()+'.xlsx');
-  }
-
-
-  /* ---------- حفظ على التطبيق (Firestore: offices/{office}/clients/{client}/einvoices/{YYYYMM}) ---------- */
-  const digits=x=>String(x==null?'':x).replace(/\D/g,'');
-  const clientsList=()=>{ try{ return clientsCache||[]; }catch(e){ return []; } };
-  const savedCol=cid=>{ try{ const c=officeClientsCol(); return c&&cid?c.doc(cid).collection('einvoices'):null; }catch(e){ return null; } };
-  const say=t=>{ $('einvSaveMsg').textContent=t; };
-  function refreshClients(){
-    const sel=$('einvClient'), keep=sel.value;
-    const cs=clientsList().slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
-    sel.innerHTML='<option value="">— اختار العميل —</option>'+cs.map(c=>'<option value="'+c.id+'">'+escapeHtml(c.name||'')+(c.taxRegNo?' ('+escapeHtml(c.taxRegNo)+')':'')+'</option>').join('');
-    sel.value=keep||'';
-  }
-  function matchClient(force){
-    const tax=digits($('einvTax').value), sel=$('einvClient');
-    if(!force&&sel.value) return;
-    const c=tax&&clientsList().find(c=>digits(c.taxRegNo)===tax);
-    sel.value=c?c.id:'';
-    $('einvClientNote').textContent=c?'':(tax?'مفيش عميل مسجل بالرقم الضريبي ده، اختار العميل يدوي قبل الحفظ.':'');
-    loadSaved();
-  }
-  async function saveAll(){
-    if(!ROWS.length) return;
-    const cid=$('einvClient').value, col=savedCol(cid);
-    if(!cid){ say('اختار العميل الأول من القايمة.'); return; }
-    if(!col){ say('لسه بيتحمّل بيانات المكتب، جرب تاني بعد ثانية.'); return; }
-    const tax=$('einvTax').value.trim(), rate=num($('einvRate').value)/100, cl=clientsList().find(c=>c.id===cid);
-    if(cl&&cl.taxRegNo&&digits(cl.taxRegNo)!==digits(tax)&&!confirm('الرقم الضريبي في الشيت ('+tax+') مختلف عن رقم العميل '+cl.name+' ('+cl.taxRegNo+'). تحفظ برضه؟')) return;
-    const byM={}; ROWS.forEach(r=>{ (byM[ym(r.date)]=byM[ym(r.date)]||[]).push(r); });
-    const selM=Number($('einvMonth').value), btn=$('einvSaveBtn'); btn.disabled=true; say('جاري الحفظ...');
-    try{
-      for(const m of Object.keys(byM)){
-        let credit=0; if(Number(m)===selM) credit=num($('einvCredit').value); else { try{ credit=num(localStorage.getItem('mishwar_einv_credit_'+tax+'_'+m)); }catch(e){} }
-        const c=calc(byM[m],tax,rate,credit), mref=col.doc(String(m)), old=await mref.collection('rows').get(), batch=db.batch();
-        old.docs.forEach(d=>batch.delete(d.ref));
-        const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName]), parts=Math.ceil(flat.length/400);
-        for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-        batch.set(mref,{ym:Number(m),taxId:tax,rate,credit,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:FILE,updatedBy:(auth.currentUser&&auth.currentUser.email)||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-        await batch.commit();
-      }
-      say('تم الحفظ على التطبيق ('+Object.keys(byM).length+' شهر).'); loadSaved();
-    }catch(e){ console.error(e); say('تعذّر الحفظ: '+(e&&e.message?e.message:'غير معروف')); }
-    btn.disabled=false;
-  }
-  async function loadSaved(){
-    const box=$('einvSaved'), cid=$('einvClient').value, col=savedCol(cid);
-    if(!cid||!col){ box.innerHTML=''; return; }
-    try{
-      const snap=await col.get(), list=snap.docs.map(d=>d.data()).sort((a,b)=>b.ym-a.ym);
-      if(cid!==$('einvClient').value) return;
-      box.innerHTML='<h3 style="margin:22px 0 10px;font-size:16px;">📚 السجل المحفوظ لهذا العميل</h3>'+(list.length?
-        '<div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الفرق</th><th>الضريبة</th><th>الرصيد الدائن</th><th>الصافي</th><th>آخر حفظ</th><th></th></tr></thead><tbody>'+
-        list.map(d=>{ const pay=d.net>0, ts=d.updatedAt&&d.updatedAt.toDate?d.updatedAt.toDate().toLocaleDateString('en-GB'):'';
-          return '<tr><td style="white-space:nowrap">'+String(d.ym).slice(0,4)+'-'+String(d.ym).slice(4)+'</td><td>'+money(d.S)+'</td><td>'+money(d.P)+'</td><td>'+money(d.diff)+'</td><td>'+money(d.due)+'</td><td>'+money(d.credit)+'</td><td><span class="ev-chip" style="margin:0;color:#fff;background:'+(pay?'#c0261c':'#0a8f55')+'">'+money(d.net)+(pay?' مستحق':' مرحّل')+'</span></td><td>'+ts+'</td><td style="white-space:nowrap"><button class="act btn-ghost btn-small" onclick="einvOpen('+d.ym+')">فتح</button> <button class="act btn-ghost btn-small" onclick="einvDel('+d.ym+')">حذف</button></td></tr>'; }).join('')+'</tbody></table></div>'
-        :'<p style="opacity:.7;font-size:13px;margin:0;">لسه مفيش حاجة محفوظة لهذا العميل.</p>');
-    }catch(e){ box.innerHTML='<p style="color:var(--red);font-size:13px;">تعذّر تحميل المحفوظ: '+escapeHtml(e&&e.message?e.message:'')+'</p>'; }
-  }
-  async function openSaved(m){
-    const col=savedCol($('einvClient').value); if(!col) return; say('جاري فتح الشهر المحفوظ...');
-    try{
-      const mref=col.doc(String(m)), [md,rs]=await Promise.all([mref.get(),mref.collection('rows').get()]);
-      if(!md.exists) throw new Error('الشهر مش موجود');
-      const d=md.data(), parts=rs.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i); let flat=[]; parts.forEach(p=>{ flat=flat.concat(JSON.parse(p.rows)); });
-      ROWS=flat.map(a=>({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]}));
-      STATS={total:0,bad:0,tel:0}; FILE=d.sourceFile||'';
-      $('einvTax').value=d.taxId; $('einvRate').value=+(d.rate*100).toFixed(2);
-      $('einvMonth').innerHTML='<option value="'+m+'">'+String(m).slice(0,4)+'-'+String(m).slice(4)+'</option>'; $('einvMonth').value=String(m);
-      $('einvCredit').value=d.credit||''; saveCredit(); ENTER=true; render(); say('تم فتح الشهر المحفوظ. عدّل الرصيد الدائن واضغط حفظ لو عايز تحدّثه.');
-      const o=$('einvOut'); if(o.scrollIntoView) o.scrollIntoView({behavior:'smooth',block:'start'});
-    }catch(e){ console.error(e); say('تعذّر الفتح: '+(e&&e.message?e.message:'')); }
-  }
-  async function delSaved(m){
-    if(!confirm('تمسح شهر '+String(m).slice(0,4)+'-'+String(m).slice(4)+' من المحفوظ؟')) return;
-    const col=savedCol($('einvClient').value); if(!col) return;
-    try{ const mref=col.doc(String(m)), rs=await mref.collection('rows').get(), b=db.batch(); rs.docs.forEach(d=>b.delete(d.ref)); b.delete(mref); await b.commit(); say('تم المسح.'); loadSaved(); }
-    catch(e){ say('تعذّر المسح: '+(e&&e.message?e.message:'')); }
-  }
-  window.einvClientFocus=refreshClients; window.einvSave=saveAll; window.einvOpen=openSaved; window.einvDel=delSaved; window.einvClientChanged=()=>{ $('einvClientNote').textContent=''; loadSaved(); };
-  window.einvTaxChanged=()=>{ loadCredit(); matchClient(true); ENTER=true; render(); };
-  document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('[data-tab="einvoice"]')) setTimeout(()=>{ refreshClients(); loadSaved(); },150); });
-  window.einvLoad=load; window.einvRender=render; window.einvExport=exportXlsx;
-  window.einvTaxOrMonthChanged=()=>{ loadCredit(); ENTER=true; render(); };
-  window.einvDrop=e=>{ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files.length) load({files:e.dataTransfer.files,value:''}); };
-  window.einvCreditChanged=()=>{ saveCredit(); render(); };
-  document.addEventListener('DOMContentLoaded',render);
-  if(document.readyState!=='loading') render();
+    [['العميل',CNAME],['الشهر',ymLbl(m)],['الرقم الضريبي للعميل',d.taxId],['إجمالي المبيعات',C.S],['إجمالي المشتريات',C.P],['إجمالي المبيعات المعفاة',C.SE],['إجمالي المشتريات المعفاة',C.PE],['الفرق',C.diff],['نسبة الضريبة',num(d.rate)],['الضريبة المستحقة',C.due],['الرصيد الدائن',num(d.credit)],['الصافي (موجب = مستحق السداد ، سالب = رصيد مرحل)',C.net]].forEach(r=>{ const x=s2.addRow(r); x.eachCell(c=>c.font={name:'Arial',size:11}); x.getCell(1).font={name:'Arial',size:11,bold:true}; if(typeof r[1]==='number') x.getCell(2).numFmt=r[0]==='نسبة الضريبة'?'0%':'#,##0.00'; });
+    s2.getColumn(1).width=46; s2.getColumn(2).width=24;
+    await xlDownload(wb,'فواتير_'+CNAME+'_'+m+'.xlsx');
+  };
+  window.finExportSummary=async function(){
+    const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY)); if(!L.length) return;
+    const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('المركز المالي',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
+    const heads=['الشهر','المبيعات','المشتريات','المبيعات المعفاة','المشتريات المعفاة','الفرق','الضريبة المستحقة','الرصيد الدائن','الصافي'];
+    ws.addRow(heads); ws.getRow(1).eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center'}; });
+    const tot=[0,0,0,0,0,0,0,0];
+    L.forEach(d=>{ const v=[num(d.S),num(d.P),num(d.SE),num(d.PE),num(d.diff),num(d.due),num(d.credit),num(d.net)]; v.forEach((x,i)=>tot[i]+=x); const r=ws.addRow([ymLbl(d.ym)].concat(v)); r.eachCell(c=>c.font={name:'Arial',size:10}); for(let i=2;i<=9;i++) r.getCell(i).numFmt='#,##0.00'; });
+    const tr=ws.addRow(['الإجمالي'].concat(tot)); tr.eachCell(c=>c.font={name:'Arial',size:11,bold:true}); for(let i=2;i<=9;i++) tr.getCell(i).numFmt='#,##0.00';
+    ws.columns.forEach((c,i)=>c.width=i?18:16);
+    await xlDownload(wb,'المركز_المالي_'+CNAME+'_'+(FM||FY||'كل_الفترات')+'.xlsx');
+  };
 })();
 </script>
 </body>
