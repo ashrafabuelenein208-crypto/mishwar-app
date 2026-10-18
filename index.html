@@ -1183,7 +1183,7 @@
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('ضرائب القيمة المضافة')">ضرائب القيمة المضافة</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('مستندات')">مستندات</button>
         <button type="button" class="landing-cat-btn" onclick="openCategorySection('حسابات الضرائب')">حسابات الضرائب</button>
-        <button type="button" class="landing-cat-btn" onclick="openFinCenter()">المركز المالي</button>
+        <button type="button" class="landing-cat-btn" onclick="openFinCenter()">الموقف الضريبي</button>
       </div>
     </div>
 
@@ -1219,7 +1219,7 @@
       <h2 id="finTitle" style="text-align:center;"></h2>
       <section>
         <h3 style="margin:0 0 6px;font-size:15px;">➕ إضافة شهور جديدة</h3>
-        <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بينظّفه ويحسب كل شهر لوحده، وتراجعه وتدوس "حفظ في المركز المالي".</p>
+        <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بينظّفه ويحسب كل شهر لوحده، وتراجعه وتدوس "حفظ في الموقف الضريبي".</p>
         <label class="ev-drop" for="finFile" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="finDrop(event)">
           <div class="ev-up">📄</div>
           <div><b>اسحب شيت الفواتير هنا أو اضغط للاختيار</b><span class="sub" id="finUpMsg">ملف Excel (xlsx)</span></div>
@@ -1228,7 +1228,7 @@
         <div id="finPre"></div>
       </section>
       <section>
-        <h3 style="margin:0 0 10px;font-size:15px;">📊 المركز المالي</h3>
+        <h3 style="margin:0 0 10px;font-size:15px;">📊 الموقف الضريبي</h3>
         <div id="finFilterBar" class="fin-bar" style="display:none;">
           <div class="field"><label>السنة</label><select id="finYear" onchange="finYearChanged()"></select></div>
           <div class="field"><label>الشهر</label><select id="finMonth" onchange="finMonthChanged()"></select></div>
@@ -6268,7 +6268,7 @@ populateClientHelpers();
     CID=currentClientHubId; const c=clientObj(); if(!c) return;
     CNAME=c.name||''; PRE=null; SAVED=[]; FY=0; FM=0; DET={}; DETF='all'; ENTER=true;
     showView();
-    $('finTitle').textContent='المركز المالي — '+CNAME;
+    $('finTitle').textContent='الموقف الضريبي — '+CNAME;
     $('finUpMsg').textContent='ملف Excel (xlsx)';
     say(''); renderPre(); loadSaved();
   };
@@ -6277,7 +6277,7 @@ populateClientHelpers();
   async function loadSaved(){
     const col=savedCol(CID), box=$('finDash'), cid=CID;
     if(!col){ $('finFilterBar').style.display='none'; box.innerHTML='<p style="opacity:.7;font-size:13px;">لسه بيتحمّل بيانات المكتب، افتح الخانة تاني بعد ثانية.</p>'; return; }
-    box.innerHTML='<p style="opacity:.7;font-size:13px;">جاري تحميل المركز المالي...</p>';
+    box.innerHTML='<p style="opacity:.7;font-size:13px;">جاري تحميل الموقف الضريبي...</p>';
     try{
       const snap=await col.get();
       if(cid!==CID) return;
@@ -6307,7 +6307,7 @@ populateClientHelpers();
   /* ---------- الداش بورد ---------- */
   function renderDash(){
     const box=$('finDash'), bar=$('finFilterBar');
-    if(!SAVED.length){ bar.style.display='none'; box.innerHTML='<div class="empty">لسه مفيش بيانات محفوظة للعميل ده. ارفع شيت الفواتير من فوق وراجعه واضغط "حفظ في المركز المالي" وهتلاقي هنا كل شهر لوحده.</div>'; return; }
+    if(!SAVED.length){ bar.style.display='none'; box.innerHTML='<div class="empty">لسه مفيش بيانات محفوظة للعميل ده. ارفع شيت الفواتير من فوق وراجعه واضغط "حفظ في الموقف الضريبي" وهتلاقي هنا كل شهر لوحده.</div>'; return; }
     bar.style.display='flex';
     const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY));
     const sm=k=>L.reduce((t,d)=>t+num(d[k]),0);
@@ -6383,7 +6383,7 @@ populateClientHelpers();
   };
   window.finDel=function(m){
     const run=async()=>{
-      if(!confirm('تمسح شهر '+ymLbl(m)+' من المركز المالي؟')) return;
+      if(!confirm('تمسح شهر '+ymLbl(m)+' من الموقف الضريبي؟')) return;
       const col=savedCol(CID); if(!col) return;
       try{
         const mref=col.doc(String(m)), rs=await mref.collection('rows').get(), b=db.batch();
@@ -6450,7 +6450,8 @@ populateClientHelpers();
       '<div class="field"><label>نسبة الضريبة %</label><input id="finRate" type="number" step="0.5" value="'+PRE.rate+'" oninput="finPreChanged()"></div></div>'+
       '<div id="finPreWarn" style="font-size:12px;color:var(--red);margin-bottom:8px;"></div>'+
       '<div id="finPreTbl"></div>'+
-      '<div class="row-actions" style="margin-top:12px;"><button class="act btn-primary" id="finSaveBtn" onclick="finSave()">💾 حفظ في المركز المالي</button><button class="act btn-ghost" onclick="finCancelPre()">إلغاء</button><span id="finPreMsg" style="font-size:12.5px;opacity:.85;align-self:center;"></span></div></div>';
+      '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin-top:12px;cursor:pointer;"><input type="checkbox" id="finReplace" onchange="finPreChanged()"> استبدال الشهر المحفوظ بالكامل (بدل ما يتدمج مع الفواتير اللي فيه)</label>'+
+      '<div class="row-actions" style="margin-top:12px;"><button class="act btn-primary" id="finSaveBtn" onclick="finSave()">💾 حفظ في الموقف الضريبي</button><button class="act btn-ghost" onclick="finCancelPre()">إلغاء</button><span id="finPreMsg" style="font-size:12.5px;opacity:.85;align-self:center;"></span></div></div>';
     renderPreTbl();
   }
   function renderPreTbl(){
@@ -6459,7 +6460,7 @@ populateClientHelpers();
     PRE.rate=num($('finRate').value);
     const L=preCalc(), saved=new Set(SAVED.map(d=>d.ym));
     $('finPreTbl').innerHTML='<div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>رصيد دائن</th><th>الصافي</th></tr></thead><tbody>'+
-      L.map(x=>'<tr><td style="white-space:nowrap"><b>'+ymLbl(x.m)+'</b>'+(saved.has(x.m)?'<div style="font-size:11px;color:var(--red);">محفوظ قبل كده — هيتحدّث</div>':'')+'</td><td>'+money(x.c.S)+'</td><td>'+money(x.c.P)+'</td><td>'+money(x.c.due)+'</td><td><input type="number" step="0.01" style="width:110px;" value="'+(num(PRE.credits[x.m])||'')+'" placeholder="0" oninput="finPreCredit('+x.m+',this)"></td><td id="finPreNet'+x.m+'">'+netChip(x.c.net)+'</td></tr>').join('')+'</tbody></table></div>';
+      L.map(x=>'<tr><td style="white-space:nowrap"><b>'+ymLbl(x.m)+'</b>'+(saved.has(x.m)?'<div style="font-size:11px;color:var(--red);">محفوظ قبل كده — '+(($('finReplace')&&$('finReplace').checked)?'هيتم استبداله':'هيتدمج مع المحفوظ')+'</div>':'')+'</td><td>'+money(x.c.S)+'</td><td>'+money(x.c.P)+'</td><td>'+money(x.c.due)+'</td><td><input type="number" step="0.01" style="width:110px;" value="'+(num(PRE.credits[x.m])||'')+'" placeholder="0" oninput="finPreCredit('+x.m+',this)"></td><td id="finPreNet'+x.m+'">'+netChip(x.c.net)+'</td></tr>').join('')+'</tbody></table></div>';
   }
   window.finPreChanged=()=>{ if(PRE) renderPreTbl(); };
   window.finPreCredit=(m,el)=>{
@@ -6476,18 +6477,27 @@ populateClientHelpers();
     if(!tax){ preSay('اكتب الرقم الضريبي للعميل.'); return; }
     const cl=clientObj();
     if(cl&&cl.taxRegNo&&digits(cl.taxRegNo)!==digits(tax)&&!confirm('الرقم الضريبي ('+tax+') مختلف عن رقم العميل '+cl.name+' ('+cl.taxRegNo+'). تحفظ برضه؟')) return;
-    const L=preCalc(), btn=$('finSaveBtn'); btn.disabled=true; preSay('جاري الحفظ...');
+    const L=preCalc(), btn=$('finSaveBtn'), replace=!!($('finReplace')&&$('finReplace').checked); btn.disabled=true; preSay('جاري الحفظ...');
     try{
       for(const x of L){
-        const c=x.c, mref=col.doc(String(x.m)), old=await mref.collection('rows').get(), batch=db.batch();
+        const mref=col.doc(String(x.m)), old=await mref.collection('rows').get(), batch=db.batch();
+        let c=x.c, srcFile=PRE.file;
+        const prev=SAVED.find(d=>d.ym===x.m);
+        if(!replace&&old.docs.length){
+          const oldRows=[]; old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>oldRows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]})));
+          const key=r=>[r.sTax,r.bTax,r.num,r.type,r.date.getTime(),r.val,r.vat].join('|'), have=new Set(oldRows.map(key));
+          const merged=oldRows.concat(x.rows.filter(r=>!have.has(key(r))));
+          c=calc(merged,tax,rate,num(PRE.credits[x.m]));
+          if(prev&&prev.sourceFile&&prev.sourceFile!==PRE.file) srcFile=prev.sourceFile+' + '+PRE.file;
+        }
         old.docs.forEach(d=>batch.delete(d.ref));
         const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName]), parts=Math.ceil(flat.length/400);
         for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:num(PRE.credits[x.m]),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:PRE.file,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:num(PRE.credits[x.m]),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         await batch.commit(); delete DET[x.m];
       }
       const n=L.length; PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre();
-      FY=0; FM=0; await loadSaved(); say('تم الحفظ في المركز المالي ('+n+' شهر).');
+      FY=0; FM=0; await loadSaved(); say('تم الحفظ في الموقف الضريبي ('+n+' شهر).');
     }catch(e){ console.error(e); preSay('تعذّر الحفظ: '+(e&&e.message?e.message:'غير معروف')); btn.disabled=false; }
   };
 
@@ -6515,14 +6525,14 @@ populateClientHelpers();
   };
   window.finExportSummary=async function(){
     const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY)); if(!L.length) return;
-    const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('المركز المالي',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
+    const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('الموقف الضريبي',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
     const heads=['الشهر','المبيعات','المشتريات','المبيعات المعفاة','المشتريات المعفاة','الفرق','الضريبة المستحقة','الرصيد الدائن','الصافي'];
     ws.addRow(heads); ws.getRow(1).eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center'}; });
     const tot=[0,0,0,0,0,0,0,0];
     L.forEach(d=>{ const v=[num(d.S),num(d.P),num(d.SE),num(d.PE),num(d.diff),num(d.due),num(d.credit),num(d.net)]; v.forEach((x,i)=>tot[i]+=x); const r=ws.addRow([ymLbl(d.ym)].concat(v)); r.eachCell(c=>c.font={name:'Arial',size:10}); for(let i=2;i<=9;i++) r.getCell(i).numFmt='#,##0.00'; });
     const tr=ws.addRow(['الإجمالي'].concat(tot)); tr.eachCell(c=>c.font={name:'Arial',size:11,bold:true}); for(let i=2;i<=9;i++) tr.getCell(i).numFmt='#,##0.00';
     ws.columns.forEach((c,i)=>c.width=i?18:16);
-    await xlDownload(wb,'المركز_المالي_'+CNAME+'_'+(FM||FY||'كل_الفترات')+'.xlsx');
+    await xlDownload(wb,'الموقف_الضريبي_'+CNAME+'_'+(FM||FY||'كل_الفترات')+'.xlsx');
   };
 })();
 </script>
