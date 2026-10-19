@@ -1078,6 +1078,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
   <!-- HOME -->
   <div class="panel active" id="panel-home">
     <div id="expiryAlertsBox"></div>
+    <div id="vrHomeBox"></div>
     <div class="cards" id="summaryCards"></div>
     <section>
       <h2>أكثر العملاء تكلفة (الشهر الحالي)</h2>
@@ -1217,6 +1218,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('شركات')">شركات</button>
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('فردي')">فردي</button>
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
+        <button type="button" class="landing-cat-btn" onclick="vrOpen()">سجل الإقرارات</button>
         <button type="button" class="landing-cat-btn" onclick="finOverviewOpen()">الموقف الضريبي لكل العملاء</button>
       </div>
     </div>
@@ -1260,6 +1262,14 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
       <label class="file-upload-btn" for="taxYearImportFile" style="display:block;text-align:center;font-size:17px;padding:16px;max-width:420px;margin:0 auto 18px;">＋ استيراد ملفات</label>
       <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
+    </div>
+    <div id="clientsVatView" style="display:none;">
+      <div class="row-actions" style="margin-bottom:8px;"><button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button></div>
+      <h2 style="text-align:center;">سجل إقرارات القيمة المضافة</h2>
+      <section>
+        <div class="field"><label>الفترة</label><select id="vrMonth" onchange="vrMonth()"></select></div>
+        <div id="vrBody"></div>
+      </section>
     </div>
     <div id="clientsFinView" style="display:none;">
       <div class="row-actions" id="finBackRow" style="margin-bottom:8px;">
@@ -4226,6 +4236,7 @@ function showClientsList(){
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsLanding(){
+  { const v = document.getElementById('clientsVatView'); if(v) v.style.display = 'none'; }
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'none';
@@ -5077,6 +5088,7 @@ function copyAlertText(msg){
 /* ---------- HOME ---------- */
 function renderHomeTab(){
   renderExpiryAlerts();
+  if(window.vrHomeBanner) window.vrHomeBanner();
   const trips = loadTrips();
   const receipts = loadReceipts();
   const thisMonth = todayStr().slice(0,7);
@@ -6955,6 +6967,187 @@ populateClientHelpers();
     await xlDownload(wb,'الموقف_الضريبي_كل_العملاء_'+(OV.month||'اخر_شهر')+'.xlsx');
   };
 
+})();
+</script>
+<style>
+.vr-sum{display:flex;flex-direction:column;gap:2px;font-size:15px;margin-bottom:8px}.vr-sum span{font-size:12px;color:var(--navy-dim)}
+.vr-chips{display:flex;gap:6px;flex-wrap:wrap}
+.vr-row{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:8px 0;border-radius:12px;background:var(--bronze-soft);border-inline-start:5px solid var(--line)}
+.vr-row.vr-todo{border-inline-start-color:var(--red)}.vr-row.vr-pay{border-inline-start-color:var(--bronze)}.vr-row.vr-done{border-inline-start-color:var(--green)}
+.vr-main{flex:1;cursor:pointer;min-width:0}.vr-nm{font-weight:800;color:var(--navy)}.vr-nm i{font-style:normal;font-size:11px;background:var(--line);padding:1px 8px;border-radius:10px;margin-inline-start:6px;color:var(--navy-dim)}.vr-st{font-size:12.5px;margin-top:2px}
+.vr-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:none;align-items:center;justify-content:center;padding:12px}
+.vr-box{background:var(--card,#fff);color:inherit;border-radius:16px;padding:16px;width:100%;max-width:440px;max-height:92vh;overflow:auto}
+.vr-l{display:block;font-size:12.5px;font-weight:700;margin:12px 0 5px}
+.vr-seg{display:flex;gap:6px}.vr-seg button{flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}.vr-seg button.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:800}
+.vr-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.vr-two input,.vr-box input[type=file]{width:100%}
+.vr-rc{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:13px}
+.vr-home{background:var(--red-soft);color:var(--red);font-weight:800;padding:12px 14px;border-radius:12px;margin-bottom:12px;cursor:pointer;font-size:14px}
+</style>
+<script>
+/* ===== سجل الإقرارات (VAT): حالة التقديم + السداد + الإيصال ===== */
+(function(){
+  const $=id=>document.getElementById(id), esc=escapeHtml;
+  const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const ymLbl=m=>MN[m%100-1]+' '+Math.floor(m/100);
+  const prevYm=()=>{const t=new Date(),y=t.getFullYear(),m=t.getMonth();return m===0?(y-1)*100+12:y*100+m;};
+  const freqOf=c=>c.vatFreq||(c.category==='فردي'?'q':'m');
+  const qLbl=m=>'الربع '+Math.ceil((m%100)/3)+' '+Math.floor(m/100);
+  const perLbl=(c,m)=>freqOf(c)==='q'?qLbl(m):ymLbl(m);
+  const col=cid=>{try{const c=officeClientsCol();return c?c.doc(cid).collection('vatReturns'):null;}catch(e){return null;}};
+  const who=()=>{try{return auth.currentUser.email||'';}catch(e){return '';}};
+  const money=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2});
+  const today=()=>new Date().toISOString().slice(0,10);
+  const eligible=(c,ym)=>c.category!=='غير مسجل'&&(freqOf(c)==='m'||ym%100%3===0);
+  const stateOf=d=>!d||!d.filed?'todo':(d.pay==='due'||(!d.pay&&!d.zero)?'pay':'done');
+  const TXT={todo:'🔴 لسه ما اتقدّمش',pay:'🟡 اتقدّم — السداد لسه',done:'🟢 خلص'};
+  let ST={ym:prevYm(),rows:[],tok:0,filter:'all',bulk:false,sel:{},skipped:0,homeAt:0,homeN:0};
+
+  async function fetchAll(ym){
+    const cs=loadClients().filter(c=>eligible(c,ym)).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+    const rows=await Promise.all(cs.map(async c=>{
+      try{ const k=col(c.id); const s=k?await k.doc(String(ym)).get():null; return {c,d:s&&s.exists?s.data():null}; }
+      catch(e){ return {c,d:null,err:1}; }
+    }));
+    return {rows,skipped:loadClients().filter(c=>c.category!=='غير مسجل').length-cs.length};
+  }
+
+  window.vrOpen=async function(){
+    ['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView','clientsFinView'].forEach(id=>{const e=$(id);if(e)e.style.display='none';});
+    $('clientsVatView').style.display='block'; window.scrollTo({top:0});
+    ST.bulk=false; ST.sel={}; vrLoad();
+  };
+  async function vrLoad(){
+    if(!officeClientsCol()){ $('vrBody').innerHTML='<p class="empty">لسه بيتحمّل بيانات المكتب، افتح الشاشة تاني بعد ثانية.</p>'; return; }
+    const tok=++ST.tok; $('vrBody').innerHTML='<p class="empty">جاري التحميل...</p>';
+    const r=await fetchAll(ST.ym); if(tok!==ST.tok) return;
+    ST.rows=r.rows; ST.skipped=r.skipped; render();
+  }
+  window.vrMonth=()=>{ST.ym=Number($('vrMonth').value);ST.bulk=false;ST.sel={};vrLoad();};
+  window.vrFilter=f=>{ST.filter=f;render();};
+  window.vrBulk=()=>{ST.bulk=!ST.bulk;ST.sel={};render();};
+  window.vrSel=(id,v)=>{ST.sel[id]=v;const n=Object.values(ST.sel).filter(Boolean).length;const b=$('vrBulkGo');if(b)b.textContent='تأكيد إقرار صفري لـ '+n;};
+
+  function render(){
+    let opts='';const base=prevYm();
+    for(let i=0,m=base;i<14;i++){opts+='<option value="'+m+'">'+ymLbl(m)+'</option>';m=m%100===1?(Math.floor(m/100)-1)*100+12:m-1;}
+    $('vrMonth').innerHTML=opts; $('vrMonth').value=String(ST.ym);
+    const R=ST.rows, cnt={todo:0,pay:0,done:0}; R.forEach(r=>cnt[stateOf(r.d)]++);
+    const chip=(f,t,n)=>'<button class="act btn-small '+(ST.filter===f?'btn-primary':'btn-ghost')+'" onclick="vrFilter(\''+f+'\')">'+t+' ('+n+')</button>';
+    let h='<div class="vr-sum"><b>'+(cnt.todo?'متبقي '+cnt.todo+' من '+R.length+' إقرار':(R.length?'✅ كل الإقرارات اتقدمت':'مفيش عملاء'))+'</b>'+(ST.skipped?'<span>'+ST.skipped+' عميل ربع سنوي مش مطلوب منهم الشهر ده</span>':'')+'</div>';
+    h+='<div class="vr-chips">'+chip('all','الكل',R.length)+chip('todo','لسه',cnt.todo)+chip('pay','عليه سداد',cnt.pay)+chip('done','خلص',cnt.done)+'</div>';
+    h+='<div class="row-actions" style="margin:8px 0;"><button class="act btn-ghost btn-small" onclick="vrBulk()">'+(ST.bulk?'✖ إلغاء التحديد':'☑ إقرار صفري لمجموعة')+'</button></div>';
+    const L=R.filter(r=>ST.filter==='all'||stateOf(r.d)===ST.filter);
+    if(!L.length) h+='<p class="empty">مفيش عملاء في الفلتر ده</p>';
+    L.forEach(r=>{
+      const s=stateOf(r.d), d=r.d||{};
+      let sub=TXT[s]; if(d.filed&&d.zero) sub+=' · صفري'; if(s==='pay'&&d.pay==='due') sub+=' · '+money(d.amount)+' ج'; if(d.hasReceipt) sub+=' · 📎';
+      h+='<div class="vr-row vr-'+s+'">'+(ST.bulk&&s==='todo'?'<input type="checkbox" onchange="vrSel(\''+r.c.id+'\',this.checked)" '+(ST.sel[r.c.id]?'checked':'')+'>':'')
+        +'<div class="vr-main" onclick="vrEdit(\''+r.c.id+'\')"><div class="vr-nm">'+esc(r.c.name)+(freqOf(r.c)==='q'?' <i>ربع سنوي</i>':'')+'</div><div class="vr-st">'+sub+'</div></div>'
+        +(!ST.bulk&&s==='todo'?'<button class="act btn-ghost btn-small" onclick="vrZero(\''+r.c.id+'\')">صفري ✓</button>':'')+'</div>';
+    });
+    if(ST.bulk) h+='<button class="act btn-primary" id="vrBulkGo" style="width:100%;margin-top:10px;" onclick="vrBulkGo()">تأكيد إقرار صفري لـ 0</button>';
+    $('vrBody').innerHTML=h;
+  }
+  const zeroDoc=(cid)=>({cid,ym:ST.ym,filed:true,zero:true,filedAt:today(),filedBy:who(),pay:'none',updatedAt:Date.now(),updatedBy:who()});
+  window.vrZero=async function(cid){
+    try{ await col(cid).doc(String(ST.ym)).set(zeroDoc(cid),{merge:true}); const r=ST.rows.find(x=>x.c.id===cid); r.d=Object.assign({},r.d,zeroDoc(cid)); ST.homeAt=0; render(); }
+    catch(e){ alert('تعذّر الحفظ: '+(e&&e.message||'')); }
+  };
+  window.vrBulkGo=async function(){
+    const ids=Object.keys(ST.sel).filter(k=>ST.sel[k]); if(!ids.length) return alert('اختار عميل واحد على الأقل');
+    if(!confirm('تسجيل إقرار صفري لـ '+ids.length+' عميل عن '+ymLbl(ST.ym)+'؟')) return;
+    try{ const b=db.batch(); ids.forEach(id=>b.set(col(id).doc(String(ST.ym)),zeroDoc(id),{merge:true})); await b.commit(); ST.bulk=false; ST.sel={}; ST.homeAt=0; vrLoad(); }
+    catch(e){ alert('تعذّر الحفظ: '+(e&&e.message||'')); }
+  };
+
+  /* ---------- نافذة تفاصيل الإقرار ---------- */
+  let M=null;
+  window.vrEdit=async function(cid){
+    const r=ST.rows.find(x=>x.c.id===cid); if(!r) return;
+    const d=r.d||{}; M={cid,c:r.c,filed:!!d.filed,zero:!!d.zero,filedAt:d.filedAt||today(),filedNo:d.filedNo||'',pay:d.pay||'',amount:d.amount||'',paidAt:d.paidAt||today(),has:!!d.hasReceipt,rname:d.receiptName||'',newR:null,delR:false,hint:''};
+    mdl(); 
+    if(freqOf(r.c)==='m'){ try{ const s=await officeClientsCol().doc(cid).collection('einvoices').doc(String(ST.ym)).get(); if(s.exists&&M){ const n=Number(s.data().net); if(n>0){ M.hint='من الشيت: مستحق سداد '+money(n)+' ج'; mdl(); } } }catch(e){} }
+  };
+  const seg=(k,vals)=>'<div class="vr-seg">'+vals.map(v=>'<button type="button" class="'+(v[2]?'on':'')+'" onclick="vrSet(\''+k+'\',\''+v[0]+'\')">'+v[1]+'</button>').join('')+'</div>';
+  window.vrSet=(k,v)=>{
+    if(k==='st'){ M.filed=v!=='todo'; M.zero=v==='zero'; if(M.zero) M.pay='none'; }
+    else if(k==='pay') M.pay=v;
+    else if(k==='freq'){ officeClientsCol().doc(M.cid).update({vatFreq:v}).then(()=>{M.c.vatFreq=v; mdl(); vrLoad();}).catch(e=>alert('تعذّر الحفظ')); return; }
+    keep(); mdl();
+  };
+  function keep(){ ['vrFiledAt','vrFiledNo','vrAmount','vrPaidAt'].forEach(id=>{const e=$(id); if(!e) return; if(id==='vrFiledAt')M.filedAt=e.value; if(id==='vrFiledNo')M.filedNo=e.value; if(id==='vrAmount')M.amount=e.value; if(id==='vrPaidAt')M.paidAt=e.value;}); }
+  function mdl(){
+    let o=$('vrModal'); if(!o){ o=document.createElement('div'); o.id='vrModal'; o.className='vr-ov'; document.body.appendChild(o); }
+    const f=freqOf(M.c), st=!M.filed?'todo':(M.zero?'zero':'filed');
+    let h='<div class="vr-box"><h3 style="margin:0 0 4px;">'+esc(M.c.name)+'</h3><div style="font-size:12.5px;color:var(--navy-dim);margin-bottom:10px;">إقرار '+perLbl(M.c,ST.ym)+'</div>';
+    h+='<label class="vr-l">دورية الإقرار</label>'+seg('freq',[['m','شهري',f==='m'],['q','ربع سنوي',f==='q']]);
+    h+='<label class="vr-l">الإقرار</label>'+seg('st',[['todo','لسه',st==='todo'],['filed','تم التقديم',st==='filed'],['zero','إقرار صفري',st==='zero']]);
+    if(M.filed){ h+='<div class="vr-two"><div><label class="vr-l">تاريخ التقديم</label><input type="date" id="vrFiledAt" value="'+esc(M.filedAt)+'"></div><div><label class="vr-l">رقم الإقرار (اختياري)</label><input type="text" id="vrFiledNo" value="'+esc(M.filedNo)+'"></div></div>'; }
+    if(M.filed&&!M.zero){
+      h+='<label class="vr-l">السداد</label>'+seg('pay',[['none','لا يوجد سداد',M.pay==='none'],['due','مطلوب سداد',M.pay==='due'],['paid','تم السداد',M.pay==='paid']]);
+      if(M.hint) h+='<div style="font-size:12px;color:var(--navy);margin-top:6px;">'+esc(M.hint)+'</div>';
+      if(M.pay==='due'||M.pay==='paid') h+='<div class="vr-two"><div><label class="vr-l">المبلغ (ج.م)</label><input type="number" id="vrAmount" value="'+esc(M.amount)+'"></div>'+(M.pay==='paid'?'<div><label class="vr-l">تاريخ السداد</label><input type="date" id="vrPaidAt" value="'+esc(M.paidAt)+'"></div>':'')+'</div>';
+    }
+    if(M.filed){
+      const has=(M.has&&!M.delR)||M.newR;
+      h+='<label class="vr-l">إيصال السداد / إيصال التقديم</label>';
+      if(has) h+='<div class="vr-rc">📎 '+esc(M.newR?M.newR.name:M.rname||'إيصال')+' <button class="act btn-ghost btn-small" onclick="vrView()">عرض</button> <button class="act btn-ghost btn-small" onclick="vrShare()">مشاركة</button> <button class="act btn-danger btn-small" onclick="vrDelR()">حذف</button></div>';
+      h+='<input type="file" accept="image/*,application/pdf" onchange="vrPick(this)"><div id="vrRMsg" style="font-size:12px;opacity:.8;margin-top:4px;"></div>';
+    }
+    h+='<div class="row-actions" style="margin-top:14px;"><button class="act btn-primary" id="vrSave" onclick="vrSave()">حفظ</button><button class="act btn-ghost" onclick="vrClose()">إلغاء</button></div></div>';
+    o.innerHTML=h; o.style.display='flex';
+  }
+  window.vrClose=()=>{const o=$('vrModal'); if(o) o.style.display='none'; M=null;};
+  window.vrDelR=()=>{ if(!confirm('حذف الإيصال؟')) return; keep(); M.newR=null; M.delR=true; mdl(); };
+  window.vrPick=async function(inp){
+    const f=inp.files&&inp.files[0]; if(!f) return; const msg=$('vrRMsg'); keep();
+    try{
+      let data;
+      if(f.type==='application/pdf'){ if(f.size>700*1024){ msg.textContent='ملف الـ PDF كبير (أكتر من 700 ك.ب). صوّر الإيصال كصورة بدل كده.'; inp.value=''; return; } data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f);}); }
+      else{ data=await shrink(f); }
+      M.newR={data,name:f.name||'إيصال'}; M.delR=false; mdl();
+    }catch(e){ msg.textContent='تعذّر قراءة الملف'; }
+  };
+  function shrink(f){ return new Promise((ok,no)=>{ const img=new Image(), u=URL.createObjectURL(f); img.onload=()=>{ const k=Math.min(1,1400/Math.max(img.width,img.height)), c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg',.72)); }; img.onerror=no; img.src=u; }); }
+  async function getR(){ if(M.newR) return M.newR; const s=await col(M.cid).doc(String(ST.ym)).collection('files').doc('receipt').get(); if(!s.exists) throw new Error('مفيش إيصال'); return s.data(); }
+  const toBlob=u=>{ const p=u.split(','), mime=p[0].match(/:(.*?);/)[1], b=atob(p[1]), a=new Uint8Array(b.length); for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i); return new Blob([a],{type:mime}); };
+  window.vrView=async function(){
+    try{ const r=await getR(), bl=toBlob(r.data), url=URL.createObjectURL(bl);
+      const v=document.createElement('div'); v.className='vr-ov'; v.style.zIndex=10001; v.onclick=()=>v.remove();
+      v.innerHTML=bl.type==='application/pdf'?'<div class="vr-box" style="text-align:center;"><a class="act btn-primary" href="'+url+'" target="_blank" rel="noopener">فتح ملف PDF</a></div>':'<img src="'+url+'" style="max-width:96%;max-height:92%;border-radius:10px;background:#fff;">';
+      v.style.display='flex'; document.body.appendChild(v);
+    }catch(e){ alert('تعذّر فتح الإيصال'); }
+  };
+  window.vrShare=async function(){
+    try{ const r=await getR(), bl=toBlob(r.data), ext=bl.type==='application/pdf'?'pdf':'jpg', file=new File([bl],'ايصال-'+M.c.name+'-'+ST.ym+'.'+ext,{type:bl.type});
+      if(navigator.canShare&&navigator.canShare({files:[file]})) await navigator.share({files:[file],title:'إيصال '+M.c.name});
+      else window.vrView();
+    }catch(e){}
+  };
+  window.vrSave=async function(){
+    keep(); const btn=$('vrSave'); btn.disabled=true; btn.textContent='جاري الحفظ...';
+    const m=M, k=col(m.cid), ref=k.doc(String(ST.ym));
+    if(m.filed&&!m.zero&&m.pay==='paid'&&!(Number(m.amount)>0)&&!confirm('مفيش مبلغ مكتوب للسداد. تكمّل؟')){ btn.disabled=false; btn.textContent='حفظ'; return; }
+    const doc={cid:m.cid,ym:ST.ym,filed:m.filed,zero:m.filed&&m.zero,filedAt:m.filed?m.filedAt:'',filedNo:m.filed?m.filedNo:'',filedBy:m.filed?who():'',
+      pay:m.filed?(m.zero?'none':m.pay):'',amount:(m.pay==='due'||m.pay==='paid')&&!m.zero?Number(m.amount)||0:0,paidAt:m.pay==='paid'&&!m.zero?m.paidAt:'',
+      hasReceipt:m.filed&&((m.has&&!m.delR)||!!m.newR),receiptName:m.newR?m.newR.name:(m.has&&!m.delR?m.rname:''),updatedAt:Date.now(),updatedBy:who()};
+    try{
+      if(m.newR){ if(m.newR.data.length>900000) throw new Error('الملف كبير، صوّره بجودة أقل'); await ref.collection('files').doc('receipt').set(m.newR); }
+      else if((m.delR||!m.filed)&&m.has){ await ref.collection('files').doc('receipt').delete(); doc.hasReceipt=false; doc.receiptName=''; }
+      await ref.set(doc);
+      const r=ST.rows.find(x=>x.c.id===m.cid); if(r) r.d=doc; ST.homeAt=0; vrClose(); render();
+    }catch(e){ alert('تعذّر الحفظ: '+(e&&e.message||'')); btn.disabled=false; btn.textContent='حفظ'; }
+  };
+
+  /* ---------- تنبيه الرئيسية (من يوم 20) ---------- */
+  window.vrHomeBanner=async function(){
+    const box=$('vrHomeBox'); if(!box) return;
+    if(new Date().getDate()<20||!officeClientsCol()||!loadClients().length){ box.innerHTML=''; return; }
+    const ym=prevYm();
+    if(Date.now()-ST.homeAt>600000){ ST.homeAt=Date.now(); try{ const r=await fetchAll(ym); ST.homeN=r.rows.filter(x=>stateOf(x.d)==='todo').length; }catch(e){ return; } }
+    box.innerHTML=ST.homeN?'<div class="vr-home" onclick="activateTab(\'clients\');ST_vrGo()">⚠ عليك '+ST.homeN+' إقرارات لسه ما اتقدّمتش عن '+ymLbl(ym)+' — اضغط للفتح</div>':'';
+  };
+  window.ST_vrGo=()=>{ ST.ym=prevYm(); vrOpen(); };
 })();
 </script>
 </body>
