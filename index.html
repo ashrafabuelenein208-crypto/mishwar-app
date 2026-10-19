@@ -1285,6 +1285,20 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
           <button class="act btn-ghost btn-small" id="finDelAll" onclick="finDelAll()">🗑 حذف جميع الشهور</button>
         </div>
         <div id="finMsg" style="font-size:12.5px;opacity:.85;margin-bottom:8px;"></div>
+        <div id="finCsvBox" class="fin-sec" style="display:none;margin-top:12px;">
+          <div style="padding:13px 16px;">
+            <div style="font-weight:900;font-size:14.5px;margin-bottom:4px;">📤 تصدير CSV لرفع المبيعات / المشتريات للضرائب</div>
+            <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار الشهر والنوع والمنظومة، والملف ينزل CSV جاهز بنفس ترتيب أعمدة القالب.</div>
+            <div class="fin-bar">
+              <div class="field"><label>الشهر</label><select id="csvMonth"></select></div>
+              <div class="field"><label>النوع</label><select id="csvKind"><option value="sale">مبيعات</option><option value="buy">مشتريات</option></select></div>
+              <div class="field"><label>المنظومة</label><select id="csvSys"><option value="new">جديدة</option><option value="old">قديمة</option></select></div>
+              <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;"><input type="checkbox" id="csvHdr" checked> تضمين صفّي العناوين (عربي + إنجليزي)</label>
+              <button class="act btn-primary btn-small" onclick="finExportTaxCsv()">⬇️ تصدير CSV</button>
+            </div>
+            <div id="csvMsg" style="font-size:12.5px;opacity:.9;"></div>
+          </div>
+        </div>
         <div id="finDash"></div>
       </section>
       <div id="finOverviewBox" style="display:none;">
@@ -6435,9 +6449,10 @@ populateClientHelpers();
     if(FM&&!ms.includes(FM)) FM=0;
     $('finMonth').innerHTML='<option value="0">'+(FY?'كل شهور '+FY:'كل الشهور')+'</option>'+ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
     $('finMonth').value=String(FM);
+    renderCsvBox();
   }
   window.finYearChanged=()=>{ FY=Number($('finYear').value); FM=0; DETF='all'; ENTER=true; renderFilters(); renderDash(); };
-  window.finMonthChanged=()=>{ FM=Number($('finMonth').value); DETF='all'; ENTER=true; renderDash(); };
+  window.finMonthChanged=()=>{ FM=Number($('finMonth').value); DETF='all'; ENTER=true; renderDash(); renderCsvBox(); };
   window.finPick=m=>{ FM=m; FY=yOf(m); DETF='all'; ENTER=true; renderFilters(); renderDash(); const f=$('finFilterBar'); if(f&&f.scrollIntoView) f.scrollIntoView({behavior:'smooth',block:'start'}); };
 
   /* ---------- الداش بورد ---------- */
@@ -6648,6 +6663,61 @@ populateClientHelpers();
       const n=L.length; PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre();
       FY=0; FM=0; await loadSaved(); say('تم الحفظ في الموقف الضريبي ('+n+' شهر).');
     }catch(e){ console.error(e); preSay('تعذّر الحفظ: '+(e&&e.message?e.message:'غير معروف')); btn.disabled=false; }
+  };
+
+  /* ================= تصدير CSV لرفع المبيعات/المشتريات للضرائب (منظومة جديدة / قديمة) ================= */
+  const CSV_HEADERS={"purNew": [["نوع المستند *", "نوع الضريبة *", "نوع سلع الجدول *", "رقم الفاتورة *", "اسم المورد *", "رقم التسجيل الضريبي للمورد", "رقم الملف الضريبي للمورد", "العنوان *", "الرقم القومي / رقم جواز السفر", "رقم الموبيل", "تاريخ الفاتورة *", "إسم المنتج *", "كود المنتج", "نوع البيان *", "نوع السلعة *", "وحدة قياس المنتج", "سعر الوحدة *", "فئة الضريبة *", "كمية المنتج *", "المبلغ الإجمالي *", "قيمة الخصم", "المبلغ الصافي *", "قيمة الضريبة *", "الإجمالي *"], ["DOC_TYP_P", "TAX_TYP", "TYP_SCH", "INVNUM", "CUST_NAME", "CUST_REG_NO", "CUST_FILE_NO", "ADDRESS", "ID", "PHONE", "DOC_TIN_NUM", "PROD_NAME", "PROD_CODE", "STAT_TYPE_P", "COMM_TYPE_P", "PMU", "UNITP", "TAX_CAT", "QOP", "TAMMOUNT", "DISC", "NET_AMM", "TAX_VAL", "TOTAL"]], "salesNew": [["نوع المستند *", "نوع الضريبة *", "نوع سلع الجدول *", "رقم الفاتورة *", "اسم العميل *", "رقم التسجيل الضريبي للعميل *", "رقم الملف الضريبي للعميل", "العنوان *", "الرقم القومي / رقم جواز السفر", "رقم الموبيل", "تاريخ الفاتورة *", "إسم المنتج *", "كود المنتج", "نوع البيان *", "نوع السلعة *", "وحدة قياس المنتج", "سعر الوحدة *", "فئة الضريبة *", "كمية المنتج *", "المبلغ الإجمالي *", "قيمة الخصم", "المبلغ الصافي *", "قيمة الضريبة *", "الإجمالي *"], ["DOC_TYP_S", "TAX_TYP", "TYP_SCH", "INVNUM", "CUST_NAME", "CUST_REG_NO", "CUST_FILE_NO", "ADDRESS", "ID", "PHONE", "DOC_TIN_NUM", "PROD_NAME", "PROD_CODE", "STAT_TYPE_S", "COMM_TYPE_S", "PMU", "UNITP", "TAX_CAT", "QOP", "TAMMOUNT", "DISC", "NET_AMM", "TAX_VAL", "TOTAL"]], "salesOld": [["نوع المستند (فاتورة 1/ إشعار إضافة 2/إشعار خصم 3/مستهلك نهائي محلي 5/جهة-حكومة 6/مستهلك نهائي أجنبي 7)", "نوع الضريبة (سلع عامة 1/سلع جدول 2)", "نوع سلع الجدول (لايوجد 0/جدول أولا 1/جدول ثانيا 2)", "رقم الفاتورة", "اسم العميل", "رقم التسجيل الضريبي للعميل", "رقم الملف الضريبي للعميل", "العنوان", "الرقم القومي / رقم جواز السفر", "رقم الموبيل", "تاريخ الفاتورة", "إسم المنتج", "كود المنتج", "نوع البيان (سلعة 3/خدمة 4/تسويات 5)", "نوع السلعة (محلي 1/صادرات 2/آلات ومعدات 5/أجزاء آلات 6/إعفاءات 7 /  سلع الجدول  مراجعة الإرشادات ) ", "وحدة قياس المنتج", "سعر الوحدة", "فئة الضريبة (14%/5%)", "كمية المنتج", "المبلغ الصافي", "قيمة الضريبة", "إجمالي"], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]], "purOld": [["نوع المستند (فاتورة 1/ إشعار إضافة 2/إشعار خصم 3/إذن إفراج 4)", "نوع الضريبة (سلع عامة 1/سلع جدول 2)", "نوع سلع الجدول (لايوجد 0/جدول أولا 1/جدول ثانيا 2)", "رقم الفاتورة", "اسم المورد", "رقم التسجيل الضريبي للعميل", "رقم الملف الضريبي للعميل", "العنوان", "الرقم القومي", "رقم الموبيل", "تاريخ الفاتورة", "إسم المنتج", "كود المنتج", "نوع البيان (محلي 1/مستورد 2/تسويات 5)", "نوع السلعة (سلع 3/خدمات 4/آلات ومعدات 5/أجزاء آلات 6/إعفاءات 7)", "وحدة قياس المنتج", "سعر الوحدة", "فئة الضريبة (14%/5%)", "كمية المنتج", "المبلغ الصافي", "قيمة الضريبة", "إجمالي"], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]};
+  const CSV_CFG={ city:'القاهرة', rate:0.14, dateFmt:'dd/mm/yyyy' }; /* تنسيق التاريخ: dd/mm/yyyy أو yyyy-mm-dd */
+  const csvDate=d=>{ if(!d||isNaN(d)) return ''; const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), dd=String(d.getUTCDate()).padStart(2,'0'); return CSV_CFG.dateFmt==='yyyy-mm-dd'?y+'-'+m+'-'+dd:dd+'/'+m+'/'+y; };
+  const isDebit=t=>{ const x=nz(t); return x.includes('اشعار مدين')||x.includes('اشعار اضافه')||x.includes('debit'); };
+  const f2=n=>(Math.round(Math.abs(num(n))*100)/100).toFixed(2);
+  const csvCell=v=>{ const s=v==null?'':String(v); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  /* يبني صفوف الـCSV (من غير العناوين). kind: sale|buy ، sys: new|old */
+  function buildTaxCsvRows(rows,tax,kind,sys){
+    const R=calc(rows,tax,CSV_CFG.rate,0).rows.filter(r=>r.kind===kind);
+    R.sort((a,b)=>(a.date-b.date)||String(a.num).localeCompare(String(b.num),'en',{numeric:true}));
+    return R.map((r,i)=>{
+      const cn=isCredit(r.type), dn=!cn&&isDebit(r.type);
+      const base=cn?3:(dn?2:1);                                   /* 1 فاتورة / 2 إشعار مدين / 3 إشعار دائن */
+      const name=kind==='sale'?r.bName:r.sName, cTax=kind==='sale'?r.bTax:r.sTax;
+      const hasTax=digits(cTax)!=='';
+      const docType=hasTax?base:5;                                /* مفيش رقم تسجيل ضريبي = 5 */
+      const stat=base===1?3:5;                                    /* نوع البيان */
+      const exempt=r.flag==='exempt';
+      const comm=exempt?7:3;                                      /* نوع السلعة: 3 خاضعة 14% ، 7 معفاة */
+      const val=f2(r.val), vat=exempt?'0.00':f2(r.vat), tot=f2(Math.abs(num(r.val))+(exempt?0:Math.abs(num(r.vat))));
+      const rate=exempt?'0':String(CSV_CFG.rate);
+      const head=[docType,1,0,(r.num!==''&&r.num!=null)?r.num:String(i+1),name,hasTax?String(cTax).trim():'','',CSV_CFG.city,'','',csvDate(r.date),kind==='sale'?'مبيعات':'مشتريات','',stat,comm,'',val,rate,1];
+      return sys==='new'?head.concat([val,'0.00',val,vat,tot]):head.concat([val,vat,tot]);
+    });
+  }
+  function renderCsvBox(){
+    const box=$('finCsvBox'); if(!box) return;
+    if(!SAVED.length){ box.style.display='none'; return; }
+    box.style.display='';
+    const sel=$('csvMonth'), keep=Number(sel.value)||0;
+    const ms=SAVED.map(d=>d.ym).sort((a,b)=>b-a);
+    sel.innerHTML=ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
+    sel.value=String(ms.includes(FM)?FM:(ms.includes(keep)?keep:ms[0]));
+  }
+  window.finExportTaxCsv=async function(){
+    const msg=$('csvMsg'); msg.textContent='';
+    const m=Number($('csvMonth').value), kind=$('csvKind').value, sys=$('csvSys').value, withHdr=$('csvHdr').checked;
+    const d=SAVED.find(x=>x.ym===m); if(!d){ msg.textContent='اختار شهر محفوظ.'; return; }
+    msg.textContent='جاري التجهيز...';
+    try{
+      const rows=await fetchRows(CID,m); DET[m]=rows;
+      const out=buildTaxCsvRows(rows,d.taxId,kind,sys);
+      if(!out.length){ msg.textContent='مفيش فواتير '+(kind==='sale'?'مبيعات':'مشتريات')+' في '+ymLbl(m)+'.'; return; }
+      const H=CSV_HEADERS[(kind==='sale'?'sales':'pur')+(sys==='new'?'New':'Old')];
+      const lines=(withHdr?H:[]).concat(out).map(r=>r.map(csvCell).join(','));
+      const blob=new Blob(['\ufeff'+lines.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download=(kind==='sale'?'مبيعات':'مشتريات')+'_'+(sys==='new'?'منظومة_جديدة':'منظومة_قديمة')+'_'+CNAME+'_'+m+'.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+      const ex=out.filter(r=>r[14]===7).length, nt=out.filter(r=>r[0]===5).length;
+      msg.textContent='✅ تم تصدير '+out.length+' صف'+(ex?' — منها '+ex+' معفاة':'')+(nt?' — '+nt+' بدون رقم ضريبي (نوع المستند 5)':'')+'.';
+    }catch(e){ console.error(e); msg.textContent='تعذّر التصدير: '+(e&&e.message?e.message:''); }
   };
 
   /* ---------- التصدير ---------- */
