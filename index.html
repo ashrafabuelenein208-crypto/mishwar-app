@@ -7190,7 +7190,7 @@ populateClientHelpers();
   let M=null;
   window.vrEdit=function(cid){
     const r=ST.rows.find(x=>x.c.id===cid); if(!r) return;
-    const d=r.d||{}; M={cid,c:r.c,filed:!!d.filed,filedAt:d.filedAt||today(),filedNo:d.filedNo||'',pay:d.pay||'',amount:d.amount||'',paidAt:d.paidAt||today(),has:!!d.hasReceipt,rname:d.receiptName||'',newR:null,delR:false};
+    const d=r.d||{}; M={cid,c:r.c,exists:!!r.d,filed:!!d.filed,filedAt:d.filedAt||today(),filedNo:d.filedNo||'',pay:d.pay||'',amount:d.amount||'',paidAt:d.paidAt||today(),has:!!d.hasReceipt,rname:d.receiptName||'',newR:null,delR:false};
     mdl();
   };
   const seg=(k,vals)=>'<div class="vr-seg">'+vals.map(v=>'<button type="button" class="'+(v[2]?'on ':'')+(v[3]||'')+'" onclick="vrSet(\''+k+'\',\''+v[0]+'\')">'+v[1]+'</button>').join('')+'</div>';
@@ -7216,9 +7216,19 @@ populateClientHelpers();
       h+='<input type="file" accept="image/*,application/pdf" onchange="vrPick(this)"><div id="vrRMsg" style="font-size:12px;opacity:.8;margin-top:4px;"></div>';
     }
     h+='<label class="vr-l">دورية تقديم الإقرار</label>'+seg('freq',[['m','شهري',f==='m'],['q','ربع سنوي',f==='q'],['n','لا يُقدَّم',f==='n']]);
-    h+='<div class="row-actions" style="margin-top:14px;"><button class="act btn-primary" id="vrSave" onclick="vrSave()">حفظ</button><button class="act btn-ghost" onclick="vrClose()">إلغاء</button></div></div>';
+    h+='<div class="row-actions" style="margin-top:14px;"><button class="act btn-primary" id="vrSave" onclick="vrSave()">حفظ</button><button class="act btn-ghost" onclick="vrClose()">إلغاء</button>'+(M.exists?'<button class="act btn-danger" onclick="vrDel()">🗑 حذف الإقرار</button>':'')+'</div></div>';
     o.innerHTML=h; o.style.display='flex';
   }
+  window.vrDel=async function(){
+    if(!M||!confirm('حذف إقرار '+perLbl(M.c,ST.ym)+' الخاص بـ '+M.c.name+' نهائيا، مع الإيصال المرفق؟')) return;
+    const m=M, ref=col(m.cid).doc(String(ST.ym));
+    try{
+      try{ await ref.collection('files').doc('receipt').delete(); }catch(e){}
+      await ref.delete();
+      const r=ST.rows.find(x=>x.c.id===m.cid); if(r) r.d=null;
+      ST.homeAt=0; vrClose(); render();
+    }catch(e){ alert('تعذّر الحذف: '+(e&&e.message||'')); }
+  };
   window.vrClose=()=>{const o=$('vrModal'); if(o) o.style.display='none'; M=null;};
   window.vrDelR=()=>{ if(!confirm('حذف الإيصال؟')) return; keep(); M.newR=null; M.delR=true; mdl(); };
   window.vrPick=async function(inp){
