@@ -1271,11 +1271,13 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
           <button type="button" class="landing-cat-btn" id="vrCatC" onclick="vrCat('شركات')">شركات</button>
           <button type="button" class="landing-cat-btn" id="vrCatI" onclick="vrCat('فردي')">فردي</button>
         </div>
+        <div class="vr-pdf" style="margin-top:16px;justify-content:center;"><select id="vrMonth2" onchange="vrMonth2()"></select><button class="act btn-primary btn-small vr-pdfbtn" onclick="vrPdf('')">⬇️ تنزيل تقرير PDF (شركات + فردي)</button></div>
       </div>
       <div id="vrList" style="display:none;">
         <div class="row-actions" style="margin-bottom:8px;"><button class="act btn-ghost btn-small" onclick="vrChoose()">‹ رجوع</button></div>
         <h2 id="vrTitle" style="text-align:center;"></h2>
         <section>
+          <div class="vr-pdf"><button class="act btn-primary btn-small vr-pdfbtn" onclick="vrPdfCur()">⬇️ تنزيل تقرير PDF</button></div>
           <div class="vr-add"><input type="text" id="vrAddName" placeholder="اسم العميل الجديد"><select id="vrAddFreq"><option value="m">شهري</option><option value="q">ربع سنوي</option></select><button class="act btn-primary btn-small" onclick="vrAdd()">➕ إضافة</button></div>
           <div class="field"><label>الفترة</label><select id="vrMonth" onchange="vrMonth()"></select></div>
           <div id="vrBody"></div>
@@ -7000,6 +7002,10 @@ populateClientHelpers();
 .vr-p-todo{background:var(--red)}.vr-p-done{background:var(--green)}.vr-p-due{background:#6d4adf}.vr-p-paid{background:#0b7ea8}
 .vr-p-none,.vr-p-unset{background:transparent;color:var(--navy-dim);border:1px solid var(--line)}
 .vr-chev{color:var(--navy-dim);font-size:22px}
+.vr-fq{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;padding:6px 8px;border-radius:12px;color:#fff;line-height:1.25}
+.vr-fq small{font-size:10px;opacity:.85}.vr-fq b{font-size:13px}
+.vr-fq.fq-m{background:var(--navy)}.vr-fq.fq-q{background:#0f9d9a}
+.vr-pdf{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.vr-pdf select{width:auto}
 .vr-ex{margin-top:14px;font-size:13px}.vr-ex summary{cursor:pointer;color:var(--navy-dim);font-weight:700}.vr-exr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .vr-add{display:flex;gap:6px;margin-bottom:10px}.vr-add input{flex:1;min-width:0}.vr-add select{width:auto}
 .vr-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:none;align-items:center;justify-content:center;padding:12px}
@@ -7048,6 +7054,7 @@ populateClientHelpers();
     ST.cat=''; ST.tok++;
     $('vrChoose').style.display='block'; $('vrList').style.display='none';
     const cs=loadClients().filter(c=>c.category!=='غير مسجل'&&freqOf(c)!=='n');
+    { let o=''; for(let i=0,m=prevYm();i<14;i++){ o+='<option value="'+m+'">'+ymLbl(m)+'</option>'; m=m%100===1?(Math.floor(m/100)-1)*100+12:m-1; } $('vrMonth2').innerHTML=o; $('vrMonth2').value=String(ST.ym); }
     $('vrCatC').textContent='شركات ('+cs.filter(c=>c.category==='شركات').length+')';
     $('vrCatI').textContent='فردي ('+cs.filter(c=>c.category==='فردي').length+')';
   };
@@ -7094,8 +7101,8 @@ populateClientHelpers();
     if(!L.length) h+='<p class="empty">لا يوجد عملاء في هذا التصنيف</p>';
     L.forEach(r=>{
       const s=stateOf(r.d), d=r.d||{};
-      h+='<div class="vr-row vr-'+s+'" onclick="vrEdit(\''+r.c.id+'\')"><div class="vr-ic">'+(s==='done'?'✓':'✕')+'</div><div class="vr-main"><div class="vr-nm">'+esc(r.c.name)+(freqOf(r.c)==='q'?' <i>ربع سنوي</i>':'')+'</div><div class="vr-pills">'
-        +(s==='done'?'<span class="vr-p vr-p-done">تم التقديم</span>'+payPill(d):'<span class="vr-p vr-p-todo">لم يتم التقديم</span>')+(d.hasReceipt?'<span class="vr-p vr-p-none">📎 إيصال</span>':'')+'</div></div><div class="vr-chev">‹</div></div>';
+      h+='<div class="vr-row vr-'+s+'" onclick="vrEdit(\''+r.c.id+'\')"><div class="vr-ic">'+(s==='done'?'✓':'✕')+'</div><div class="vr-main"><div class="vr-nm">'+esc(r.c.name)+'</div><div class="vr-pills">'
+        +(s==='done'?'<span class="vr-p vr-p-done">تم التقديم</span>'+payPill(d):'<span class="vr-p vr-p-todo">لم يتم التقديم</span>')+(d.hasReceipt?'<span class="vr-p vr-p-none">📎 إيصال</span>':'')+'</div></div><div class="vr-fq fq-'+freqOf(r.c)+'"><small>الدورية</small><b>'+(freqOf(r.c)==='q'?'ربع سنوي':'شهري')+'</b></div><div class="vr-chev">‹</div></div>';
     });
     if(ST.excl&&ST.excl.length) h+='<details class="vr-ex"><summary>عملاء لا يُقدَّم لهم إقرار ('+ST.excl.length+')</summary>'+ST.excl.map(c=>'<div class="vr-exr"><span>'+esc(c.name)+'</span><button class="act btn-ghost btn-small" onclick="vrReenable(\''+c.id+'\')">إعادة التفعيل</button></div>').join('')+'</details>';
     $('vrBody').innerHTML=h;
@@ -7103,6 +7110,72 @@ populateClientHelpers();
   window.vrReenable=function(cid){
     const c=loadClients().find(x=>x.id===cid), v=c&&c.category==='فردي'?'q':'m';
     officeClientsCol().doc(cid).update({vatFreq:v}).then(()=>{ if(c) c.vatFreq=v; ST.homeAt=0; vrLoad(); }).catch(()=>alert('تعذّر الحفظ'));
+  };
+
+  /* ---------- تقرير PDF ---------- */
+  const libC={};
+  const lib=u=>libC[u]||(libC[u]=new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=u; s.onload=ok; s.onerror=()=>{ delete libC[u]; no(new Error('تعذّر تحميل مكتبة PDF، تأكد من الاتصال بالإنترنت')); }; document.head.appendChild(s); }));
+  window.vrPdfCur=()=>vrPdf(ST.cat);
+  window.vrMonth2=()=>{ ST.ym=Number($('vrMonth2').value); };
+  window.vrPdf=async function(scope){
+    const btns=[...document.querySelectorAll('.vr-pdfbtn')];
+    btns.forEach(b=>{ b.disabled=true; b.dataset.t=b.textContent; b.textContent='جاري تجهيز التقرير...'; });
+    const host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;';
+    try{
+      if(!window.html2canvas) await lib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      if(!window.jspdf) await lib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      const cats=scope?[scope]:['شركات','فردي'], groups=[]; let skipped=0;
+      for(const cat of cats){
+        const r=await fetchAll(ST.ym,cat); skipped+=r.skipped;
+        const rows=r.rows.map(x=>{ const d=x.d||{}, f=!!d.filed; return {n:x.c.name,fq:freqOf(x.c)==='q'?'ربع سنوي':'شهري',f,at:f?(d.filedAt||''):'',pay:f?(d.pay||''):'',amt:Number(d.amount)||0,g:!f?0:(d.pay==='due'?1:(d.pay==='paid'?2:3))}; })
+          .sort((a,b)=>a.g-b.g||String(a.n).localeCompare(String(b.n),'ar'));
+        groups.push({cat,rows});
+      }
+      const all=groups.reduce((a,g)=>a.concat(g.rows),[]);
+      if(!all.length){ alert('لا يوجد عملاء لعرضهم في التقرير'); return; }
+      const nDone=all.filter(r=>r.f).length, nTodo=all.length-nDone, due=all.filter(r=>r.pay==='due'), paid=all.filter(r=>r.pay==='paid');
+      const sum=a=>a.reduce((t,r)=>t+r.amt,0);
+      const items=[]; groups.forEach(g=>{ if(!g.rows.length) return; items.push({t:'cat',cat:g.cat,n:g.rows.length}); g.rows.forEach((r,i)=>items.push({t:'row',r,i:i+1})); });
+      const pages=[]; let cur=[], cap=14;
+      items.forEach(it=>{ if(cur.length>=cap||(it.t==='cat'&&cur.length>=cap-1)){ pages.push(cur); cur=[]; cap=24; } cur.push(it); });
+      if(cur.length) pages.push(cur);
+      const payTxt=r=>!r.f?'—':(r.pay==='due'?'مطلوب سداد':(r.pay==='paid'?'تم السداد':(r.pay==='none'?'لا يوجد سداد':'غير محدد')));
+      const payCol=r=>r.pay==='due'?'#6d4adf':(r.pay==='paid'?'#0b7ea8':'#5c7d90');
+      const dt=s=>s?String(s).split('-').reverse().join('/'):'—';
+      const box=(t,v,c,sub)=>'<div style="flex:1;border-radius:12px;padding:10px 8px;text-align:center;background:'+c+'1a;border:1.5px solid '+c+'"><div style="font-size:12px;color:#44586a">'+t+'</div><div style="font-size:22px;font-weight:900;color:'+c+'">'+v+'</div>'+(sub?'<div style="font-size:11px;color:#44586a">'+sub+'</div>':'')+'</div>';
+      const td='padding:7px 6px;border-bottom:1px solid #e3e8ee;font-size:12.5px;';
+      const pageHtml=(rows,pi)=>{
+        let h='<div dir="rtl" style="width:794px;height:1123px;box-sizing:border-box;padding:34px 34px 60px;background:#fff;color:#1c2b39;font-family:Cairo,Tahoma,Arial,sans-serif;position:relative;overflow:hidden">';
+        if(pi===0){
+          h+='<div style="background:linear-gradient(120deg,#00699c,#2a9fd6);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px"><div style="font-size:13px;opacity:.9">مكتب الغريب للمحاسبة والمراجعة</div><div style="font-size:22px;font-weight:900;margin-top:2px">تقرير متابعة إقرارات القيمة المضافة</div><div style="font-size:13px;margin-top:6px;opacity:.95">الفترة: '+ymLbl(ST.ym)+' &nbsp;|&nbsp; '+(scope?esc(scope):'شركات وفردي')+' &nbsp;|&nbsp; تاريخ التقرير: '+dt(today())+'</div></div>';
+          h+='<div style="display:flex;gap:8px;margin-bottom:8px">'+box('إجمالي العملاء',all.length,'#00699c')+box('تم التقديم',nDone,'#1f9d6c')+box('لم يتم التقديم',nTodo,'#e0483a')+box('مطلوب سداد',due.length,'#6d4adf',money(sum(due))+' ج.م')+box('تم السداد',paid.length,'#0b7ea8',money(sum(paid))+' ج.م')+'</div>';
+          if(skipped) h+='<div style="font-size:11px;color:#5c7d90;margin-bottom:6px">تم استبعاد '+skipped+' عميل ربع سنوي لعدم استحقاق إقرار عن هذه الفترة.</div>';
+        }
+        h+='<table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="background:#00699c;color:#fff;font-size:12px"><th style="padding:8px 6px;width:30px">#</th><th style="padding:8px 6px;text-align:right">اسم العميل</th><th style="padding:8px 6px">الدورية</th><th style="padding:8px 6px">حالة الإقرار</th><th style="padding:8px 6px">تاريخ التقديم</th><th style="padding:8px 6px">السداد</th><th style="padding:8px 6px">المبلغ (ج.م)</th></tr></thead><tbody>';
+        rows.forEach(it=>{
+          if(it.t==='cat'){ h+='<tr><td colspan="7" style="padding:8px 10px;background:#eaf3f8;color:#00699c;font-weight:900;font-size:13.5px;border-bottom:2px solid #00699c">'+esc(it.cat)+' — '+it.n+' عميل</td></tr>'; return; }
+          const r=it.r, c=r.f?'#1f9d6c':'#e0483a';
+          h+='<tr><td style="'+td+'text-align:center;color:#5c7d90">'+it.i+'</td><td style="'+td+'font-weight:800">'+esc(r.n)+'</td><td style="'+td+'text-align:center">'+r.fq+'</td>'
+            +'<td style="'+td+'text-align:center"><span style="display:inline-block;padding:2px 10px;border-radius:12px;background:'+c+';color:#fff;font-weight:800;font-size:12px">'+(r.f?'تم التقديم':'لم يتم التقديم')+'</span></td>'
+            +'<td style="'+td+'text-align:center">'+(r.f?dt(r.at):'—')+'</td>'
+            +'<td style="'+td+'text-align:center;font-weight:800;color:'+payCol(r)+'">'+payTxt(r)+'</td>'
+            +'<td style="'+td+'text-align:center;font-weight:700">'+((r.pay==='due'||r.pay==='paid')&&r.amt?money(r.amt):'—')+'</td></tr>';
+        });
+        h+='</tbody></table><div style="position:absolute;left:34px;right:34px;bottom:22px;display:flex;justify-content:space-between;font-size:11px;color:#5c7d90;border-top:1px solid #e3e8ee;padding-top:8px"><span>مكتب الغريب للمحاسبة والمراجعة</span><span>صفحة '+(pi+1)+' من '+pages.length+'</span></div></div>';
+        return h;
+      };
+      document.body.appendChild(host);
+      if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+      const { jsPDF }=window.jspdf, doc=new jsPDF({unit:'mm',format:'a4',compress:true});
+      for(let i=0;i<pages.length;i++){
+        host.innerHTML=pageHtml(pages[i],i);
+        const cv=await html2canvas(host.firstElementChild,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+        if(i) doc.addPage();
+        doc.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
+      }
+      doc.save('إقرارات_القيمة_المضافة_'+(scope||'شركات_وفردي')+'_'+ymLbl(ST.ym).replace(' ','_')+'.pdf');
+    }catch(e){ alert('تعذّر إنشاء التقرير: '+(e&&e.message||'')); }
+    finally{ host.remove(); btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.textContent=b.dataset.t; }); }
   };
 
   /* ---------- نافذة تفاصيل الإقرار ---------- */
