@@ -1288,13 +1288,14 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <div id="finCsvBox" class="fin-sec" style="display:none;margin-top:12px;">
           <div style="padding:13px 16px;">
             <div style="font-weight:900;font-size:14.5px;margin-bottom:4px;">📤 تصدير CSV لرفع المبيعات / المشتريات للضرائب</div>
-            <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار الشهر والنوع والمنظومة، والملف ينزل CSV جاهز بنفس ترتيب أعمدة القالب.</div>
+            <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار الشهر والنوع والمنظومة. Excel علشان تعدّل قبل التحويل، وCSV جاهز للرفع، بنفس ترتيب أعمدة القالب.</div>
             <div class="fin-bar">
               <div class="field"><label>الشهر</label><select id="csvMonth"></select></div>
               <div class="field"><label>النوع</label><select id="csvKind"><option value="sale">مبيعات</option><option value="buy">مشتريات</option></select></div>
               <div class="field"><label>المنظومة</label><select id="csvSys"><option value="new">جديدة</option><option value="old">قديمة</option></select></div>
               <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;"><input type="checkbox" id="csvHdr" checked> تضمين صفّي العناوين (عربي + إنجليزي)</label>
               <button class="act btn-primary btn-small" onclick="finExportTaxCsv()">⬇️ تصدير CSV</button>
+              <button class="act btn-ghost btn-small" onclick="finExportTaxXlsx()">📊 تصدير Excel</button>
             </div>
             <div id="csvMsg" style="font-size:12.5px;opacity:.9;"></div>
           </div>
@@ -6682,7 +6683,7 @@ populateClientHelpers();
       const name=kind==='sale'?r.bName:r.sName, cTax=kind==='sale'?r.bTax:r.sTax;
       const hasTax=digits(cTax)!=='';
       const docType=hasTax?base:5;                                /* مفيش رقم تسجيل ضريبي = 5 */
-      const stat=base===1?3:5;                                    /* نوع البيان */
+      const stat=base===1?1:5;                                    /* نوع البيان: 1 دايمًا، و5 لو المستند 2 أو 3 */
       const exempt=r.flag==='exempt';
       const comm=exempt?7:3;                                      /* نوع السلعة: 3 خاضعة 14% ، 7 معفاة */
       const val=f2(r.val), vat=exempt?'0.00':f2(r.vat), tot=f2(Math.abs(num(r.val))+(exempt?0:Math.abs(num(r.vat))));
@@ -6700,24 +6701,53 @@ populateClientHelpers();
     sel.innerHTML=ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
     sel.value=String(ms.includes(FM)?FM:(ms.includes(keep)?keep:ms[0]));
   }
-  window.finExportTaxCsv=async function(){
+  async function csvPrepare(){
     const msg=$('csvMsg'); msg.textContent='';
     const m=Number($('csvMonth').value), kind=$('csvKind').value, sys=$('csvSys').value, withHdr=$('csvHdr').checked;
-    const d=SAVED.find(x=>x.ym===m); if(!d){ msg.textContent='اختار شهر محفوظ.'; return; }
+    const d=SAVED.find(x=>x.ym===m); if(!d){ msg.textContent='اختار شهر محفوظ.'; return null; }
     msg.textContent='جاري التجهيز...';
+    const rows=await fetchRows(CID,m); DET[m]=rows;
+    const out=buildTaxCsvRows(rows,d.taxId,kind,sys);
+    if(!out.length){ msg.textContent='مفيش فواتير '+(kind==='sale'?'مبيعات':'مشتريات')+' في '+ymLbl(m)+'.'; return null; }
+    const H=CSV_HEADERS[(kind==='sale'?'sales':'pur')+(sys==='new'?'New':'Old')];
+    const fn=(kind==='sale'?'مبيعات':'مشتريات')+'_'+(sys==='new'?'منظومة_جديدة':'منظومة_قديمة')+'_'+CNAME+'_'+m;
+    const ex=out.filter(r=>r[14]===7).length, nt=out.filter(r=>r[0]===5).length;
+    const note=out.length+' صف'+(ex?' — منها '+ex+' معفاة':'')+(nt?' — '+nt+' بدون رقم ضريبي (نوع المستند 5)':'');
+    return {out,H,fn,note,withHdr,kind};
+  }
+  window.finExportTaxCsv=async function(){
     try{
-      const rows=await fetchRows(CID,m); DET[m]=rows;
-      const out=buildTaxCsvRows(rows,d.taxId,kind,sys);
-      if(!out.length){ msg.textContent='مفيش فواتير '+(kind==='sale'?'مبيعات':'مشتريات')+' في '+ymLbl(m)+'.'; return; }
-      const H=CSV_HEADERS[(kind==='sale'?'sales':'pur')+(sys==='new'?'New':'Old')];
-      const lines=(withHdr?H:[]).concat(out).map(r=>r.map(csvCell).join(','));
+      const P=await csvPrepare(); if(!P) return;
+      const lines=(P.withHdr?P.H:[]).concat(P.out).map(r=>r.map(csvCell).join(','));
       const blob=new Blob(['\ufeff'+lines.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-      a.download=(kind==='sale'?'مبيعات':'مشتريات')+'_'+(sys==='new'?'منظومة_جديدة':'منظومة_قديمة')+'_'+CNAME+'_'+m+'.csv';
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=P.fn+'.csv';
       document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-      const ex=out.filter(r=>r[14]===7).length, nt=out.filter(r=>r[0]===5).length;
-      msg.textContent='✅ تم تصدير '+out.length+' صف'+(ex?' — منها '+ex+' معفاة':'')+(nt?' — '+nt+' بدون رقم ضريبي (نوع المستند 5)':'')+'.';
-    }catch(e){ console.error(e); msg.textContent='تعذّر التصدير: '+(e&&e.message?e.message:''); }
+      $('csvMsg').textContent='✅ تم تصدير CSV: '+P.note+'.';
+    }catch(e){ console.error(e); $('csvMsg').textContent='تعذّر التصدير: '+(e&&e.message?e.message:''); }
+  };
+  /* Excel قابل للتعديل: الأرقام أرقام، والرقم الضريبي والتاريخ نص زي ما هيطلعوا في الـCSV */
+  window.finExportTaxXlsx=async function(){
+    try{
+      const P=await csvPrepare(); if(!P) return;
+      const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet(P.kind==='sale'?'مستندات المبيعات':'Purchase Final',{views:[{rightToLeft:true,state:'frozen',ySplit:P.withHdr?2:0}]});
+      const NUMCOL=new Set([0,1,2,13,14,18]);          /* أعمدة أرقام صحيحة: نوع المستند/الضريبة/السلع/البيان/السلعة/الكمية */
+      const first=P.out[0], nc=first.length, moneyFrom=16;   /* من سعر الوحدة (Q) وما بعده مبالغ، ما عدا الكمية والفئة */
+      if(P.withHdr) P.H.forEach(h=>{ const r=ws.addRow(h); r.eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; }); });
+      P.out.forEach(r=>{
+        const x=ws.addRow(r.map((v,i)=>{
+          if(v===''||v==null) return null;
+          if(NUMCOL.has(i)||i>=moneyFrom) return Number(v);
+          return String(v);
+        }));
+        x.eachCell({includeEmpty:true},c=>{ c.font={name:'Arial',size:10}; });
+        for(let i=moneyFrom;i<nc;i++){ if(i===17||i===18) continue; x.getCell(i+1).numFmt='0.00'; }
+        [5,11,12].forEach(i=>x.getCell(i).numFmt='@');
+        x.getCell(6).numFmt='@';
+      });
+      for(let i=1;i<=nc;i++) ws.getColumn(i).width=i===5?30:(i===4||i===6||i===11?16:14);
+      await xlDownload(wb,P.fn+'.xlsx');
+      $('csvMsg').textContent='✅ تم تصدير Excel: '+P.note+'. عدّل وبعدين حوّله CSV (حفظ باسم ← CSV UTF-8).';
+    }catch(e){ console.error(e); $('csvMsg').textContent='تعذّر التصدير: '+(e&&e.message?e.message:''); }
   };
 
   /* ---------- التصدير ---------- */
