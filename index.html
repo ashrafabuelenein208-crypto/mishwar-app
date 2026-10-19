@@ -1217,6 +1217,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('شركات')">شركات</button>
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('فردي')">فردي</button>
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
+        <button type="button" class="landing-cat-btn" onclick="finOverviewOpen()">الموقف الضريبي لكل العملاء</button>
       </div>
     </div>
 
@@ -1261,11 +1262,11 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
       <div id="taxYearFilesList"></div>
     </div>
     <div id="clientsFinView" style="display:none;">
-      <div class="row-actions" style="margin-bottom:8px;">
+      <div class="row-actions" id="finBackRow" style="margin-bottom:8px;">
         <button class="act btn-ghost btn-small" onclick="showClientsCategoryHub()">‹ رجوع</button>
       </div>
       <h2 id="finTitle" style="text-align:center;"></h2>
-      <section>
+      <section id="finUploadSec">
         <h3 style="margin:0 0 6px;font-size:15px;">➕ إضافة شهور جديدة</h3>
         <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 12px;">ارفع شيت الفواتير الإلكترونية زي ما نازل من البوابة. التطبيق بينظّفه ويحسب كل شهر لوحده، وتراجعه وتدوس "حفظ في الموقف الضريبي".</p>
         <label class="ev-drop" for="finFile" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="finDrop(event)">
@@ -1275,7 +1276,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         </label>
         <div id="finPre"></div>
       </section>
-      <section>
+      <section id="finDashSec">
         <h3 style="margin:0 0 10px;font-size:15px;">📊 الموقف الضريبي</h3>
         <div id="finFilterBar" class="fin-bar" style="display:none;">
           <div class="field"><label>السنة</label><select id="finYear" onchange="finYearChanged()"></select></div>
@@ -1286,6 +1287,20 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <div id="finMsg" style="font-size:12.5px;opacity:.85;margin-bottom:8px;"></div>
         <div id="finDash"></div>
       </section>
+      <div id="finOverviewBox" style="display:none;">
+        <div class="row-actions" style="margin-bottom:8px;">
+          <button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button>
+        </div>
+        <h2 style="text-align:center;">الموقف الضريبي لكل العملاء</h2>
+        <section>
+          <div class="fin-bar">
+            <div class="field"><label>الشهر</label><select id="ovMonth" onchange="finOverviewMonth()"></select></div>
+            <button class="act btn-ghost btn-small" onclick="finOverviewExport()">⬇️ تنزيل الملخص (Excel)</button>
+            <button class="act btn-ghost btn-small" onclick="finOverviewRefresh()">🔄 تحديث</button>
+          </div>
+          <div id="ovBody"></div>
+        </section>
+      </div>
     </div>
     <div id="clientsFormView" style="display:none;">
     <div class="row-actions" style="margin-bottom:8px;">
@@ -6360,7 +6375,7 @@ populateClientHelpers();
   /* ---------- فتح المركز المالي لعميل ---------- */
   function showView(){
     ['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView'].forEach(id=>{ const e=$(id); if(e) e.style.display='none'; });
-    $('clientsFinView').style.display='block';
+    $('clientsFinView').style.display='block'; setMode(false);
     window.scrollTo({top:0});
   }
   window.openFinCenter=function(){
@@ -6459,7 +6474,7 @@ populateClientHelpers();
           return '<tr><td style="white-space:nowrap"><b>'+ymLbl(d.ym)+'</b></td><td>'+money(d.S)+'</td><td>'+money(d.P)+'</td><td>'+money(d.diff)+'</td><td>'+money(d.due)+'</td><td>'+money(d.credit)+'</td><td>'+netChip(num(d.net))+'</td><td>'+ts+'</td><td style="white-space:nowrap"><button class="act btn-ghost btn-small" onclick="finPick('+d.ym+')">فتح</button> <button class="act btn-ghost btn-small" onclick="finDel('+d.ym+')">حذف</button></td></tr>'; }).join('')+
         '</tbody></table></div>',L.length+' شهر');
     }else{
-      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 14px;">'+(SAVED[0].ym===FM?'<div class="field" style="margin:0;min-width:230px;"><label>الرصيد الدائن الافتتاحي (أول مرة بس، وبعدها بيترحّل تلقائي)</label><input id="finCreditEdit" type="number" step="0.01" value="'+(num(one.openCredit)||'')+'" placeholder="0"></div><button class="act btn-primary btn-small" onclick="finSetCredit('+FM+')">تحديث الرصيد الافتتاحي</button>':'<div style="font-size:13px;padding:8px 12px;border-radius:12px;background:rgba(120,140,170,.15);">الرصيد المرحّل من الشهر اللي قبله (تلقائي): <b>'+money(one.credit)+'</b></div>')+'<button class="act btn-ghost btn-small" onclick="finExportMonth('+FM+')">⬇️ تنزيل شيت الشهر (Excel)</button><button class="act btn-ghost btn-small" onclick="finDel('+FM+')">🗑 حذف الشهر</button></div>'+
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 14px;">'+(SAVED[0].ym===FM?'<div class="field" style="margin:0;min-width:230px;"><label>الرصيد الدائن الافتتاحي (أول مرة بس، وبعدها بيترحّل تلقائي)</label><input id="finCreditEdit" type="number" step="0.01" value="'+(num(one.openCredit)||'')+'" placeholder="0"></div><button class="act btn-primary btn-small" onclick="finSetCredit('+FM+')">تحديث الرصيد الافتتاحي</button>':'<div style="font-size:13px;padding:8px 12px;border-radius:12px;background:rgba(120,140,170,.15);">الرصيد المرحّل من الشهر اللي قبله (تلقائي): <b>'+money(one.credit)+'</b></div>')+'<button class="act btn-ghost btn-small" onclick="finExportMonth('+FM+')">⬇️ تنزيل شيت الشهر (Excel)</button><button class="act btn-primary btn-small" onclick="finPrintMonth('+FM+')">🖨 طباعة الإقرار</button><button class="act btn-ghost btn-small" onclick="finDel('+FM+')">🗑 حذف الشهر</button></div>'+
         sec('inv','🧾 فواتير الشهر','<div id="finDetail"><p style="opacity:.7;font-size:13px;">جاري تحميل الفواتير...</p></div>');
     }
     box.innerHTML=h;
@@ -6669,6 +6684,173 @@ populateClientHelpers();
     ws.columns.forEach((c,i)=>c.width=i?18:16);
     await xlDownload(wb,'الموقف_الضريبي_'+CNAME+'_'+(FM||FY||'كل_الفترات')+'.xlsx');
   };
+  /* ================= نظرة عامة لكل العملاء + طباعة إقرار الشهر ================= */
+  function setMode(ov){
+    ['finBackRow','finTitle','finUploadSec','finDashSec'].forEach(id=>{ const e=$(id); if(e) e.style.display=ov?'none':''; });
+    const b=$('finOverviewBox'); if(b) b.style.display=ov?'block':'none';
+  }
+
+  /* ---------- فواتير شهر (من غير ما نغيّر حالة الشاشة) ---------- */
+  async function fetchRows(cid,m){
+    if(cid===CID&&DET[m]) return DET[m];
+    const col=savedCol(cid); if(!col) throw new Error('بيانات المكتب لسه بتتحمّل');
+    const rs=await col.doc(String(m)).collection('rows').get();
+    let flat=[]; rs.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(p=>{ flat=flat.concat(JSON.parse(p.rows)); });
+    return flat.map(a=>({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]}));
+  }
+  function whSums(rows,tax){
+    let sale=0,buy=0;
+    rows.forEach(r=>{ const w=isCredit(r.type)?-Math.abs(num(r.wh)):num(r.wh); if(r.sTax===tax) sale+=w; else if(r.bTax===tax) buy+=w; });
+    return {sale,buy};
+  }
+
+  /* ---------- الإقرار القابل للطباعة ---------- */
+  function declHtml(name,d,wh){
+    const net=num(d.net), credit=num(d.credit), carry=Math.max(0,-net), rate=+(num(d.rate)*100).toFixed(2);
+    const row=(l,v,cls)=>'<tr class="'+(cls||'')+'"><td>'+l+'</td><td class="n">'+money(v)+'</td></tr>';
+    const cnt=(l,v)=>'<tr class="sm"><td>'+l+'</td><td class="n">'+v+'</td></tr>';
+    let t='';
+    t+='<tr class="hd"><td>البند</td><td>القيمة (جنيه)</td></tr>';
+    t+=row('إجمالي المبيعات (شامل المعفاة)',d.S);
+    t+=row('منها مبيعات معفاة',d.SE,'sm');
+    t+=row('إجمالي المشتريات الخاضعة للضريبة',d.P);
+    t+=row('مشتريات معفاة (للعلم، غير داخلة في الحساب)',d.PE,'sm');
+    t+=row('الفرق (المبيعات − المشتريات)',d.diff);
+    t+=row('الضريبة المستحقة (الفرق × '+rate+'%)',d.due);
+    t+=row('الرصيد الدائن المرحّل من الشهر السابق',credit);
+    t+=net>0?row('المستحق سداده لمصلحة الضرائب',net,'fin pay'):row('المستحق سداده لمصلحة الضرائب',0,'fin ok');
+    if(carry>0) t+=row('الرصيد الدائن المرحّل للشهر التالي',carry,'fin ok');
+    if(wh&&(Math.abs(wh.sale)>.004||Math.abs(wh.buy)>.004)){
+      t+='<tr class="hd"><td colspan="2">الخصم تحت حساب الضريبة (للعلم، غير داخل في الحساب أعلاه)</td></tr>';
+      t+=row('على فواتير مبيعات العميل',wh.sale,'sm')+row('على فواتير مشتريات العميل',wh.buy,'sm');
+    }
+    let c='<tr class="hd"><td colspan="2">عدد الفواتير</td></tr>';
+    c+=cnt('إجمالي الفواتير',num(d.nInvoices))+cnt('فواتير المبيعات',num(d.nSales))+cnt('فواتير المشتريات',num(d.nBuys))+cnt('فواتير معفاة',num(d.nExempt))+cnt('فواتير ضريبتها مش بالنسبة',num(d.nWrong));
+    const css='@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Tahoma,Arial,sans-serif;color:#111;font-size:13px;line-height:1.6;margin:0}'+
+      'h1{font-size:20px;text-align:center;margin:0 0 4px}.sub{text-align:center;font-size:13px;color:#444;margin-bottom:16px}'+
+      'table{width:100%;border-collapse:collapse;margin-bottom:14px}td{border:1px solid #888;padding:7px 10px}'+
+      '.info td:first-child{width:30%;background:#eef1f6;font-weight:bold}.rep td:first-child{width:68%}'+
+      '.n{text-align:left;direction:ltr;font-variant-numeric:tabular-nums;font-weight:bold}'+
+      '.hd td{background:#1f3864;color:#fff;font-weight:bold;text-align:center}.sm td{font-size:12px;color:#333}'+
+      '.fin td{font-size:15px;font-weight:bold}.pay td{background:#fde4e1}.ok td{background:#e1f5ea}'+
+      '.sign{display:flex;justify-content:space-between;gap:24px;margin-top:40px;font-size:12px}.sign div{flex:1;border-top:1px solid #444;padding-top:6px;text-align:center}'+
+      '.note{font-size:11px;color:#555;margin-top:16px}';
+    return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>إقرار '+esc(name)+' - '+ymLbl(d.ym)+'</title><style>'+css+'</style></head><body>'+
+      '<h1>إقرار ضريبة القيمة المضافة</h1><div class="sub">ملخص شهر '+ymLbl(d.ym)+'</div>'+
+      '<table class="info"><tr><td>اسم الممول</td><td>'+esc(name)+'</td></tr><tr><td>الرقم الضريبي</td><td>'+esc(d.taxId)+'</td></tr><tr><td>الفترة</td><td>'+ymLbl(d.ym)+'</td></tr><tr><td>نسبة الضريبة</td><td>'+rate+'%</td></tr></table>'+
+      '<table class="rep">'+t+'</table><table class="rep">'+c+'</table>'+
+      '<div class="sign"><div>إعداد</div><div>مراجعة</div><div>اعتماد</div></div>'+
+      '<p class="note">ملخص مُعَدّ من الفواتير الإلكترونية المحفوظة في التطبيق، تاريخ الطباعة '+new Date().toLocaleDateString('en-GB')+'. هذه الورقة ليست نموذج الإقرار الرسمي لمصلحة الضرائب.</p></body></html>';
+  }
+  function printHtml(html){
+    const f=document.createElement('iframe');
+    f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(f);
+    const w=f.contentWindow, doc=w.document; doc.open(); doc.write(html); doc.close();
+    setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){ console.error(e); } setTimeout(()=>f.remove(),60000); },400);
+  }
+  window.finPrintMonth=async function(m){
+    const d=SAVED.find(x=>x.ym===m); if(!d) return;
+    say('جاري تجهيز الإقرار...'); let wh=null;
+    try{ wh=whSums(await fetchRows(CID,m),d.taxId); }catch(e){ console.warn(e); }
+    say(''); printHtml(declHtml(CNAME,d,wh));
+  };
+
+  /* ---------- نظرة عامة لكل العملاء ---------- */
+  const OV={list:[],month:0,tok:0};
+  function chainLocal(list){
+    let carry=0;
+    return list.map((d,i)=>{
+      const o=Object.assign({},d);
+      if(i===0) carry=o.openCredit!=null?num(o.openCredit):num(o.credit);
+      o.credit=carry; o.net=num(o.due)-carry; carry=Math.max(0,-o.net);
+      return o;
+    });
+  }
+  function prevYm(){ const t=new Date(), y=t.getFullYear(), m=t.getMonth(); return m===0?(y-1)*100+12:y*100+m; }
+  window.finOverviewOpen=function(){
+    ['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView'].forEach(id=>{ const e=$(id); if(e) e.style.display='none'; });
+    $('clientsFinView').style.display='block'; setMode(true); window.scrollTo({top:0});
+    OV.month=0; loadOverview();
+  };
+  window.finOverviewRefresh=()=>loadOverview();
+  window.finOverviewMonth=()=>{ OV.month=Number($('ovMonth').value); renderOverview(); };
+  async function loadOverview(){
+    const box=$('ovBody'), col=(function(){ try{ return officeClientsCol(); }catch(e){ return null; } })();
+    if(!col){ box.innerHTML='<p style="opacity:.7;font-size:13px;">لسه بيتحمّل بيانات المكتب، افتح الشاشة تاني بعد ثانية.</p>'; return; }
+    const cs=loadClients().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar')), tok=++OV.tok;
+    box.innerHTML='<p style="opacity:.7;font-size:13px;">جاري تحميل الموقف الضريبي لكل العملاء...</p>';
+    const res=await Promise.all(cs.map(async c=>{
+      try{
+        const snap=await col.doc(c.id).collection('einvoices').get();
+        return {c,err:'',list:chainLocal(snap.docs.map(x=>x.data()).filter(x=>x&&x.ym).sort((a,b)=>a.ym-b.ym))};
+      }catch(e){ console.error(e); return {c,list:[],err:(e&&e.message)||'خطأ'}; }
+    }));
+    if(tok!==OV.tok) return;
+    OV.list=res; renderOverview();
+  }
+  function ovCompute(){
+    const withData=OV.list.filter(x=>x.list.length), without=OV.list.filter(x=>!x.list.length), need=prevYm();
+    const months=[...new Set(withData.reduce((a,x)=>a.concat(x.list.map(d=>d.ym)),[]))].sort((a,b)=>b-a);
+    if(OV.month&&!months.includes(OV.month)) OV.month=0;
+    const rows=withData.map(x=>{
+      const last=x.list[x.list.length-1], d=OV.month?x.list.find(z=>z.ym===OV.month):last;
+      return {c:x.c,d,late:OV.month?!d:last.ym<need};
+    });
+    const key=r=>r.d?Math.max(0,num(r.d.net)):-1;
+    rows.sort((a,b)=>key(b)-key(a));
+    return {rows,without,months,need};
+  }
+  function renderOverview(){
+    const box=$('ovBody'), V=ovCompute(), rows=V.rows;
+    $('ovMonth').innerHTML='<option value="0">آخر شهر محفوظ لكل عميل</option>'+V.months.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
+    $('ovMonth').value=String(OV.month);
+    if(!rows.length){ box.innerHTML='<div class="empty">لسه مفيش أي عميل عنده بيانات محفوظة في الموقف الضريبي.</div>'; return; }
+    const has=rows.filter(r=>r.d), sumDue=has.reduce((t,r)=>t+Math.max(0,num(r.d.net)),0), sumCarry=has.reduce((t,r)=>t+Math.max(0,-num(r.d.net)),0);
+    const nPay=has.filter(r=>num(r.d.net)>0).length, nLate=rows.filter(r=>r.late).length;
+    const oc=(icn,l,v,tone,sub)=>'<div class="ev-card '+tone+'"><div class="ev-ic">'+ic(icn)+'</div><div class="ev-l">'+l+'</div><div class="ev-v">'+v+'</div>'+(sub?'<div class="ev-s">'+sub+'</div>':'')+'</div>';
+    let h='<div class="ev-grid">'+
+      oc(sumDue>0?'alert':'check','إجمالي المستحق سداده',money(sumDue),'net '+(sumDue>0?'pay':'ok'),nPay?('على '+nPay+' عميل'):'لا يوجد مستحق')+
+      oc('card','إجمالي الأرصدة المرحّلة',money(sumCarry),'t-cr','رصيد دائن لصالح العملاء')+
+      oc('users','عدد العملاء بالبيانات',String(rows.length),'t-tax',V.without.length?('وفي '+V.without.length+' بدون بيانات'):'')+
+      oc('tag','عملاء ناقصهم شهور',String(nLate),'t-ex',nLate?(OV.month?'مفيش بيانات للشهر ده':('آخر شهر مطلوب: '+ymLbl(V.need))):'كله محدّث')+'</div>';
+    const warn='background:#e0a100;color:#000';
+    h+='<div class="ev-tbl"><table><thead><tr><th>العميل</th><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>رصيد أول الشهر</th><th>الصافي</th><th>ملاحظة</th><th></th></tr></thead><tbody>'+
+      rows.map(r=>{
+        const c=r.c, d=r.d, btn='<button class="act btn-ghost btn-small" onclick="finOverviewGo(\''+c.id+'\')">فتح</button>';
+        if(!d) return '<tr><td><b>'+esc(c.name)+'</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>'+chip('مفيش بيانات لـ '+ymLbl(OV.month),'#e0a100','#000')+'</td><td style="white-space:nowrap">'+btn+'</td></tr>';
+        return '<tr><td><b>'+esc(c.name)+'</b><div style="font-size:11px;opacity:.65;direction:ltr;text-align:right;">'+esc(d.taxId||c.taxRegNo||'')+'</div></td><td style="white-space:nowrap">'+ymLbl(d.ym)+'</td><td>'+money(d.S)+'</td><td>'+money(d.P)+'</td><td>'+money(d.due)+'</td><td>'+money(d.credit)+'</td><td>'+netChip(num(d.net))+'</td><td>'+(r.late?chip('ناقص '+ymLbl(V.need),'#e0a100','#000'):'')+'</td><td style="white-space:nowrap">'+btn+' <button class="act btn-ghost btn-small" onclick="finOverviewPrint(\''+c.id+'\','+d.ym+')">🖨 إقرار</button></td></tr>';
+      }).join('')+'</tbody></table></div>';
+    if(V.without.length) h+='<p style="font-size:12.5px;opacity:.8;margin-top:12px;">عملاء مفيش لهم بيانات موقف ضريبي ('+V.without.length+'): '+V.without.map(x=>esc(x.c.name)+(x.err?' (تعذّر التحميل)':'')).join('، ')+'</p>';
+    box.innerHTML=h;
+  }
+  window.finOverviewGo=function(id){
+    try{ openClientHub(id); }catch(e){ currentClientHubId=id; }
+    openFinCenter();
+  };
+  window.finOverviewPrint=async function(id,m){
+    const x=OV.list.find(z=>z.c.id===id), d=x&&x.list.find(z=>z.ym===m); if(!d) return;
+    const msg=$('ovBody'); let wh=null;
+    try{ wh=whSums(await fetchRows(id,m),d.taxId); }catch(e){ console.warn(e); }
+    printHtml(declHtml(x.c.name,d,wh));
+  };
+  window.finOverviewExport=async function(){
+    const V=ovCompute(), rows=V.rows.filter(r=>r.d); if(!rows.length) return;
+    const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('الموقف الضريبي',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
+    const heads=['العميل','الرقم الضريبي','الشهر','المبيعات','المشتريات','الفرق','الضريبة المستحقة','الرصيد الدائن (أول الشهر)','المستحق سداده','الرصيد المرحّل لآخر الشهر','ملاحظة'];
+    ws.addRow(heads); ws.getRow(1).eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center'}; });
+    const tot=[0,0,0,0,0,0,0];
+    rows.forEach(r=>{
+      const d=r.d, v=[num(d.S),num(d.P),num(d.diff),num(d.due),num(d.credit),Math.max(0,num(d.net)),Math.max(0,-num(d.net))];
+      v.forEach((x,i)=>tot[i]+=x);
+      const w=ws.addRow([r.c.name,String(d.taxId||r.c.taxRegNo||''),ymLbl(d.ym)].concat(v,[r.late?'ناقص '+ymLbl(V.need):'']));
+      w.eachCell({includeEmpty:true},c=>c.font={name:'Arial',size:10}); for(let i=4;i<=10;i++) w.getCell(i).numFmt='#,##0.00';
+    });
+    const t=ws.addRow(['الإجمالي','','' ].concat(tot,[''])); t.eachCell({includeEmpty:true},c=>c.font={name:'Arial',size:11,bold:true}); for(let i=4;i<=10;i++) t.getCell(i).numFmt='#,##0.00';
+    [30,18,16,16,16,16,18,20,16,20,18].forEach((w,i)=>ws.getColumn(i+1).width=w);
+    await xlDownload(wb,'الموقف_الضريبي_كل_العملاء_'+(OV.month||'اخر_شهر')+'.xlsx');
+  };
+
 })();
 </script>
 </body>
