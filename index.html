@@ -1271,6 +1271,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
           <div class="field"><label>السنة</label><select id="finYear" onchange="finYearChanged()"></select></div>
           <div class="field"><label>الشهر</label><select id="finMonth" onchange="finMonthChanged()"></select></div>
           <button class="act btn-ghost btn-small" onclick="finExportSummary()">⬇️ تنزيل ملخص الفترة</button>
+          <button class="act btn-ghost btn-small" id="finDelAll" onclick="finDelAll()">🗑 حذف جميع الشهور</button>
         </div>
         <div id="finMsg" style="font-size:12.5px;opacity:.85;margin-bottom:8px;"></div>
         <div id="finDash"></div>
@@ -6341,7 +6342,7 @@ populateClientHelpers();
     const setW=()=>bars.forEach(b=>b.style.width=b.dataset.w+'%'); raf?raf(()=>raf(setW)):setW();
   }
   const chip=(t,bg,col)=>'<span class="ev-chip" style="margin:0;background:'+bg+';color:'+(col||'#fff')+'">'+t+'</span>';
-  const netChip=v=>chip(money(v)+(v>0?' مستحق':' مرحّل'),v>0?'#c0261c':'#0a8f55');
+  const netChip=v=>chip(money(Math.abs(v))+(v>0?' مستحق':' مرحّل'),v>0?'#c0261c':'#0a8f55');
 
   /* ---------- فتح المركز المالي لعميل ---------- */
   function showView(){
@@ -6371,7 +6372,28 @@ populateClientHelpers();
       console.error(e); $('finFilterBar').style.display='none';
       box.innerHTML='<p style="color:var(--red);font-size:13px;">تعذّر التحميل: '+esc(e&&e.message?e.message:'')+'</p>'; return;
     }
+    await persist(chain(SAVED));
     ENTER=true; renderFilters(); renderDash();
+  }
+  /* الرصيد الدائن: بيتحط مرة واحدة في أول شهر، وبعد كده بيترحّل تلقائي (لو الصافي سالب يكمّل للشهر اللي بعده، ولو مستحق سداد بيتصفّر) */
+  function chain(list){
+    const ch=[]; let carry=0;
+    list.forEach((d,i)=>{
+      const had=d.openCredit!=null;
+      if(i===0){ d.openCredit=had?num(d.openCredit):num(d.credit); carry=d.openCredit; }
+      const credit=carry, net=num(d.due)-credit;
+      if(Math.abs(num(d.credit)-credit)>.004||Math.abs(num(d.net)-net)>.004||(i===0&&!had)) ch.push(d);
+      d.credit=credit; d.net=net; carry=Math.max(0,-net);
+    });
+    return ch;
+  }
+  async function persist(ch){
+    const col=savedCol(CID); if(!col||!ch.length) return;
+    try{
+      const b=db.batch();
+      ch.forEach(d=>{ const u={credit:d.credit,net:d.net}; if(d===SAVED[0]) u.openCredit=num(d.openCredit); b.update(col.doc(String(d.ym)),u); });
+      await b.commit();
+    }catch(e){ console.warn('chain persist',e); }
   }
 
   /* ---------- الفلاتر ---------- */
@@ -6380,6 +6402,7 @@ populateClientHelpers();
     if(FY&&!years.includes(FY)) FY=0;
     $('finYear').innerHTML='<option value="0">كل السنوات</option>'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
     $('finYear').value=String(FY);
+    $('finDelAll').textContent=FY?'🗑 حذف كل شهور '+FY:'🗑 حذف جميع الشهور';
     const ms=SAVED.filter(d=>!FY||yOf(d.ym)===FY).map(d=>d.ym).sort((a,b)=>b-a);
     if(FM&&!ms.includes(FM)) FM=0;
     $('finMonth').innerHTML='<option value="0">'+(FY?'كل شهور '+FY:'كل الشهور')+'</option>'+ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
@@ -6396,10 +6419,10 @@ populateClientHelpers();
     bar.style.display='flex';
     const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY));
     const sm=k=>L.reduce((t,d)=>t+num(d[k]),0);
-    const S=sm('S'),P=sm('P'),SE=sm('SE'),PE=sm('PE'),diff=sm('diff'),due=sm('due'),credit=sm('credit'),net=sm('net');
+    const S=sm('S'),P=sm('P'),SE=sm('SE'),PE=sm('PE'),diff=sm('diff'),due=sm('due'),credit=L.length?num(L[0].credit):0, carryEnd=L.length?Math.max(0,-num(L[L.length-1].net)):0, net=L.reduce((t,d)=>t+Math.max(0,num(d.net)),0);
     const nS=sm('nSales'),nB=sm('nBuys'),nInv=sm('nInvoices'),nEx=sm('nExempt'),nWr=sm('nWrong');
     const one=FM?L[0]:null;
-    const pay=net>0, st=pay?'pay':(net<0?'ok':'zero');
+    const pay=net>0, st=pay?'pay':(carryEnd>0?'ok':'zero');
     const lbl=FM?ymLbl(FM):(FY?'سنة '+FY+' كاملة':'كل الفترات المحفوظة');
     let n=0;
     const card=(id,ic,l,v,tone,sub,extra)=>'<div class="ev-card '+tone+(extra||'')+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'"><div class="ev-ic">'+ic+'</div><div class="ev-l">'+l+'</div><div class="ev-v" data-id="'+id+'" data-val="'+v+'">'+money(v)+'</div>'+(sub?'<div class="ev-s">'+sub+'</div>':'')+'</div>';
@@ -6411,18 +6434,18 @@ populateClientHelpers();
     let h='<div style="font-size:15px;font-weight:900;margin:0 0 12px;">'+lbl+(L.length>1?' <span style="font-size:12px;opacity:.65;font-weight:600;">('+L.length+' شهر)</span>':'')+'</div>'+
       '<div class="ev-grid">'+card('S',ic('coins'),'إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+nS)+card('P',ic('receipt'),'إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+nB+' (شامل المعفاة)')+card('D',ic('scale'),'الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
       '<div class="ev-grid">'+card('SE',ic('tag'),'إجمالي المبيعات المعفاة',SE,'t-ex')+card('PE',ic('tag'),'إجمالي المشتريات المعفاة',PE,'t-ex','بتتجمع لوحدها')+'</div>'+
-      '<div class="ev-grid">'+card('T',ic('calc'),'الضريبة المستحقة'+rateTxt,due,'t-tax')+card('C',ic('card'),'الرصيد الدائن',credit,'t-cr')+card('N',ic(pay?'alert':'check'),'الصافي بعد الرصيد الدائن',net,'net '+st,pay?'مستحق السداد':'رصيد مرحّل',' ')+'</div>'+
-      '<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه':(net<0?'رصيد دائن مُرحَّل: '+money(-net)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
+      '<div class="ev-grid">'+card('T',ic('calc'),'الضريبة المستحقة'+rateTxt,due,'t-tax')+card('C',ic('card'),FM?'الرصيد الدائن (أول الشهر)':'الرصيد الدائن (أول الفترة)',credit,'t-cr')+card('N',ic(pay?'alert':'check'),'المستحق سداده',net,'net '+st,carryEnd>0?'رصيد مرحّل: '+money(carryEnd):(pay?'مستحق السداد':''),' ')+'</div>'+
+      '<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه'+(carryEnd>0?' — ورصيد مرحّل لآخر الفترة: '+money(carryEnd):''):(carryEnd>0?'رصيد دائن مُرحَّل: '+money(carryEnd)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>'+
       '<p style="font-size:12.5px;opacity:.8;margin:0 0 12px;">إجمالي الفواتير: '+nInv+' <span class="ev-chip" style="background:rgba(255,211,0,.45)">معفاة: '+nEx+'</span><span class="ev-chip" style="background:rgba(224,72,58,.35)">ضريبة مش النسبة: '+nWr+'</span></p>';
 
     if(!FM){
       h+='<div class="ev-bars">'+L.map(d=>'<div style="margin:6px 0 10px;"><div style="font-size:12.5px;font-weight:900;margin-bottom:2px;">'+ymLbl(d.ym)+'</div>'+bar2('مبيعات',num(d.S),G)+bar2('مشتريات',num(d.P),O)+'</div>').join('')+'</div>';
-      h+='<h3 style="margin:18px 0 10px;font-size:15px;">📅 تفاصيل كل شهر</h3><div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الفرق</th><th>الضريبة</th><th>الرصيد الدائن</th><th>الصافي</th><th>آخر حفظ</th><th></th></tr></thead><tbody>'+
+      h+='<h3 style="margin:18px 0 10px;font-size:15px;">📅 تفاصيل كل شهر</h3><div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الفرق</th><th>الضريبة</th><th>رصيد مرحّل (أول الشهر)</th><th>الصافي</th><th>آخر حفظ</th><th></th></tr></thead><tbody>'+
         L.slice().sort((a,b)=>b.ym-a.ym).map(d=>{ const ts=d.updatedAt&&d.updatedAt.toDate?d.updatedAt.toDate().toLocaleDateString('en-GB'):'';
           return '<tr><td style="white-space:nowrap"><b>'+ymLbl(d.ym)+'</b></td><td>'+money(d.S)+'</td><td>'+money(d.P)+'</td><td>'+money(d.diff)+'</td><td>'+money(d.due)+'</td><td>'+money(d.credit)+'</td><td>'+netChip(num(d.net))+'</td><td>'+ts+'</td><td style="white-space:nowrap"><button class="act btn-ghost btn-small" onclick="finPick('+d.ym+')">فتح</button> <button class="act btn-ghost btn-small" onclick="finDel('+d.ym+')">حذف</button></td></tr>'; }).join('')+
         '</tbody></table></div>';
     }else{
-      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 14px;"><div class="field" style="margin:0;min-width:200px;"><label>الرصيد الدائن لشهر '+ymLbl(FM)+'</label><input id="finCreditEdit" type="number" step="0.01" value="'+(num(one.credit)||'')+'" placeholder="0"></div><button class="act btn-primary btn-small" onclick="finSetCredit('+FM+')">تحديث الرصيد الدائن</button><button class="act btn-ghost btn-small" onclick="finExportMonth('+FM+')">⬇️ تنزيل شيت الشهر (Excel)</button><button class="act btn-ghost btn-small" onclick="finDel('+FM+')">🗑 حذف الشهر</button></div>'+
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 14px;">'+(SAVED[0].ym===FM?'<div class="field" style="margin:0;min-width:230px;"><label>الرصيد الدائن الافتتاحي (أول مرة بس، وبعدها بيترحّل تلقائي)</label><input id="finCreditEdit" type="number" step="0.01" value="'+(num(one.openCredit)||'')+'" placeholder="0"></div><button class="act btn-primary btn-small" onclick="finSetCredit('+FM+')">تحديث الرصيد الافتتاحي</button>':'<div style="font-size:13px;padding:8px 12px;border-radius:12px;background:rgba(120,140,170,.15);">الرصيد المرحّل من الشهر اللي قبله (تلقائي): <b>'+money(one.credit)+'</b></div>')+'<button class="act btn-ghost btn-small" onclick="finExportMonth('+FM+')">⬇️ تنزيل شيت الشهر (Excel)</button><button class="act btn-ghost btn-small" onclick="finDel('+FM+')">🗑 حذف الشهر</button></div>'+
         '<h3 style="margin:10px 0 10px;font-size:15px;">🧾 فواتير الشهر</h3><div id="finDetail"><p style="opacity:.7;font-size:13px;">جاري تحميل الفواتير...</p></div>';
     }
     box.innerHTML=h;
@@ -6459,11 +6482,11 @@ populateClientHelpers();
 
   /* ---------- تعديل الرصيد الدائن / حذف شهر ---------- */
   window.finSetCredit=async function(m){
-    const d=SAVED.find(x=>x.ym===m), col=savedCol(CID); if(!d||!col) return;
-    const credit=num($('finCreditEdit').value), net=num(d.due)-credit;
+    const col=savedCol(CID); if(!col||!SAVED.length||SAVED[0].ym!==m) return;
+    const v=num($('finCreditEdit').value), d=SAVED[0];
     try{
-      await col.doc(String(m)).update({credit,net,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-      d.credit=credit; d.net=net; ENTER=false; renderDash(); say('تم تحديث الرصيد الدائن لشهر '+ymLbl(m)+'.');
+      await col.doc(String(m)).update({openCredit:v,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      d.openCredit=v; await persist(chain(SAVED)); ENTER=false; renderDash(); say('تم تحديث الرصيد الافتتاحي، وتم ترحيله تلقائي على باقي الشهور.');
     }catch(e){ console.error(e); say('تعذّر التحديث: '+(e&&e.message?e.message:'')); }
   };
   window.finDel=function(m){
@@ -6475,6 +6498,19 @@ populateClientHelpers();
         rs.docs.forEach(x=>b.delete(x.ref)); b.delete(mref); await b.commit();
         delete DET[m]; if(FM===m) FM=0; say('تم مسح '+ymLbl(m)+'.'); await loadSaved();
       }catch(e){ console.error(e); say('تعذّر المسح: '+(e&&e.message?e.message:'')); }
+    };
+    try{ requirePin(run); }catch(e){ run(); }
+  };
+
+  window.finDelAll=function(){
+    const T=SAVED.filter(d=>!FY||yOf(d.ym)===FY); if(!T.length) return;
+    const run=async()=>{
+      if(!confirm('هتمسح '+T.length+' شهر '+(FY?'من سنة '+FY:'(كل الشهور)')+' للعميل '+CNAME+'. العملية دي مش بترجع. متأكد؟')) return;
+      const col=savedCol(CID); if(!col) return; say('جاري الحذف...');
+      try{
+        for(const d of T){ const mref=col.doc(String(d.ym)), rs=await mref.collection('rows').get(), b=db.batch(); rs.docs.forEach(x=>b.delete(x.ref)); b.delete(mref); await b.commit(); delete DET[d.ym]; }
+        FM=0; await loadSaved(); say('تم حذف '+T.length+' شهر.');
+      }catch(e){ console.error(e); say('تعذّر الحذف: '+(e&&e.message?e.message:'')); await loadSaved(); }
     };
     try{ requirePin(run); }catch(e){ run(); }
   };
@@ -6508,8 +6544,7 @@ populateClientHelpers();
       let tax=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||'';
       const cl=clientObj(), ct=digits(cl&&cl.taxRegNo);
       if(ct){ const hit=rows.find(r=>digits(r.sTax)===ct)||rows.find(r=>digits(r.bTax)===ct); if(hit) tax=digits(hit.sTax)===ct?hit.sTax:hit.bTax; }
-      const credits={}; SAVED.forEach(d=>{ credits[d.ym]=num(d.credit); });
-      PRE={file:f.name,rows,stats,tax,rate:14,credits};
+      PRE={file:f.name,rows,stats,tax,rate:14};
       msg.textContent='تم تحميل: '+f.name;
       renderPre();
     }catch(e){ console.error(e); msg.textContent='تعذّر قراءة الشيت: '+e.message; }
@@ -6521,18 +6556,21 @@ populateClientHelpers();
   function preCalc(){
     const tax=$('finTax').value.trim(), rate=num($('finRate').value)/100, byM={};
     PRE.rows.forEach(r=>{ (byM[ym(r.date)]=byM[ym(r.date)]||[]).push(r); });
-    return Object.keys(byM).map(Number).sort((a,b)=>b-a).map(m=>({m,c:calc(byM[m],tax,rate,num(PRE.credits[m])),rows:byM[m]}));
+    return Object.keys(byM).map(Number).sort((a,b)=>b-a).map(m=>({m,c:calc(byM[m],tax,rate,0),rows:byM[m]}));
   }
   function renderPre(){
     const box=$('finPre'); if(!box) return;
     if(!PRE){ box.innerHTML=''; return; }
     const cl=clientObj(), ct=digits(cl&&cl.taxRegNo), st=PRE.stats;
+    const minM=PRE.rows.reduce((t,r)=>Math.min(t,ym(r.date)),Infinity), isFirst=!SAVED.length||minM<=SAVED[0].ym;
+    const openField=isFirst?'<div class="field"><label>الرصيد الدائن الافتتاحي (أول مرة بس، بعدها بيترحّل تلقائي)</label><input id="finOpen" type="number" step="0.01" value="'+(SAVED.length?(num(SAVED[0].openCredit)||''):'')+'" placeholder="0"></div>':'';
     box.innerHTML='<div style="border:1px solid rgba(120,140,170,.35);border-radius:16px;padding:14px 16px;margin-top:4px;">'+
       '<div style="font-weight:900;margin-bottom:6px;">معاينة: '+esc(PRE.file)+'</div>'+
       '<p style="font-size:12.5px;opacity:.8;margin:0 0 10px;">تم حذف '+st.bad+' فاتورة غير صحيحة و'+st.tel+' فاتورة شركات اتصالات من '+st.total+' صف.</p>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:10px;">'+
       '<div class="field"><label>الرقم الضريبي للعميل</label><input id="finTax" inputmode="numeric" value="'+esc(PRE.tax)+'" oninput="finPreChanged()"></div>'+
-      '<div class="field"><label>نسبة الضريبة %</label><input id="finRate" type="number" step="0.5" value="'+PRE.rate+'" oninput="finPreChanged()"></div></div>'+
+      '<div class="field"><label>نسبة الضريبة %</label><input id="finRate" type="number" step="0.5" value="'+PRE.rate+'" oninput="finPreChanged()"></div>'+openField+'</div>'+
+      (isFirst?'':'<p style="font-size:12.5px;opacity:.8;margin:0 0 8px;">الرصيد الدائن بيترحّل تلقائي من آخر شهر محفوظ، ومش محتاج تدخله تاني.</p>')+
       '<div id="finPreWarn" style="font-size:12px;color:var(--red);margin-bottom:8px;"></div>'+
       '<div id="finPreTbl"></div>'+
       '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin-top:12px;cursor:pointer;"><input type="checkbox" id="finReplace" onchange="finPreChanged()"> استبدال الشهر المحفوظ بالكامل (بدل ما يتدمج مع الفواتير اللي فيه)</label>'+
@@ -6544,14 +6582,10 @@ populateClientHelpers();
     $('finPreWarn').textContent=(ct&&digits(tax)!==ct)?'⚠️ الرقم الضريبي ده مختلف عن رقم العميل المسجّل ('+cl.taxRegNo+').':'';
     PRE.rate=num($('finRate').value);
     const L=preCalc(), saved=new Set(SAVED.map(d=>d.ym));
-    $('finPreTbl').innerHTML='<div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th><th>رصيد دائن</th><th>الصافي</th></tr></thead><tbody>'+
-      L.map(x=>'<tr><td style="white-space:nowrap"><b>'+ymLbl(x.m)+'</b>'+(saved.has(x.m)?'<div style="font-size:11px;color:var(--red);">محفوظ قبل كده — '+(($('finReplace')&&$('finReplace').checked)?'هيتم استبداله':'هيتدمج مع المحفوظ')+'</div>':'')+'</td><td>'+money(x.c.S)+'</td><td>'+money(x.c.P)+'</td><td>'+money(x.c.due)+'</td><td><input type="number" step="0.01" style="width:110px;" value="'+(num(PRE.credits[x.m])||'')+'" placeholder="0" oninput="finPreCredit('+x.m+',this)"></td><td id="finPreNet'+x.m+'">'+netChip(x.c.net)+'</td></tr>').join('')+'</tbody></table></div>';
+    $('finPreTbl').innerHTML='<div class="ev-tbl"><table><thead><tr><th>الشهر</th><th>المبيعات</th><th>المشتريات</th><th>الضريبة</th></tr></thead><tbody>'+
+      L.map(x=>'<tr><td style="white-space:nowrap"><b>'+ymLbl(x.m)+'</b>'+(saved.has(x.m)?'<div style="font-size:11px;color:var(--red);">محفوظ قبل كده — '+(($('finReplace')&&$('finReplace').checked)?'هيتم استبداله':'هيتدمج مع المحفوظ')+'</div>':'')+'</td><td>'+money(x.c.S)+'</td><td>'+money(x.c.P)+'</td><td>'+money(x.c.due)+'</td></tr>').join('')+'</tbody></table></div>';
   }
   window.finPreChanged=()=>{ if(PRE) renderPreTbl(); };
-  window.finPreCredit=(m,el)=>{
-    PRE.credits[m]=num(el.value);
-    const x=preCalc().find(z=>z.m===m), c=$('finPreNet'+m); if(x&&c) c.innerHTML=netChip(x.c.net);
-  };
   window.finCancelPre=()=>{ PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre(); };
 
   /* ---------- الحفظ في المركز المالي ---------- */
@@ -6563,6 +6597,7 @@ populateClientHelpers();
     const cl=clientObj();
     if(cl&&cl.taxRegNo&&digits(cl.taxRegNo)!==digits(tax)&&!confirm('الرقم الضريبي ('+tax+') مختلف عن رقم العميل '+cl.name+' ('+cl.taxRegNo+'). تحفظ برضه؟')) return;
     const L=preCalc(), btn=$('finSaveBtn'), replace=!!($('finReplace')&&$('finReplace').checked); btn.disabled=true; preSay('جاري الحفظ...');
+    const minNew=L.reduce((t,x)=>Math.min(t,x.m),Infinity), firstNow=!SAVED.length||minNew<=SAVED[0].ym, openIn=$('finOpen')?num($('finOpen').value):null;
     try{
       for(const x of L){
         const mref=col.doc(String(x.m)), old=await mref.collection('rows').get(), batch=db.batch();
@@ -6572,13 +6607,13 @@ populateClientHelpers();
           const oldRows=[]; old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>oldRows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]})));
           const key=r=>[r.sTax,r.bTax,r.num,r.type,r.date.getTime(),r.val,r.vat].join('|'), have=new Set(oldRows.map(key));
           const merged=oldRows.concat(x.rows.filter(r=>!have.has(key(r))));
-          c=calc(merged,tax,rate,num(PRE.credits[x.m]));
+          c=calc(merged,tax,rate,0);
           if(prev&&prev.sourceFile&&prev.sourceFile!==PRE.file) srcFile=prev.sourceFile+' + '+PRE.file;
         }
         old.docs.forEach(d=>batch.delete(d.ref));
         const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName]), parts=Math.ceil(flat.length/400);
         for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:num(PRE.credits[x.m]),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:0,openCredit:(firstNow&&x.m===minNew&&openIn!=null)?openIn:(prev&&prev.openCredit!=null?num(prev.openCredit):0),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         await batch.commit(); delete DET[x.m];
       }
       const n=L.length; PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre();
@@ -6611,10 +6646,11 @@ populateClientHelpers();
   window.finExportSummary=async function(){
     const L=SAVED.filter(d=>FM?d.ym===FM:(!FY||yOf(d.ym)===FY)); if(!L.length) return;
     const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('الموقف الضريبي',{views:[{rightToLeft:true,state:'frozen',ySplit:1}]});
-    const heads=['الشهر','المبيعات','المشتريات','المبيعات المعفاة','المشتريات المعفاة','الفرق','الضريبة المستحقة','الرصيد الدائن','الصافي'];
+    const heads=['الشهر','المبيعات','المشتريات','المبيعات المعفاة','المشتريات المعفاة','الفرق','الضريبة المستحقة','الرصيد المرحّل (أول الشهر)','الصافي'];
     ws.addRow(heads); ws.getRow(1).eachCell(c=>{ c.font=HF; c.fill=HFILL; c.alignment={horizontal:'center'}; });
     const tot=[0,0,0,0,0,0,0,0];
     L.forEach(d=>{ const v=[num(d.S),num(d.P),num(d.SE),num(d.PE),num(d.diff),num(d.due),num(d.credit),num(d.net)]; v.forEach((x,i)=>tot[i]+=x); const r=ws.addRow([ymLbl(d.ym)].concat(v)); r.eachCell(c=>c.font={name:'Arial',size:10}); for(let i=2;i<=9;i++) r.getCell(i).numFmt='#,##0.00'; });
+    tot[6]=num(L[0].credit); tot[7]=L.reduce((t,d)=>t+Math.max(0,num(d.net)),0);
     const tr=ws.addRow(['الإجمالي'].concat(tot)); tr.eachCell(c=>c.font={name:'Arial',size:11,bold:true}); for(let i=2;i<=9;i++) tr.getCell(i).numFmt='#,##0.00';
     ws.columns.forEach((c,i)=>c.width=i?18:16);
     await xlDownload(wb,'الموقف_الضريبي_'+CNAME+'_'+(FM||FY||'كل_الفترات')+'.xlsx');
