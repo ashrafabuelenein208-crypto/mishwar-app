@@ -7005,6 +7005,7 @@ populateClientHelpers();
 .vr-chev{color:var(--navy-dim);font-size:22px}
 .vr-fq{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;padding:6px 8px;border-radius:12px;color:#fff;line-height:1.25}
 .vr-fq small{font-size:10px;opacity:.85}.vr-fq b{font-size:13px}
+.vr-trash{flex:none;border:0;background:var(--red-soft);color:var(--red);border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer}
 .vr-side{flex:none;display:flex;flex-direction:column;gap:4px}.vr-side .vr-fq{padding:3px 6px;min-width:62px}.vr-fq.sy-new{background:#5a6bd8}.vr-fq.sy-old{background:#78909c}
 .vr-fq.fq-m{background:var(--navy)}.vr-fq.fq-q{background:#0f9d9a}
 .vr-pdf{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.vr-pdf select{width:auto}
@@ -7111,7 +7112,7 @@ populateClientHelpers();
     L.forEach(r=>{
       const s=stateOf(r.d), d=r.d||{};
       h+='<div class="vr-row vr-'+s+'" onclick="vrEdit(\''+r.c.id+'\')"><div class="vr-ic">'+(s==='done'?'✓':'✕')+'</div><div class="vr-main"><div class="vr-nm">'+esc(r.c.name)+'</div><div class="vr-pills">'
-        +(s==='done'?'<span class="vr-p vr-p-done">تم التقديم</span>'+payPill(d):'<span class="vr-p vr-p-todo">لم يتم التقديم</span>')+(d.hasReceipt?'<span class="vr-p vr-p-none">📎 إيصال</span>':'')+'</div></div><div class="vr-side"><div class="vr-fq fq-'+freqOf(r.c)+'"><small>الدورية</small><b>'+(freqOf(r.c)==='q'?'ربع سنوي':'شهري')+'</b></div>'+(r.c.vatSys?'<div class="vr-fq sy-'+r.c.vatSys+'"><small>المنظومة</small><b>'+(r.c.vatSys==='old'?'قديمة':'جديدة')+'</b></div>':'')+'</div><div class="vr-chev">‹</div></div>';
+        +(s==='done'?'<span class="vr-p vr-p-done">تم التقديم</span>'+payPill(d):'<span class="vr-p vr-p-todo">لم يتم التقديم</span>')+(d.hasReceipt?'<span class="vr-p vr-p-none">📎 إيصال</span>':'')+'</div></div>'+(r.d?'<button class="vr-trash" title="حذف الإقرار" onclick="event.stopPropagation();vrDelRow(\''+r.c.id+'\')">🗑</button>':'')+'<div class="vr-side"><div class="vr-fq fq-'+freqOf(r.c)+'"><small>الدورية</small><b>'+(freqOf(r.c)==='q'?'ربع سنوي':'شهري')+'</b></div>'+(r.c.vatSys?'<div class="vr-fq sy-'+r.c.vatSys+'"><small>المنظومة</small><b>'+(r.c.vatSys==='old'?'قديمة':'جديدة')+'</b></div>':'')+'</div><div class="vr-chev">‹</div></div>';
     });
     if(ST.excl&&ST.excl.length) h+='<details class="vr-ex"><summary>عملاء لا يُقدَّم لهم إقرار ('+ST.excl.length+')</summary>'+ST.excl.map(c=>'<div class="vr-exr"><span>'+esc(c.name)+'</span><button class="act btn-ghost btn-small" onclick="vrReenable(\''+c.id+'\')">إعادة التفعيل</button></div>').join('')+'</details>';
     $('vrBody').innerHTML=h;
@@ -7222,16 +7223,15 @@ populateClientHelpers();
     h+='<div class="row-actions" style="margin-top:14px;"><button class="act btn-primary" id="vrSave" onclick="vrSave()">حفظ</button><button class="act btn-ghost" onclick="vrClose()">إلغاء</button>'+(M.exists?'<button class="act btn-danger" onclick="vrDel()">🗑 حذف الإقرار</button>':'')+'</div></div>';
     o.innerHTML=h; o.style.display='flex';
   }
-  window.vrDel=async function(){
-    if(!M||!confirm('حذف إقرار '+perLbl(M.c,ST.ym)+' الخاص بـ '+M.c.name+' نهائيا، مع الإيصال المرفق؟')) return;
-    const m=M, ref=col(m.cid).doc(String(ST.ym));
-    try{
-      try{ await ref.collection('files').doc('receipt').delete(); }catch(e){}
-      await ref.delete();
-      const r=ST.rows.find(x=>x.c.id===m.cid); if(r) r.d=null;
-      ST.homeAt=0; vrClose(); render();
-    }catch(e){ alert('تعذّر الحذف: '+(e&&e.message||'')); }
-  };
+  async function delRec(cid){
+    const r=ST.rows.find(x=>x.c.id===cid); if(!r) return false;
+    if(!confirm('حذف إقرار '+perLbl(r.c,ST.ym)+' الخاص بـ '+r.c.name+' نهائيا، مع الإيصال المرفق؟')) return false;
+    const ref=col(cid).doc(String(ST.ym));
+    try{ try{ await ref.collection('files').doc('receipt').delete(); }catch(e){} await ref.delete(); r.d=null; ST.homeAt=0; return true; }
+    catch(e){ alert('تعذّر الحذف: '+(e&&e.message||'')); return false; }
+  }
+  window.vrDel=async function(){ if(M&&await delRec(M.cid)){ vrClose(); render(); } };
+  window.vrDelRow=async function(cid){ if(await delRec(cid)) render(); };
   window.vrClose=()=>{const o=$('vrModal'); if(o) o.style.display='none'; M=null;};
   window.vrDelR=()=>{ if(!confirm('حذف الإيصال؟')) return; keep(); M.newR=null; M.delR=true; mdl(); };
   window.vrPick=async function(inp){
