@@ -1315,7 +1315,12 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
             <div style="font-weight:900;font-size:14.5px;margin-bottom:4px;">📤 تصدير CSV لرفع المبيعات / المشتريات للضرائب</div>
             <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار شهر أو أكتر (مثلا 3 شهور للإقرار الربع سنوي) والنوع والمنظومة، والصفوف بتتجمع في ملف واحد. Excel علشان تعدّل قبل التحويل، وCSV جاهز للرفع، بنفس ترتيب أعمدة القالب.</div>
             <div class="fin-bar">
-              <div class="field" style="flex:1 1 100%;"><label>الشهور (اختار شهر أو أكتر)</label><div id="csvMonths" class="csv-months"></div><div class="row-actions" style="margin-top:6px;"><button type="button" class="act btn-ghost btn-small" onclick="csvPick('last3')">آخر 3 شهور</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('all')">كل المحفوظ</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('none')">مسح</button></div></div>
+              <div class="field" style="flex:1 1 100%;"><label>الشهور (اختار شهر أو أكتر)</label>
+              <button type="button" id="csvMBtn" class="csv-mbtn" onclick="csvToggle()">📅 اختار الشهور ▾</button>
+              <div id="csvMPanel" class="csv-mpanel" style="display:none;">
+                <div class="row-actions csv-qa"><button type="button" class="act btn-ghost btn-small" onclick="csvPick('last3')">آخر 3 شهور</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('all')">الكل</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('none')">مسح</button><button type="button" class="act btn-primary btn-small" onclick="csvToggle()">تم ✓</button></div>
+                <div id="csvMonths" class="csv-months"></div>
+              </div></div>
               <div class="field"><label>النوع</label><select id="csvKind"><option value="sale">مبيعات</option><option value="buy">مشتريات</option></select></div>
               <div class="field"><label>المنظومة</label><select id="csvSys"><option value="new">جديدة</option><option value="old">قديمة</option></select></div>
               <div class="field"><label>شكل التاريخ</label><select id="csvDateFmt"><option value="dd.mm.yyyy">24.09.2026 (زي البوابة)</option><option value="yyyy-mm-dd">2026-09-30 (سنة-شهر-يوم)</option><option value="dd/mm/yyyy">30/09/2026 (يوم/شهر/سنة)</option><option value="mm/dd/yyyy">09/30/2026 (شهر/يوم/سنة)</option></select></div>
@@ -6730,11 +6735,24 @@ populateClientHelpers();
     const wrap=$('csvMonths'), prev=[...wrap.querySelectorAll('input:checked')].map(i=>Number(i.value));
     const ms=SAVED.map(d=>d.ym).sort((a,b)=>b-a);
     const keepM=prev.filter(m=>ms.includes(m)), pick=keepM.length?keepM:[ms.includes(FM)?FM:ms[0]];
-    wrap.innerHTML=ms.map(m=>'<label><input type="checkbox" value="'+m+'"'+(pick.includes(m)?' checked':'')+'> '+ymLbl(m)+'</label>').join('');
+    const yrs=[...new Set(ms.map(m=>Math.floor(m/100)))];
+    wrap.innerHTML=yrs.map(y=>'<div class="csv-y"><div class="csv-yh"><b>'+y+'</b><button type="button" class="act btn-ghost btn-small" onclick="csvYear('+y+')">اختيار السنة</button></div><div class="csv-yg">'+ms.filter(m=>Math.floor(m/100)===y).map(m=>'<label><input type="checkbox" value="'+m+'" onchange="csvSum()"'+(pick.includes(m)?' checked':'')+'> '+ymLbl(m).split(' ')[0]+'</label>').join('')+'</div></div>').join('');
+    csvSum();
   }
   window.csvPick=function(mode){
     const bx=[...document.querySelectorAll('#csvMonths input')];
     bx.forEach((i,n)=>{ i.checked=mode==='all'?true:(mode==='last3'?n<3:false); });
+    csvSum();
+  };
+  window.csvToggle=function(){ const p=$('csvMPanel'); p.style.display=p.style.display==='none'?'block':'none'; };
+  window.csvYear=function(y){
+    const bx=[...document.querySelectorAll('#csvMonths input')].filter(i=>Math.floor(Number(i.value)/100)===y);
+    const all=bx.every(i=>i.checked); bx.forEach(i=>{ i.checked=!all; }); csvSum();
+  };
+  window.csvSum=function(){
+    const b=$('csvMBtn'); if(!b) return;
+    const v=[...document.querySelectorAll('#csvMonths input:checked')].map(i=>Number(i.value)).sort((x,y)=>x-y);
+    b.textContent='📅 '+(!v.length?'اختار الشهور':(v.length===1?ymLbl(v[0]):v.length+' شهور: '+ymLbl(v[0])+' ← '+ymLbl(v[v.length-1])))+' ▾';
   };
   async function csvPrepare(){
     const msg=$('csvMsg'); msg.textContent='';
@@ -6996,7 +7014,12 @@ populateClientHelpers();
 })();
 </script>
 <style>
-.csv-months{display:flex;flex-wrap:wrap;gap:6px}.csv-months label{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1.5px solid var(--line);border-radius:20px;font-size:12.5px;cursor:pointer;background:var(--panel)}.csv-months label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
+.csv-mbtn{width:100%;text-align:start;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.csv-mpanel{margin-top:6px;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);max-height:300px;overflow-y:auto;padding:8px}
+.csv-qa{position:sticky;top:-8px;background:var(--panel);padding:6px 0 8px;z-index:1}
+.csv-yh{display:flex;justify-content:space-between;align-items:center;margin:8px 0 5px;font-size:13px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.csv-yg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.csv-yg label{justify-content:flex-start}
+.csv-months{display:block}.csv-months label{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1.5px solid var(--line);border-radius:20px;font-size:12.5px;cursor:pointer;background:var(--panel)}.csv-months label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
 .vr-hero{background:linear-gradient(120deg,var(--navy),#2a9fd6);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:12px}
 .vr-hero-t{display:flex;justify-content:space-between;align-items:baseline;font-size:16px}.vr-hero-t span{font-size:22px;font-weight:900}
 .vr-bar{height:10px;border-radius:8px;background:rgba(255,255,255,.28);margin-top:10px;overflow:hidden}.vr-bar i{display:block;height:100%;background:#3ddc97;border-radius:8px;transition:width .4s}
