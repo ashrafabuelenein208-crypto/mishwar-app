@@ -7395,7 +7395,7 @@ function parseCsv(t){
 function parseUnit(s){ s=String(s||'').trim(); if(!s) return 'EA'; const up=s.toUpperCase(); const a=UNITS.find(u=>u[0]===up); if(a) return a[0]; const b=UNITS.find(u=>u[1]===s); if(b) return b[0]; return /^[A-Z]{2,3}$/.test(up)?up:'EA'; }
 function parseTax(s){ const t=String(s==null?'':s).replace('%','').trim(); if(t===''||t==='14') return {kind:'v14',rate:14}; if(t==='5') return {kind:'v5',rate:5}; if(t==='0'||/صفر/.test(t)) return {kind:'v0',rate:0}; if(/معف/.test(t)) return {kind:'ex',rate:0}; if(/جدول/.test(t)) return {kind:'tbl',rate:parseFloat(t.replace(/[^\d.]/g,''))||0}; const n=parseFloat(t); return isNaN(n)?{kind:'v14',rate:14}:{kind:'cus',rate:n}; }
 const ad=s=>String(s==null?'':s).replace(/[\u0660-\u0669]/g,d=>'\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'.indexOf(d)).replace(/\u066B/g,'.').replace(/\u066C/g,',');
-function mapItemRow(r){ const egs=String(r[0]||'').trim(), name=String(r[1]||'').trim(); if(!egs||!name) return {err:'كود أو اسم ناقص'}; const rt=ad(r[4]).trim(), tx=parseTax(rt), p=parseFloat(ad(r[3]||'0').replace(/,/g,'')); return {item:{egs,name,unit:parseUnit(r[2]),price:isNaN(p)?0:p,tax:tx},warn:(rt.replace('%','')!=='14'&&tx.kind==='v14')||isNaN(p)}; }
+function mapItemRow(r){ const name=String(r[1]||'').trim(), egs=normEgs(r[0]); if(!egs||!name) return {err:'كود أو اسم ناقص'}; const ce=chkEgs(egs); if(ce) return {err:ce}; const gpc=ad(r[5]).trim(), nameEn=String(r[6]||'').trim(); if(gpc&&!/^\d{8}$/.test(gpc)) return {err:'GPC لازم 8 أرقام'}; const rt=ad(r[4]).trim(), tx=parseTax(rt), p=parseFloat(ad(r[3]||'0').replace(/,/g,'')); return {item:Object.assign({egs,name,unit:parseUnit(r[2]),price:isNaN(p)?0:p,tax:tx},gpc?{gpc}:{},nameEn?{nameEn}:{}),warn:(rt.replace('%','')!=='14'&&tx.kind==='v14')||isNaN(p)}; }
 const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(String(r[0]||''));
   const $=id=>document.getElementById(id), esc=v=>escapeHtml(String(v==null?'':v));
   const col=()=>{try{const c=officeClientsCol();return c?c.parent.collection('einvClients'):null;}catch(e){return null;}};
@@ -7461,7 +7461,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
         +(c.branches.length?c.branches.map(b=>row('🏬','فرع '+b.code+' — '+b.name,[b.gov,b.city,b.street,b.bld].filter(Boolean).join('، ')||'بدون عنوان','evBranchForm','evBranchDel',b.id)).join(''):'<p class="empty">لا توجد فروع</p>');
     }
     else if(EV.tab==='items'){
-      h+='<div class="vr-pdf"><button class="act btn-primary btn-small" onclick="evItemForm()">➕ صنف</button><button class="act btn-ghost btn-small" onclick="document.getElementById(\'evImp\').click()">⬆ استيراد Excel / CSV</button><button class="act btn-ghost btn-small" onclick="evTemplate()">⬇ قالب Excel</button></div>'
+      h+='<div class="vr-pdf"><button class="act btn-primary btn-small" onclick="evItemForm()">➕ صنف</button><button class="act btn-ghost btn-small" onclick="document.getElementById(\'evImp\').click()">⬆ استيراد Excel / CSV</button><button class="act btn-ghost btn-small" onclick="evTemplate()">⬇ قالب Excel</button><button class="act btn-ghost btn-small" onclick="evEgsCheck()">🔎 فحص الأكواد</button><button class="act btn-ghost btn-small" onclick="evEgsExport()">⬇ ملف تسجيل الأكواد</button></div>'
         +'<input type="file" id="evImp" accept=".xlsx,.csv" style="display:none" onchange="evImport(this)"><div id="evMsg" class="vr-note"></div>'
         +'<div class="vr-search"><input type="search" id="evIq" placeholder="🔍 بحث بالاسم أو الكود" oninput="evIqChg()"></div><div id="evItemsList"></div>';
     }
@@ -7512,15 +7512,16 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function renderItems(){
     const q=nz(EV.iq), L=EV.cur.items.filter(i=>!q||nz(i.name).includes(q)||nz(i.egs).includes(q)), box=$('evItemsList'); if(!box) return;
     if(!L.length){ box.innerHTML='<p class="empty">'+(EV.cur.items.length?'لا نتائج':'لا توجد أصناف — أضف صنف أو استورد من Excel')+'</p>'; return; }
-    box.innerHTML=L.slice(0,200).map(i=>row('📦',i.name,'EGS: '+i.egs+' · '+unitLbl(i.unit)+' · '+Number(i.price||0).toLocaleString('en-US')+' ج · '+taxText(i.tax),'evItemForm','evItemDel',i.id)).join('')+(L.length>200?'<p class="empty">عرض أول 200 من '+L.length+' — استخدم البحث</p>':'');
+    box.innerHTML=L.slice(0,200).map(i=>row('📦',i.name,'EGS: '+i.egs+stTxt(i)+' · '+unitLbl(i.unit)+' · '+Number(i.price||0).toLocaleString('en-US')+' ج · '+taxText(i.tax),'evItemForm','evItemDel',i.id)).join('')+(L.length>200?'<p class="empty">عرض أول 200 من '+L.length+' — استخدم البحث</p>':'');
   }
   window.evIqChg=()=>{EV.iq=$('evIq').value;renderItems();};
   window.evItemForm=function(id){
-    const it=id?EV.cur.items.find(x=>x.id===id):{unit:'EA',price:0,tax:{kind:'v14',rate:14}};
-    const vals={egs:it.egs,name:it.name,unit:it.unit,price:it.price,tkind:it.tax.kind,trate:it.tax.rate};
-    form(id?'تعديل صنف':'صنف جديد',[{k:'egs',label:'كود الصنف (EGS)',req:1},{k:'name',label:'اسم الصنف',req:1},{k:'unit',label:'الوحدة',type:'select',opts:UNITS},{k:'price',label:'السعر (ج.م)',type:'number'},{k:'tkind',label:'نوع الضريبة',type:'select',opts:TAXK},{k:'trate',label:'النسبة % (لضريبة الجدول والأخرى فقط)',type:'number'}],vals,async v=>{
-      if(!id&&EV.cur.items.some(x=>x.egs===v.egs)){ $('evFormMsg').textContent='الكود ده مسجل قبل كده'; return false; }
-      await mutate('items',a=>upsert(a,id,{egs:v.egs,name:v.name,unit:v.unit,price:parseFloat(v.price)||0,tax:taxFrom(v.tkind,v.trate)})); renderTab();
+    const it=id?EV.cur.items.find(x=>x.id===id):{egs:'EG-'+(EV.cur.rin||'')+'-',unit:'EA',price:0,tax:{kind:'v14',rate:14},status:'draft'};
+    const vals={egs:it.egs,gpc:it.gpc||'',nameEn:it.nameEn||'',status:it.status||'',name:it.name,unit:it.unit,price:it.price,tkind:it.tax.kind,trate:it.tax.rate};
+    form(id?'تعديل صنف':'صنف جديد',[{k:'egs',label:'كود EGS — الصيغة EG-الرقم الضريبي-الكود الداخلي (ممكن تكتب الكود الداخلي بس)',req:1},{k:'name',label:'اسم الصنف (عربي)',req:1},{k:'nameEn',label:'اسم الصنف (English) — مطلوب لتسجيل الكود'},{k:'gpc',label:'كود GPC (8 أرقام، يبدأ بـ 1000)'},{k:'status',label:'حالة الكود على البوابة',type:'select',opts:EGS_ST},{k:'unit',label:'الوحدة',type:'select',opts:UNITS},{k:'price',label:'السعر (ج.م)',type:'number'},{k:'tkind',label:'نوع الضريبة',type:'select',opts:TAXK},{k:'trate',label:'النسبة % (لضريبة الجدول والأخرى فقط)',type:'number'}],vals,async v=>{
+      v.egs=normEgs(v.egs); const ee=chkEgs(v.egs); if(ee){ $('evFormMsg').textContent=ee; return false; } v.gpc=ad(v.gpc).trim(); if(v.gpc&&!/^\d{8}$/.test(v.gpc)){ $('evFormMsg').textContent='كود GPC لازم 8 أرقام'; return false; }
+      if(EV.cur.items.some(x=>x.egs===v.egs&&x.id!==id)){ $('evFormMsg').textContent='الكود ده مسجل قبل كده'; return false; }
+      await mutate('items',a=>upsert(a,id,{egs:v.egs,gpc:v.gpc,nameEn:v.nameEn,status:v.status,name:v.name,unit:v.unit,price:parseFloat(v.price)||0,tax:taxFrom(v.tkind,v.trate)})); renderTab();
     });
   };
   window.evItemDel=async function(id){ if(!confirm('حذف الصنف؟')) return; await mutate('items',a=>a.filter(x=>x.id!==id)); renderTab(); };
@@ -7534,7 +7535,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       let hdr=false; if(rows.length&&isHeaderRow(rows[0])){ rows=rows.slice(1); hdr=true; }
       const good=[], bad=[]; let warn=0, add=0, upd=0;
       rows.forEach((r,n)=>{ const m=mapItemRow(r); if(m.err){ bad.push('صف '+(n+(hdr?2:1))+': '+m.err); return; } if(m.warn) warn++; good.push(m.item); });
-      await mutate('items',cur=>{ add=0; upd=0; good.forEach(it=>{ const i=cur.findIndex(x=>x.egs===it.egs); if(i>=0){ cur[i]=Object.assign({},cur[i],it); upd++; } else { cur.push(Object.assign({id:uid()},it)); add++; } }); return cur; });
+      await mutate('items',cur=>{ add=0; upd=0; good.forEach(it=>{ const i=cur.findIndex(x=>x.egs===it.egs); if(i>=0){ cur[i]=Object.assign({},cur[i],it); upd++; } else { cur.push(Object.assign({id:uid(),status:'draft'},it)); add++; } }); return cur; });
       renderTab();
       $('evMsg').textContent='✓ تمت الإضافة: '+add+' · تم التحديث: '+upd+(warn?' · ⚠ '+warn+' صنف ضريبته فاضية/غير مفهومة اتحسبت 14% — راجعها':'')+(bad.length?' · تم تجاهل '+bad.length+' ('+bad.slice(0,3).join('، ')+')':'');
     }catch(e){ msg.textContent='تعذّر الاستيراد: '+(e&&e.message||''); }
@@ -7542,9 +7543,9 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   };
   window.evTemplate=async function(){
     const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('الأصناف',{views:[{rightToLeft:true}]});
-    ws.addRow(['كود الصنف (EGS)','اسم الصنف','الوحدة (متر / كيلو / EA ...)','السعر','الضريبة (14 / 5 / 0 / معفى)']);
-    ws.addRow(['EG-123456789-1001','ماسورة 4 بوصة','متر',150,14]); ws.addRow(['EG-123456789-2001','لوح خشب','قطعة',320.5,14]);
-    ws.getRow(1).font={bold:true}; ws.columns.forEach((c,i)=>{c.width=[24,28,26,12,26][i];});
+    ws.addRow(['كود الصنف (EGS أو الكود الداخلي بس)','اسم الصنف','الوحدة (متر / كيلو / EA ...)','السعر','الضريبة (14 / 5 / 0 / معفى)','GPC (8 أرقام)','اسم الصنف English']);
+    ws.addRow(['1001','ماسورة 4 بوصة','متر',150,14,'10000051','Pipe 4 inch']); ws.addRow(['EG-123456789-2001','لوح خشب','قطعة',320.5,14,'10000051','Wood board']);
+    ws.getRow(1).font={bold:true}; ws.columns.forEach((c,i)=>{c.width=[30,28,26,12,26,16,24][i];});
     const buf=await wb.xlsx.writeBuffer(), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([buf])); a.download='قالب_الاصناف.xlsx'; document.body.appendChild(a); a.click(); a.remove();
   };
 
@@ -7564,6 +7565,38 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       tx.update(ref,{[field]:out}); return out; });
     EV.cur[field]=nv;
   }
+
+
+  /* ---------- أكواد EGS: الصيغة / الفحص / ملف التسجيل ---------- */
+  const EGS_ST=[['','غير محدد'],['draft','غير مُسجل'],['requested','مُقدّم وينتظر الاعتماد'],['approved','معتمد']];
+  const stTxt=i=>({approved:' ✔ معتمد',requested:' ⏳ ينتظر',draft:' ✎ غير مُسجل'}[i.status]||'');
+  const normEgs=c=>{ c=ad(c).trim().replace(/\s+/g,''); if(!c) return c; return /^EG-/i.test(c)?'EG-'+c.slice(3):'EG-'+(EV.cur.rin||'')+'-'+c; };
+  const chkEgs=c=>{ const m=/^EG-(\d{9})-([A-Za-z0-9._-]+)$/.exec(c); if(!m) return 'الصيغة لازم EG-الرقم الضريبي(9 أرقام)-الكود الداخلي'; if(EV.cur.rin&&m[1]!==EV.cur.rin) return 'الرقم الضريبي في الكود ('+m[1]+') مختلف عن رقم العميل ('+EV.cur.rin+')'; return ''; };
+  window.evEgsCheck=async function(){
+    const msg=$('evMsg'), L=EV.cur.items; if(!EV.cur.rin){ msg.textContent='أدخل الرقم الضريبي للعميل (تبويب بيانات) الأول'; return; }
+    const seen={}, probs=[]; L.forEach(i=>{ const e=chkEgs(i.egs); if(e) probs.push(i.egs); if(seen[i.egs]) probs.push(i.egs+' (مكرر)'); seen[i.egs]=1; });
+    const noGpc=L.filter(i=>!/^\d{8}$/.test(i.gpc||'')).length, noEn=L.filter(i=>!i.nameEn).length;
+    const used=new Set(L.map(i=>i.egs)), map={};
+    L.forEach(i=>{ if(!chkEgs(i.egs)) return; });
+    L.forEach(i=>{ if(!chkEgs(i.egs)) return; const m=/^EG-\d{9}-(.+)$/i.exec(i.egs||''), n=m?'EG-'+EV.cur.rin+'-'+m[1]:normEgs(i.egs); });
+    L.forEach(i=>{ const m=/^EG-\d{9}-(.+)$/i.exec(i.egs||''), n=m?'EG-'+EV.cur.rin+'-'+m[1]:normEgs(i.egs); if(n!==i.egs&&!chkEgs(n)&&!used.has(n)){ map[i.id]=n; used.add(n); } });
+    const nf=Object.keys(map).length;
+    msg.textContent=(probs.length?'⚠ أكواد غلط: '+probs.slice(0,4).join('، ')+(probs.length>4?' ...':''):'✓ كل الأكواد صيغتها سليمة')+' · بدون GPC: '+noGpc+' · بدون اسم English: '+noEn;
+    if(nf&&confirm('تصحيح '+nf+' كود تلقائيًا (توحيد الرقم الضريبي والصيغة)؟')){ await mutate('items',a=>a.map(i=>map[i.id]?Object.assign({},i,{egs:map[i.id]}):i)); renderTab(); $('evMsg').textContent='✓ اتصحح '+nf+' كود'; }
+  };
+  window.evEgsExport=async function(){
+    const msg=$('evMsg'), L=EV.cur.items.filter(i=>i.status!=='approved'&&i.status!=='requested');
+    if(!L.length){ msg.textContent='كل الأكواد مُقدّمة أو معتمدة'; return; }
+    const bad=L.filter(i=>chkEgs(i.egs)||!/^\d{8}$/.test(i.gpc||'')||!i.nameEn);
+    if(bad.length){ msg.textContent='⚠ '+bad.length+' صنف ناقص (صيغة/GPC/اسم English): '+bad.slice(0,3).map(i=>i.egs).join('، '); return; }
+    if(L.length>1000&&!confirm('الملف الواحد على البوابة حده 1000 كود. هيتنزل أول 1000 فقط. متابعة؟')) return;
+    const P=L.slice(0,1000), wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('EGS');
+    ws.addRow(['codeType','parentCode','itemCode','codeName','codeNameAr','activeFrom','requestReason','linkedCode']);
+    P.forEach(i=>ws.addRow(['EGS',i.gpc,i.egs,i.nameEn,i.name,todayStr(),'','']));
+    ws.columns.forEach(c=>{c.width=22;});
+    const buf=await wb.xlsx.writeBuffer(), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([buf])); a.download='تسجيل_اكواد_EGS.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+    if(confirm('تعليم '+P.length+' صنف كـ «مُقدّم للتسجيل»؟ (راجع ملف القالب من البوابة قبل الرفع)')){ const ids=new Set(P.map(i=>i.id)); await mutate('items',a=>a.map(i=>ids.has(i.id)?Object.assign({},i,{status:'requested'}):i)); renderTab(); }
+  };
 
   /* ---------- الفواتير: نفس خطوات بوابة المصلحة الأربع ---------- */
   const icol=()=>col().doc(EV.cur.id).collection('invoices');
@@ -7614,6 +7647,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(!INV.buyer) p.push('اختر المشتري'); else if(!INV.buyer.addr) p.push('عنوان المشتري مطلوب في البوابة');
     if(!INV.lines.length) p.push('لا توجد بنود');
     INV.lines.forEach((l,i)=>{ if(!(l.qty>0)) p.push('بند '+(i+1)+': الكمية لازم أكبر من صفر'); if(!(l.price>=0)) p.push('بند '+(i+1)+': السعر غير صحيح'); if(l.disc<0||l.disc>100) p.push('بند '+(i+1)+': الخصم بين 0 و100'); });
+    INV.lines.forEach((l,i)=>{ const it=EV.cur.items.find(x=>x.egs===l.egs); if(it&&it.status&&it.status!=='approved') p.push('بند '+(i+1)+': الكود '+l.egs+' لسه مش معتمد من المصلحة'); });
     return p;
   }
   function invBody(){
