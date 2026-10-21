@@ -1313,9 +1313,9 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <div id="finCsvBox" class="fin-sec" style="display:none;margin-top:12px;">
           <div style="padding:13px 16px;">
             <div style="font-weight:900;font-size:14.5px;margin-bottom:4px;">📤 تصدير CSV لرفع المبيعات / المشتريات للضرائب</div>
-            <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار الشهر والنوع والمنظومة. Excel علشان تعدّل قبل التحويل، وCSV جاهز للرفع، بنفس ترتيب أعمدة القالب.</div>
+            <div style="font-size:11.5px;opacity:.7;margin-bottom:10px;">اختار شهر أو أكتر (مثلا 3 شهور للإقرار الربع سنوي) والنوع والمنظومة، والصفوف بتتجمع في ملف واحد. Excel علشان تعدّل قبل التحويل، وCSV جاهز للرفع، بنفس ترتيب أعمدة القالب.</div>
             <div class="fin-bar">
-              <div class="field"><label>الشهر</label><select id="csvMonth"></select></div>
+              <div class="field" style="flex:1 1 100%;"><label>الشهور (اختار شهر أو أكتر)</label><div id="csvMonths" class="csv-months"></div><div class="row-actions" style="margin-top:6px;"><button type="button" class="act btn-ghost btn-small" onclick="csvPick('last3')">آخر 3 شهور</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('all')">كل المحفوظ</button><button type="button" class="act btn-ghost btn-small" onclick="csvPick('none')">مسح</button></div></div>
               <div class="field"><label>النوع</label><select id="csvKind"><option value="sale">مبيعات</option><option value="buy">مشتريات</option></select></div>
               <div class="field"><label>المنظومة</label><select id="csvSys"><option value="new">جديدة</option><option value="old">قديمة</option></select></div>
               <div class="field"><label>شكل التاريخ</label><select id="csvDateFmt"><option value="dd.mm.yyyy">24.09.2026 (زي البوابة)</option><option value="yyyy-mm-dd">2026-09-30 (سنة-شهر-يوم)</option><option value="dd/mm/yyyy">30/09/2026 (يوم/شهر/سنة)</option><option value="mm/dd/yyyy">09/30/2026 (شهر/يوم/سنة)</option></select></div>
@@ -6704,7 +6704,7 @@ populateClientHelpers();
   const f2=n=>(Math.round(Math.abs(num(n))*100)/100).toFixed(2);
   const csvCell=v=>{ const s=v==null?'':String(v); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
   /* يبني صفوف الـCSV (من غير العناوين). kind: sale|buy ، sys: new|old */
-  function buildTaxCsvRows(rows,tax,kind,sys){
+  function buildTaxCsvRows(rows,tax,kind,sys,off){
     const R=calc(rows,tax,CSV_CFG.rate,0).rows.filter(r=>r.kind===kind);
     R.sort((a,b)=>(a.date-b.date)||String(a.num).localeCompare(String(b.num),'en',{numeric:true}));
     return R.map((r,i)=>{
@@ -6718,7 +6718,7 @@ populateClientHelpers();
       const comm=exempt?7:3;                                      /* نوع السلعة: 3 خاضعة 14% ، 7 معفاة */
       const val=f2(r.val), vat=exempt?'0.00':f2(r.vat), tot=f2(Math.abs(num(r.val))+(exempt?0:Math.abs(num(r.vat))));
       const rate=exempt?'0':String(CSV_CFG.rate);
-      const head=[docType,1,0,(r.num!==''&&r.num!=null)?r.num:String(i+1),name,hasTax?String(cTax).trim():'','',CSV_CFG.city,'','',csvDate(r.date),kind==='sale'?'مبيعات':'مشتريات','',stat,comm,'',val,rate,1];
+      const head=[docType,1,0,(r.num!==''&&r.num!=null)?r.num:String(i+1+(off||0)),name,hasTax?String(cTax).trim():'','',CSV_CFG.city,'','',csvDate(r.date),kind==='sale'?'مبيعات':'مشتريات','',stat,comm,'',val,rate,1];
       return sys==='new'?head.concat([val,'0.00',val,vat,tot]):head.concat([val,vat,tot]);
     });
   }
@@ -6727,23 +6727,34 @@ populateClientHelpers();
     if(!SAVED.length){ box.style.display='none'; return; }
     box.style.display='';
     try{ const sv=localStorage.getItem('csv_date_fmt2'); if(sv&&!box.dataset.fmt){ $('csvDateFmt').value=sv; } box.dataset.fmt=1; }catch(_){}
-    const sel=$('csvMonth'), keep=Number(sel.value)||0;
+    const wrap=$('csvMonths'), prev=[...wrap.querySelectorAll('input:checked')].map(i=>Number(i.value));
     const ms=SAVED.map(d=>d.ym).sort((a,b)=>b-a);
-    sel.innerHTML=ms.map(m=>'<option value="'+m+'">'+ymLbl(m)+'</option>').join('');
-    sel.value=String(ms.includes(FM)?FM:(ms.includes(keep)?keep:ms[0]));
+    const keepM=prev.filter(m=>ms.includes(m)), pick=keepM.length?keepM:[ms.includes(FM)?FM:ms[0]];
+    wrap.innerHTML=ms.map(m=>'<label><input type="checkbox" value="'+m+'"'+(pick.includes(m)?' checked':'')+'> '+ymLbl(m)+'</label>').join('');
   }
+  window.csvPick=function(mode){
+    const bx=[...document.querySelectorAll('#csvMonths input')];
+    bx.forEach((i,n)=>{ i.checked=mode==='all'?true:(mode==='last3'?n<3:false); });
+  };
   async function csvPrepare(){
     const msg=$('csvMsg'); msg.textContent='';
-    const m=Number($('csvMonth').value), kind=$('csvKind').value, sys=$('csvSys').value, withHdr=$('csvHdr').checked;
-    const d=SAVED.find(x=>x.ym===m); if(!d){ msg.textContent='اختار شهر محفوظ.'; return null; }
+    const ms=[...document.querySelectorAll('#csvMonths input:checked')].map(i=>Number(i.value)).sort((a,b)=>a-b);
+    const kind=$('csvKind').value, sys=$('csvSys').value, withHdr=$('csvHdr').checked;
+    if(!ms.length){ msg.textContent='اختار شهر واحد على الأقل.'; return null; }
     msg.textContent='جاري التجهيز...';
-    const rows=await fetchRows(CID,m); DET[m]=rows;
-    const out=buildTaxCsvRows(rows,d.taxId,kind,sys);
-    if(!out.length){ msg.textContent='مفيش فواتير '+(kind==='sale'?'مبيعات':'مشتريات')+' في '+ymLbl(m)+'.'; return null; }
+    let out=[]; const empty=[];
+    for(const m of ms){
+      const d=SAVED.find(x=>x.ym===m); if(!d) continue;
+      const rows=await fetchRows(CID,m); DET[m]=rows;
+      const part=buildTaxCsvRows(rows,d.taxId,kind,sys,out.length);
+      if(part.length) out=out.concat(part); else empty.push(ymLbl(m));
+    }
+    if(!out.length){ msg.textContent='مفيش فواتير '+(kind==='sale'?'مبيعات':'مشتريات')+' في الشهور المختارة.'; return null; }
     const H=CSV_HEADERS[(kind==='sale'?'sales':'pur')+(sys==='new'?'New':'Old')];
-    const fn=(kind==='sale'?'مبيعات':'مشتريات')+'_'+(sys==='new'?'منظومة_جديدة':'منظومة_قديمة')+'_'+CNAME+'_'+m;
+    const per=ms.length>1?ms[0]+'-'+ms[ms.length-1]:String(ms[0]);
+    const fn=(kind==='sale'?'مبيعات':'مشتريات')+'_'+(sys==='new'?'منظومة_جديدة':'منظومة_قديمة')+'_'+CNAME+'_'+per;
     const ex=out.filter(r=>r[14]===7).length, nt=out.filter(r=>r[0]===5).length;
-    const note=out.length+' صف'+(ex?' — منها '+ex+' معفاة':'')+(nt?' — '+nt+' بدون رقم ضريبي (نوع المستند 5)':'');
+    const note=(ms.length>1?ms.length+' شهور — ':'')+out.length+' صف'+(ex?' — منها '+ex+' معفاة':'')+(nt?' — '+nt+' بدون رقم ضريبي (نوع المستند 5)':'')+(empty.length?' — مفيش فواتير في: '+empty.join('، '):'');
     return {out,H,fn,note,withHdr,kind};
   }
   window.finExportTaxCsv=async function(){
@@ -6985,6 +6996,7 @@ populateClientHelpers();
 })();
 </script>
 <style>
+.csv-months{display:flex;flex-wrap:wrap;gap:6px}.csv-months label{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1.5px solid var(--line);border-radius:20px;font-size:12.5px;cursor:pointer;background:var(--panel)}.csv-months label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
 .vr-hero{background:linear-gradient(120deg,var(--navy),#2a9fd6);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:12px}
 .vr-hero-t{display:flex;justify-content:space-between;align-items:baseline;font-size:16px}.vr-hero-t span{font-size:22px;font-weight:900}
 .vr-bar{height:10px;border-radius:8px;background:rgba(255,255,255,.28);margin-top:10px;overflow:hidden}.vr-bar i{display:block;height:100%;background:#3ddc97;border-radius:8px;transition:width .4s}
