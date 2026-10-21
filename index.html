@@ -7552,7 +7552,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   /* ---------- المشترين ---------- */
   window.evBuyerForm=function(id){
     const b=id?EV.cur.buyers.find(x=>x.id===id):{type:'B'};
-    form(id?'تعديل مشتري':'مشتري جديد',[{k:'name',label:'اسم المشتري',req:1},{k:'type',label:'النوع',type:'select',opts:BTYPES},{k:'idn',label:'الرقم الضريبي / القومي / جواز السفر'},{k:'addr',label:'العنوان'},{k:'phone',label:'الموبايل'}],b,async v=>{ const e=chkBuyer(v); if(e){ $('evFormMsg').textContent=e; return false; } await mutate('buyers',a=>upsert(a,id,v)); renderTab(); });
+    form(id?'تعديل مشتري':'مشتري جديد',[{k:'name',label:'اسم المشتري',req:1},{k:'type',label:'النوع',type:'select',opts:BTYPES},{k:'idn',label:'الرقم الضريبي / القومي / جواز السفر'},{k:'gov',label:'المحافظة'},{k:'city',label:'المدينة / المنطقة'},{k:'street',label:'الشارع'},{k:'bld',label:'رقم المبنى'},{k:'addr',label:'عنوان نصي (اختياري)'},{k:'phone',label:'الموبايل'}],b,async v=>{ const e=chkBuyer(v); if(e){ $('evFormMsg').textContent=e; return false; } await mutate('buyers',a=>upsert(a,id,v)); renderTab(); });
   };
   window.evBuyerDel=async function(id){ if(!confirm('حذف المشتري؟')) return; await mutate('buyers',a=>a.filter(x=>x.id!==id)); renderTab(); };
 
@@ -7598,6 +7598,74 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(confirm('تعليم '+P.length+' صنف كـ «مُقدّم للتسجيل»؟ (راجع ملف القالب من البوابة قبل الرفع)')){ const ids=new Set(P.map(i=>i.id)); await mutate('items',a=>a.map(i=>ids.has(i.id)?Object.assign({},i,{status:'requested'}):i)); renderTab(); }
   };
 
+
+  /* ---------- التوقيع (برنامج ETA-Signer المحلي) + بناء مستند ETA v1.0 ---------- */
+  const SIGNER='http://localhost:5211';
+  const bAddr=b=>b?([b.bld,b.street,b.city,b.gov].filter(Boolean).join('، ')||b.addr||''):'';
+  const VAT_SUB={v14:['T1','V009'],v5:['T1','V010'],v0:['T1','V010'],ex:['T1','V003'],cus:['T1','V010'],tbl:['T2','Tbl01']};
+  const fp=()=>JSON.stringify([INV.no,INV.branchId,INV.buyer,INV.lines]);
+  const signedOk=()=>!!(INV&&INV.signed&&INV.signedFp===fp());
+  function etaCanon(v){
+    if(v===null||typeof v!=='object') return '"'+String(v)+'"';
+    let o=''; for(const k of Object.keys(v)){ const val=v[k], K=k.toUpperCase();
+      if(Array.isArray(val)){ o+='"'+K+'"'; val.forEach(el=>{ o+='"'+K+'"'+etaCanon(el); }); }
+      else o+='"'+K+'"'+etaCanon(val); }
+    return o;
+  }
+  function etaDoc(){
+    const c=EV.cur, b=c.branches.find(x=>x.id===INV.branchId), by=INV.buyer, act=(String(c.activity||'').match(/\d{4}/)||[''])[0];
+    const addr=(o,code)=>Object.assign(code!==undefined?{branchID:String(code)}:{},{country:'EG',governate:o.gov||'',regionCity:o.city||'',street:o.street||'',buildingNumber:o.bld||''});
+    const lines=INV.lines.map(l=>{ const k=calcLine(l), t=l.tax||{kind:'v14',rate:14}, m=VAT_SUB[t.kind]||['T1','V009'], tx=[{taxType:m[0],amount:k.tax,subType:m[1],rate:+t.rate||0}];
+      if(+l.wht>0) tx.push({taxType:'T4',amount:k.wht,subType:'W004',rate:+l.wht});
+      return {description:l.name,itemType:'EGS',itemCode:l.egs,unitType:l.unit,quantity:+l.qty,internalCode:String(l.egs).split('-').slice(2).join('-'),salesTotal:k.gross,total:k.total,valueDifference:0,totalTaxableFees:0,netTotal:k.net,itemsDiscount:0,unitValue:{currencySold:'EGP',amountEGP:+l.price},discount:{rate:+l.disc||0,amount:k.disc},taxableItems:tx}; });
+    const tt={}; lines.forEach(l=>l.taxableItems.forEach(x=>{ tt[x.taxType]=r2((tt[x.taxType]||0)+x.amount); }));
+    const T=calcInv(INV), rcv={type:by.type,id:by.idn,name:by.name};
+    const rcvAddr=by.type==='B'||by.gov||by.city||by.street||by.bld; const rc=rcvAddr?{address:addr(by),type:by.type,id:by.idn,name:by.name}:rcv;
+    const iso=(INV.dateAuto||INV.date===todayStr())?new Date().toISOString().replace(/\.\d{3}Z$/,'Z'):INV.date+'T00:00:00Z';
+    return {issuer:{address:addr(b,b.code),type:'B',id:c.rin,name:c.name},receiver:rc,documentType:'I',documentTypeVersion:'1.0',dateTimeIssued:iso,taxpayerActivityCode:act,internalID:INV.no,invoiceLines:lines,totalDiscountAmount:T.disc,totalSalesAmount:T.gross,netAmount:T.net,taxTotals:Object.keys(tt).map(k=>({taxType:k,amount:tt[k]})),totalAmount:T.total,extraDiscountAmount:0,totalItemsDiscountAmount:0};
+  }
+  function etaProblems(){
+    const p=problems(), c=EV.cur, by=INV.buyer, b=c.branches.find(x=>x.id===INV.branchId);
+    if(!/\d{4}/.test(c.activity||'')) p.push('كود النشاط لازم يحتوي 4 أرقام (مثال 6920)');
+    if(b&&!(b.gov&&b.city&&b.street&&b.bld)) p.push('عنوان الفرع: المحافظة والمدينة والشارع ورقم المبنى مطلوبين');
+    if(by&&by.type==='B'&&!(by.gov&&by.city&&by.street&&by.bld)) p.push('عنوان المشتري (شركة): المحافظة والمدينة والشارع ورقم المبنى مطلوبين');
+    if(by&&!by.idn) p.push('رقم تسجيل المشتري ناقص');
+    INV.lines.forEach((l,i)=>{ if(chkEgs(l.egs)) p.push('بند '+(i+1)+': صيغة EGS غلط'); });
+    return p;
+  }
+  async function sgn(path,body){
+    const r=await fetch(SIGNER+path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+    const j=await r.json(); if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j;
+  }
+  async function pickCert(certs){
+    if(!certs.length) throw new Error('مفيش شهادة ظاهرة — تأكد إن التوكن موصّل');
+    if(certs.length===1) return certs[0].thumbprint;
+    const n=parseInt(prompt('اختار رقم الشهادة:\n'+certs.map((c,i)=>(i+1)+') '+c.subject+' — '+c.issuer+' — حتى '+c.notAfter).join('\n')),10);
+    if(!(n>=1&&n<=certs.length)) throw new Error('اتلغى'); return certs[n-1].thumbprint;
+  }
+  const sgnErr=e=>(e&&e.message==='Failed to fetch')?'برنامج التوقيع مش شغال — شغّل run-signer.bat وسيب نافذته مفتوحة':(e&&e.message)||'خطأ';
+  window.evSignTest=async function(){
+    const m=$('evInvMsg');
+    try{ m.textContent='جاري الاتصال ببرنامج التوقيع...'; const p=await sgn('/ping'), th=await pickCert(p.certs); m.textContent='اكتب الـ PIN في النافذة اللي هتظهر...';
+      await sgn('/sign',{canonical:'TEST',thumbprint:th}); m.textContent='✓ التوقيع شغال ('+p.certs.find(c=>c.thumbprint===th).subject+')'; }
+    catch(e){ m.textContent='✗ '+sgnErr(e); }
+  };
+  window.evInvSign=async function(){
+    invRead(); const m=$('evInvMsg'), pr=etaProblems();
+    if(pr.length){ m.textContent='⚠ '+pr[0]+(pr.length>1?' (+'+(pr.length-1)+' كمان)':''); return; }
+    try{
+      const doc=etaDoc(), canon=etaCanon(doc); m.textContent='جاري الاتصال بالتوكن...';
+      const p=await sgn('/ping'), th=await pickCert(p.certs); m.textContent='اكتب الـ PIN في النافذة اللي هتظهر...';
+      const r=await sgn('/sign',{canonical:canon,thumbprint:th});
+      INV.signed=JSON.stringify({documents:[Object.assign({},doc,{signatures:[{signatureType:'I',value:r.signature}]})]}); INV.signedFp=fp();
+      await evInvSave(); invRender(); $('evInvMsg').textContent='✓ تم التوقيع وحُفظت الفاتورة';
+    }catch(e){ m.textContent='✗ '+sgnErr(e); }
+  };
+  window.evInvDlJson=function(){
+    if(!signedOk()) return; const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([INV.signed],{type:'application/json'})); a.download=(INV.no||'invoice')+'-signed.json'; document.body.appendChild(a); a.click(); a.remove();
+  };
+
   /* ---------- الفواتير: نفس خطوات بوابة المصلحة الأربع ---------- */
   const icol=()=>col().doc(EV.cur.id).collection('invoices');
   let INV=null, INVS=[];
@@ -7628,7 +7696,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evInvStep=function(n){ if(n<1||n>4) return; invRead(); INV.step=n; invRender(); };
   window.evInvAuto=function(){ $('ev_date').disabled=$('ev_auto').checked; };
   window.evInvBranch=function(v){ INV.branchId=v; invRender(); };
-  window.evInvBuyer=function(v){ INV.buyerId=v; const b=EV.cur.buyers.find(x=>x.id===v); INV.buyer=b?{name:b.name,type:b.type,idn:b.idn||'',addr:b.addr||'',phone:b.phone||''}:null; invRender(); };
+  window.evInvBuyer=function(v){ INV.buyerId=v; const b=EV.cur.buyers.find(x=>x.id===v); INV.buyer=b?{name:b.name,type:b.type,idn:b.idn||'',addr:b.addr||'',gov:b.gov||'',city:b.city||'',street:b.street||'',bld:b.bld||'',phone:b.phone||''}:null; invRender(); };
   window.evInvAddLine=function(){
     const inp=$('ev_pick'), q=nz(inp.value); if(!q) return;
     const it=EV.cur.items.find(x=>nz(x.egs)===q)||EV.cur.items.find(x=>nz(x.name)===q)||EV.cur.items.find(x=>nz(x.name).includes(q)||nz(x.egs).includes(q));
@@ -7644,7 +7712,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(!INV.no) p.push('الرقم الداخلي ناقص'); if(!INV.dateAuto&&!INV.date) p.push('تاريخ الإصدار ناقص');
     if(!c.rin) p.push('الرقم الضريبي للشركة ناقص'); if(!c.activity) p.push('كود النشاط الضريبي للشركة ناقص');
     if(!b) p.push('اختر فرع المصدر'); else if(!addrOf(b)) p.push('عنوان الفرع ناقص');
-    if(!INV.buyer) p.push('اختر المشتري'); else if(!INV.buyer.addr) p.push('عنوان المشتري مطلوب في البوابة');
+    if(!INV.buyer) p.push('اختر المشتري'); else if(!bAddr(INV.buyer)) p.push('عنوان المشتري مطلوب في البوابة');
     if(!INV.lines.length) p.push('لا توجد بنود');
     INV.lines.forEach((l,i)=>{ if(!(l.qty>0)) p.push('بند '+(i+1)+': الكمية لازم أكبر من صفر'); if(!(l.price>=0)) p.push('بند '+(i+1)+': السعر غير صحيح'); if(l.disc<0||l.disc>100) p.push('بند '+(i+1)+': الخصم بين 0 و100'); });
     INV.lines.forEach((l,i)=>{ const it=EV.cur.items.find(x=>x.egs===l.egs); if(it&&it.status&&it.status!=='approved') p.push('بند '+(i+1)+': الكود '+l.egs+' لسه مش معتمد من المصلحة'); });
@@ -7661,7 +7729,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
        +'<label class="vr-l">الفرع *</label><select style="width:100%" onchange="evInvBranch(this.value)"><option value="">اختر</option>'+c.branches.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===INV.branchId?' selected':'')+'>'+esc(x.code+' / '+x.name)+'</option>').join('')+'</select>'
        +'<div class="vr-note">'+esc(addrOf(b)||'عنوان الفرع ناقص')+'</div>'
        +'<h3 style="margin:10px 0 6px">المشتري</h3><select style="width:100%" onchange="evInvBuyer(this.value)"><option value="">اختر مشتري</option>'+c.buyers.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===INV.buyerId?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select>'
-       +(by?'<div class="vr-note">'+esc((BTYPES.find(t=>t[0]===by.type)||['',''])[1])+'<br>رقم التسجيل: '+esc(by.idn||'—')+'<br>العنوان: '+esc(by.addr||'ناقص')+'</div>':'<div class="vr-note">مش لاقي المشتري؟ أضفه من تبويب «المشترين» وارجع.</div>'); }
+       +(by?'<div class="vr-note">'+esc((BTYPES.find(t=>t[0]===by.type)||['',''])[1])+'<br>رقم التسجيل: '+esc(by.idn||'—')+'<br>العنوان: '+esc(bAddr(by)||'ناقص')+'</div>':'<div class="vr-note">مش لاقي المشتري؟ أضفه من تبويب «المشترين» وارجع.</div>'); }
     if(s===3){
       return '<div class="vr-search"><input id="ev_pick" list="ev_dl" placeholder="اكتب كود أو اسم الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></div><div class="vr-pdf"><button class="act btn-primary btn-small" onclick="evInvAddLine()">➕ إضافة بند</button></div>'
        +(INV.lines.length?INV.lines.map((l,i)=>'<div class="vr-row" style="cursor:default;flex-wrap:wrap"><div class="vr-main"><div class="vr-nm">'+esc(l.name)+'</div><div class="vr-st" style="font-size:12px">'+esc(l.egs)+' · '+unitLbl(l.unit)+' · '+taxText(l.tax)+'</div>'
@@ -7674,7 +7742,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<div id="evInvTot">'+totHtml()+'</div>'
       +'<div class="vr-pdf" style="margin-top:10px"><button class="act btn-ghost btn-small" onclick="evInvCopy()">📋 نسخ الملخص</button><button class="act btn-primary btn-small" onclick="evInvSent()">'+(INV.status==='sent'?'↩ رجوع لمسودة':'✅ تم الإرسال على البوابة')+'</button></div>'
       +(INV.portalNo?'<div class="vr-note">رقم البوابة: '+esc(INV.portalNo)+'</div>':'')
-      +'<div class="vr-note">التطبيق بيجهّز الفاتورة وبيحسبها؛ الإرسال والتوقيع بيتم من بوابة المصلحة.</div>';
+      +'<div class="vr-pdf"><button class="act btn-ghost btn-small" onclick="evSignTest()">🔌 اختبار التوقيع</button><button class="act btn-primary btn-small" onclick="evInvSign()">🔏 توقيع الفاتورة</button>'+(signedOk()?'<button class="act btn-ghost btn-small" onclick="evInvDlJson()">⬇ JSON الموقّع</button>':'')+'</div>'
+      +'<div class="vr-note">'+(signedOk()?'✓ الفاتورة موقّعة. أي تعديل بعد كده يحتاج توقيع جديد.':'مش موقّعة.')+' الإرسال للمصلحة هيتفعّل في الخطوة الجاية بعد ما نتأكد إن التوقيع شغال.</div>';
   }
   function invRender(){
     const box=$('evInvBox'); if(!box) return; const s=INV.step;
@@ -7685,7 +7754,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     invRead(); if(!INV.no){ $('evInvMsg').textContent='الرقم الداخلي مطلوب'; return; }
     if(INVS.some(x=>x.id!==INV.id&&x.no===INV.no)){ $('evInvMsg').textContent='الرقم الداخلي مكرر'; return; }
     const id=INV.id||uid(), now=Date.now(), old=INVS.find(x=>x.id===id);
-    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,notify:INV.notify,branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',createdAt:old?old.createdAt:now,updatedAt:now};
+    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,notify:INV.notify,branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',signed:INV.signed||'',signedFp:INV.signedFp||'',createdAt:old?old.createdAt:now,updatedAt:now};
     try{ await icol().doc(id).set(doc); INV.id=id; const i=INVS.findIndex(x=>x.id===id); if(i>=0) INVS[i]=Object.assign({id},doc); else INVS.unshift(Object.assign({id},doc)); $('evInvMsg').textContent='✓ تم الحفظ'; }
     catch(e){ $('evInvMsg').textContent='تعذّر الحفظ: '+(e&&e.message||''); }
   };
