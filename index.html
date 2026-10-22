@@ -944,6 +944,23 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     }catch(e){}
   })();
 </script>
+<style>
+nav.tabs button[data-tab=einv]{--c1:#5ad0ff;--c2:#0a6fb8}
+.ei-bar,.ei-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.ei-bar select{min-width:220px;max-width:100%}
+.ei-sub{display:flex;gap:6px;margin:8px 0}
+.ei-sub button{padding:8px 14px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.ei-sub button.on{background:#00699c;color:#fff;border-color:#00699c}
+.ei-wrap{overflow-x:auto;margin-top:8px}
+.ei-wrap table{width:100%;border-collapse:collapse;font-size:13px}
+.ei-wrap th,.ei-wrap td{border-bottom:1px solid rgba(128,128,128,.3);padding:6px 8px;text-align:right;vertical-align:top}
+.ei-msg{padding:8px 12px;border-radius:10px;background:rgba(0,105,156,.12);margin:8px 0;font-size:14px}
+.ei-msg.bad{background:rgba(224,35,78,.14)}
+.ei-ok{color:#12a150}.ei-er{color:#e0234e}.ei-up{color:#c77a00}
+.ei-card{border:1px solid rgba(128,128,128,.35);border-radius:12px;padding:10px;margin:8px 0}
+.ei-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ei-pk button{display:block;width:100%;text-align:right;margin:4px 0;padding:6px 8px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font:inherit;cursor:pointer}
+</style>
 </head>
 <body>
 
@@ -1068,6 +1085,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     <button data-tab="cash"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></svg></span><span class="lbl">الحساب مع صاحب المكتب</span></button>
     <button data-tab="alerts"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="lbl">التنبيهات</span></button>
     <button data-tab="chat"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span><span class="lbl">الشات <span id="chatUnreadDot" style="display:none;"></span></span></button>
+    <button data-tab="einv"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h5"/></svg></span><span class="lbl">الفاتورة الإلكترونية</span></button>
     <button data-tab="owner" id="ownerTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span><span class="lbl">لوحة صاحب المكتب</span></button>
     <button data-tab="ownerclients" id="ownerClientsTabBtn" style="display:none;"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg></span><span class="lbl">حساب عميل</span></button>
   </nav>
@@ -1706,6 +1724,13 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <div class="attach-list" id="poaFilesList"></div>
       </div>
     </section>
+  </div>
+
+  <div class="panel" id="panel-einv">
+    <h2>الفاتورة الإلكترونية المصرية</h2>
+    <div class="ei-bar"><select id="eiCo" onchange="EI.co(this.value)"></select><span id="eiCoInfo" style="font-size:13px;opacity:.8"></span></div>
+    <div class="ei-sub"><button id="eiSubCodes" onclick="EI.sub('codes')">أكواد EGS</button><button id="eiSubItems" onclick="EI.sub('items')">الأصناف والربط</button></div>
+    <div id="eiMsg"></div><div id="eiBody"></div>
   </div>
 
   <!-- OWNER-ONLY: CLIENT LEDGERS (separate from employee tracking) -->
@@ -3499,6 +3524,7 @@ function activateTab(tabName){
   document.getElementById('panel-'+tabName).classList.add('active');
   if(tabName === 'clients') showClientsLanding();
   if(tabName === 'poas') renderPoaTab();
+  if(tabName === 'einv' && window.renderEinv) renderEinv();
   if(tabName === 'cash') renderCashTab();
   if(tabName === 'alerts') renderAlertsTab();
   if(tabName === 'log') renderLogTab();
@@ -6906,7 +6932,156 @@ populateClientHelpers();
       '<table class="info"><tr><td>اسم الممول</td><td>'+esc(name)+'</td></tr><tr><td>الرقم الضريبي</td><td>'+esc(d.taxId)+'</td></tr><tr><td>الفترة</td><td>'+ymLbl(d.ym)+'</td></tr><tr><td>نسبة الضريبة</td><td>'+rate+'%</td></tr></table>'+
       '<table class="rep">'+t+'</table><table class="rep">'+c+'</table>'+
       '<div class="sign"><div>إعداد</div><div>مراجعة</div><div>اعتماد</div></div>'+
-      '<p class="note">ملخص مُعَدّ من الفواتير الإلكترونية المحفوظة في التطبيق، تاريخ الطباعة '+new Date().toLocaleDateString('en-GB')+'. هذه الورقة ليست نموذج الإقرار الرسمي لمصلحة الضرائب.</p></body></html>';
+      '<p class="note">ملخص مُعَدّ من الفواتير الإلكترونية المحفوظة في التطبيق، تاريخ الطباعة '+new Date().toLocaleDateString('en-GB')+'. هذه الورقة ليست نموذج الإقرار الرسمي لمصلحة الضرائب.</p><script>
+(function(){
+const E={cid:'',codes:[],links:{},items:[],sub:'codes',prev:null,q:'',st:'',un:[],pick:null};
+const $=id=>document.getElementById(id), esc=escapeHtml;
+const off=()=>currentOfficeId?db.collection('offices').doc(currentOfficeId):null;
+const cc=()=>(off()&&E.cid)?off().collection('clients').doc(E.cid):null;
+const co=()=>loadClients().find(c=>c.id===E.cid);
+const key=s=>String(s).replace(/\//g,'_');
+const ts=()=>firebase.firestore.FieldValue.serverTimestamp();
+const today=()=>new Date().toISOString().slice(0,10);
+const stat=c=>c.activeTo&&c.activeTo<today()?'منتهي':(c.activeFrom&&c.activeFrom>today()?'لم يبدأ':'ساري');
+const msg=(t,bad)=>{$('eiMsg').innerHTML=t?'<div class="ei-msg'+(bad?' bad':'')+'">'+t+'</div>':''};
+const nz=s=>String(s||'').toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[^\p{L}\p{N}\s]/gu,' ').trim();
+function sc(a,b){const A=new Set(nz(a).split(/\s+/).filter(Boolean)),B=nz(b).split(/\s+/).filter(Boolean);if(!A.size||!B.length)return 0;let n=0;B.forEach(w=>A.has(w)&&n++);return n/Math.max(A.size,B.length);}
+function stop(){E.un.forEach(f=>f());E.un=[];}
+function watch(){
+  stop();E.codes=[];E.links={};E.items=[];
+  const o=off();if(!o){shell();return;}
+  E.un.push(o.collection('eiItems').onSnapshot(s=>{E.items=s.docs.map(d=>Object.assign({},d.data(),{id:d.id}));list();},()=>{}));
+  if(E.cid){
+    E.un.push(cc().collection('egsCodes').onSnapshot(s=>{E.codes=s.docs.map(d=>Object.assign({},d.data(),{id:d.id}));list();},()=>{}));
+    E.un.push(cc().collection('egsLinks').onSnapshot(s=>{E.links={};s.docs.forEach(d=>E.links[d.id]=d.data());list();},()=>{}));
+  }
+  shell();
+}
+function render(){
+  const cl=loadClients().slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
+  $('eiCo').innerHTML='<option value="">— اختار الشركة —</option>'+cl.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===E.cid?' selected':'')+'>'+esc(c.name||'')+'</option>').join('');
+  info();watch();
+}
+function info(){const c=co();$('eiCoInfo').textContent=c?('الرقم الضريبي: '+(c.taxRegNo||'غير مسجل')):'';}
+function shell(){
+  $('eiSubCodes').classList.toggle('on',E.sub==='codes');$('eiSubItems').classList.toggle('on',E.sub==='items');
+  const b=$('eiBody');E.prev=null;E.pick=null;
+  if(!E.cid){b.innerHTML='<div class="ei-msg">اختار الشركة الأول، عشان الأكواد والأصناف بتتعرض لكل شركة لوحدها.</div>';return;}
+  if(E.sub==='codes'){
+    b.innerHTML='<div class="ei-row"><input id="eiQ" placeholder="🔍 كود أو اسم..." oninput="EI.q(this.value)" value="'+esc(E.q)+'"><select id="eiSt" onchange="EI.st(this.value)"><option value="">كل الحالات</option><option>ساري</option><option>منتهي</option><option>لم يبدأ</option></select><label class="file-upload-btn" for="eiFile">＋ استيراد من Excel</label><input type="file" id="eiFile" accept=".xlsx" style="display:none" onchange="EI.imp(this)"></div><div id="eiPrev"></div><div id="eiSum"></div><div class="ei-wrap" id="eiList"></div>';
+    $('eiSt').value=E.st;
+  }else{
+    b.innerHTML='<div class="ei-card"><b>إضافة صنف للدليل</b><div class="ei-grid" style="margin-top:8px"><input id="eiNa" placeholder="الاسم بالعربي"><input id="eiNe" placeholder="الاسم بالإنجليزي"><input id="eiIc" placeholder="الكود الداخلي"><input id="eiUn" placeholder="الوحدة (مثال: EA)"><input id="eiDs" placeholder="الوصف"></div><button class="act btn-small" style="margin-top:8px" data-a="add">حفظ الصنف</button></div><div class="ei-row"><input id="eiQ" placeholder="🔍 ابحث في الأصناف..." oninput="EI.q(this.value)" value="'+esc(E.q)+'"></div><div id="eiSum"></div><div id="eiList"></div>';
+  }
+  list();
+}
+function list(){
+  if(!$('eiList'))return;
+  const q=nz(E.q);
+  if(E.sub==='codes'){
+    let r=E.codes.filter(c=>(!E.st||stat(c)===E.st)&&(!q||nz([c.itemCode,c.nameAr,c.nameEn].join(' ')).includes(q)));
+    r.sort((a,b)=>String(a.itemCode).localeCompare(String(b.itemCode)));
+    $('eiSum').innerHTML='<div style="font-size:13px;opacity:.8">'+E.codes.length+' كود محفوظ لهذه الشركة'+(r.length!==E.codes.length?' — المعروض '+r.length:'')+'. «الحالة» محسوبة من تواريخ السريان بالملف، مش حالة التسجيل الرسمية.</div>';
+    $('eiList').innerHTML=r.length?'<table><tr><th>الكود</th><th>الاسم</th><th>GPC</th><th>من</th><th>إلى</th><th>السريان</th></tr>'+r.slice(0,200).map(c=>'<tr><td dir="ltr">'+esc(c.itemCode)+'<br><small>'+esc(c.codeType)+'</small></td><td>'+esc(c.nameAr)+'<br><small dir="ltr">'+esc(c.nameEn)+'</small></td><td>'+esc(c.gpc)+'</td><td>'+esc(c.activeFrom)+'</td><td>'+esc(c.activeTo)+'</td><td>'+stat(c)+'</td></tr>').join('')+'</table>'+(r.length>200?'<div style="font-size:12px">أول 200 نتيجة — استخدم البحث للتضييق.</div>':''):'<div class="ei-msg">مفيش أكواد. استورد ملف Excel.</div>';
+  }else{
+    const r=E.items.filter(i=>!q||nz([i.nameAr,i.nameEn,i.internalCode].join(' ')).includes(q));
+    const nl=E.items.filter(i=>!E.links[i.id]).length;
+    $('eiSum').innerHTML='<div style="font-size:13px;opacity:.8">'+E.items.length+' صنف — غير مرتبط بكود لهذه الشركة: '+nl+'</div>';
+    $('eiList').innerHTML=r.map(i=>{
+      const l=E.links[i.id],c=l&&E.codes.find(x=>x.id===l.codeId);
+      return '<div class="ei-card"><b>'+esc(i.nameAr||i.nameEn)+'</b> <small dir="ltr">'+esc(i.nameEn&&i.nameAr?i.nameEn:'')+'</small><div style="font-size:12px;opacity:.8">كود داخلي: '+esc(i.internalCode||'—')+' | وحدة: '+esc(i.unit||'—')+'</div>'+
+      (l?'<div class="ei-ok" dir="ltr" style="margin-top:6px">✔ '+esc(l.itemCode)+(c?' — '+esc(c.nameAr||c.nameEn):' (الكود مش موجود حالياً)')+'</div>':'<div class="ei-er" style="margin-top:6px">غير مرتبط</div>')+
+      '<div class="ei-row"><button class="act btn-ghost btn-small" data-a="pick" data-i="'+esc(i.id)+'">'+(l?'تغيير الربط':'ربط بكود')+'</button>'+(l?'<button class="act btn-ghost btn-small" data-a="unlink" data-i="'+esc(i.id)+'">إلغاء الربط</button>':'')+'<button class="act btn-danger btn-small" data-a="del" data-i="'+esc(i.id)+'">حذف الصنف</button></div>'+
+      (E.pick===i.id?'<div class="ei-pk"><input id="eiPk" placeholder="ابحث بكود أو اسم..." oninput="EI.pk(this.value)" style="width:100%"><div id="eiPkRes"></div></div>':'')+'</div>';
+    }).join('')||'<div class="ei-msg">الدليل فاضي. أضف أول صنف من النموذج فوق.</div>';
+    if(E.pick)pk($('eiPk')?$('eiPk').value:'');
+  }
+}
+function pk(v){
+  const it=E.items.find(i=>i.id===E.pick),box=$('eiPkRes');if(!it||!box)return;
+  const q=nz(v);let res,t;
+  if(q){res=E.codes.filter(c=>nz([c.itemCode,c.nameAr,c.nameEn].join(' ')).includes(q)).slice(0,8);t='نتائج البحث:';}
+  else{res=E.codes.map(c=>({c:c,s:Math.max(sc(it.nameAr,c.nameAr),sc(it.nameEn,c.nameEn),(it.internalCode&&it.internalCode===c.itemCode)?1:0)})).filter(x=>x.s>=0.4).sort((a,b)=>b.s-a.s).slice(0,3).map(x=>x.c);t=res.length?'اقتراحات (لازم تضغط عشان تعتمد):':'مفيش اقتراح قريب — ابحث يدوي.';}
+  box.innerHTML='<div style="font-size:12px;margin-top:6px">'+t+'</div>'+res.map(c=>'<button data-a="link" data-i="'+esc(it.id)+'" data-c="'+esc(c.id)+'"><span dir="ltr">'+esc(c.itemCode)+'</span> — '+esc(c.nameAr||c.nameEn)+'</button>').join('');
+}
+const cv=v=>{if(v==null)return'';if(v instanceof Date)return v;if(typeof v==='object'){if(v.richText)return v.richText.map(t=>t.text).join('');if('result' in v)return cv(v.result);if(v.text)return String(v.text);return'';}return v;};
+const sv=v=>{v=cv(v);return v instanceof Date?'':String(v).trim();};
+const dv=v=>{v=cv(v);if(v instanceof Date)return v.toISOString().slice(0,10);v=String(v).trim();return /^\d{4}-\d{2}-\d{2}/.test(v)?v.slice(0,10):'';};
+const nv=v=>{v=cv(v);if(v===''||v instanceof Date)return'';const n=Number(v);return String(isNaN(n)?v:Math.round(n)).trim();};
+const F=['codeType','nameEn','nameAr','descEn','descAr','activeFrom','activeTo','gpc','egsRelated'];
+async function imp(inp){
+  const f=inp.files[0];inp.value='';if(!f||!E.cid)return;
+  const c=co(),tax=normTaxNo(c.taxRegNo);
+  if(!tax){msg('الشركة دي مفيهاش رقم تسجيل ضريبي في بيانات العميل. أضفه الأول عشان نتحقق إن الأكواد بتاعتها.',1);return;}
+  msg('جارٍ قراءة الملف...');
+  try{
+    const wb=new ExcelJS.Workbook();await wb.xlsx.load(await f.arrayBuffer());
+    const ws=wb.getWorksheet('DataEntry')||wb.worksheets[0],h={};
+    ws.getRow(1).eachCell((cell,i)=>{h[sv(cell.value).toLowerCase()]=i;});
+    const miss=['codetype','itemcode','codename','codename2ar'].filter(k=>!h[k]);
+    if(miss.length){msg('أعمدة ناقصة في الملف: '+miss.join('، '),1);return;}
+    const ex={};E.codes.forEach(x=>ex[x.id]=x);const seen={},rows=[];
+    for(let r=2;r<=ws.rowCount;r++){
+      const row=ws.getRow(r),g=k=>h[k]?row.getCell(h[k]).value:null;
+      const code=sv(g('itemcode'));if(!code&&!sv(g('codename'))&&!sv(g('codename2ar')))continue;
+      const cl=(s,t)=>s.toLowerCase()===t?'':s;
+      const d={codeType:sv(g('codetype')).toUpperCase()||'EGS',itemCode:code,nameEn:sv(g('codename')),nameAr:sv(g('codename2ar')),descEn:cl(sv(g('description')),'des'),descAr:cl(sv(g('descriptionar')),'desc ar'),activeFrom:dv(g('activefrom')),activeTo:dv(g('activeto')),gpc:nv(g('gpcitemlinked')),egsRelated:nv(g('egsrelatedcode'))};
+      const id=key(code),errs=[];
+      if(!code)errs.push('الكود فاضي');
+      if(d.codeType!=='EGS'&&d.codeType!=='GS1')errs.push('نوع الكود لازم EGS أو GS1');
+      if(d.codeType==='EGS'&&code){const m=/^EG-(\d+)-/i.exec(code);if(!m)errs.push('كود EGS لازم يبدأ بـ EG-الرقم الضريبي-');else if(normTaxNo(m[1])!==tax)errs.push('الكود تابع لرقم ضريبي مختلف');}
+      if(!d.nameEn&&!d.nameAr)errs.push('الاسم فاضي');
+      if(d.activeFrom&&d.activeTo&&d.activeTo<d.activeFrom)errs.push('تاريخ الانتهاء قبل البداية');
+      if(code&&seen[id])errs.push('مكرر في الملف (صف '+seen[id]+')');else if(code)seen[id]=r;
+      let st='new';if(ex[id])st=F.every(k=>String(ex[id][k]||'')===String(d[k]||''))?'same':'upd';
+      rows.push({n:r,id:id,d:d,errs:errs,st:errs.length?'err':st});
+    }
+    if(!rows.length){msg('الملف مفيهوش بيانات أكواد.',1);return;}
+    E.prev={rows:rows,fname:f.name,cid:E.cid};msg('');prevUI();
+  }catch(e){msg('تعذر قراءة الملف: '+esc(e.message||e),1);}
+}
+function prevUI(){
+  const p=E.prev,k={new:0,upd:0,same:0,err:0};p.rows.forEach(r=>k[r.st]++);
+  const lbl={new:'<span class="ei-ok">جديد</span>',upd:'<span class="ei-up">تحديث</span>',same:'بدون تغيير',err:'<span class="ei-er">خطأ</span>'};
+  const sh=p.rows.slice().sort((a,b)=>(a.st==='err'?0:1)-(b.st==='err'?0:1)).slice(0,100);
+  $('eiPrev').innerHTML='<div class="ei-card"><b>مراجعة قبل الاعتماد — '+esc(p.fname)+'</b><div style="margin:6px 0">جديد: '+k.new+' | تحديث: '+k.upd+' | بدون تغيير: '+k.same+' | أخطاء: '+k.err+'</div><div style="font-size:12px;opacity:.8">الصفوف اللي فيها أخطاء مش هتتحفظ. أكواد GS1 مش بيتحقق من تبعيتها للشركة.</div><div class="ei-wrap"><table><tr><th>صف</th><th>الكود</th><th>الاسم</th><th>النتيجة</th></tr>'+sh.map(r=>'<tr><td>'+r.n+'</td><td dir="ltr">'+esc(r.d.itemCode)+'</td><td>'+esc(r.d.nameAr||r.d.nameEn)+'</td><td>'+lbl[r.st]+(r.errs.length?' — '+esc(r.errs.join('، ')):'')+'</td></tr>').join('')+'</table></div>'+(p.rows.length>100?'<div style="font-size:12px">أول 100 صف (الأخطاء الأول).</div>':'')+'<div class="ei-row"><button class="act btn-small" data-a="ok"'+((k.new+k.upd)?'':' disabled')+'>اعتماد الاستيراد ('+(k.new+k.upd)+')</button><button class="act btn-ghost btn-small" data-a="cancel">إلغاء</button></div></div>';
+}
+async function commit(){
+  const p=E.prev;if(!p||p.cid!==E.cid)return;const ref=cc();
+  const w=p.rows.filter(r=>r.st==='new'||r.st==='upd'),k={new:0,upd:0,same:0,err:0};p.rows.forEach(r=>k[r.st]++);
+  msg('جارٍ الحفظ...');
+  try{
+    for(let i=0;i<w.length;i+=400){const b=db.batch();w.slice(i,i+400).forEach(r=>b.set(ref.collection('egsCodes').doc(r.id),Object.assign({},r.d,{source:'excel',updatedAt:ts()}),{merge:true}));await b.commit();}
+    await ref.collection('egsSyncLog').add({at:ts(),file:p.fname,newN:k.new,updN:k.upd,sameN:k.same,errN:k.err,by:auth.currentUser.uid});
+    E.prev=null;$('eiPrev').innerHTML='';msg('تم الاستيراد: '+k.new+' جديد، '+k.upd+' محدّث، '+k.same+' بدون تغيير، '+k.err+' خطأ لم يُحفظ.');
+  }catch(e){msg('فشل الحفظ: '+esc(e.message||e)+' — راجع قواعد Firestore.',1);}
+}
+async function act(a,i,c){
+  try{
+    if(a==='ok')return commit();
+    if(a==='cancel'){E.prev=null;$('eiPrev').innerHTML='';return;}
+    if(a==='add'){
+      const d={nameAr:$('eiNa').value.trim(),nameEn:$('eiNe').value.trim(),internalCode:$('eiIc').value.trim(),unit:$('eiUn').value.trim(),description:$('eiDs').value.trim()};
+      if(!d.nameAr&&!d.nameEn){msg('اكتب اسم الصنف.',1);return;}
+      d.createdAt=ts();await off().collection('eiItems').add(d);msg('تم حفظ الصنف.');['eiNa','eiNe','eiIc','eiUn','eiDs'].forEach(x=>$(x).value='');return;
+    }
+    if(a==='pick'){E.pick=E.pick===i?null:i;return list();}
+    if(a==='link'){const x=E.codes.find(z=>z.id===c);await cc().collection('egsLinks').doc(i).set({itemId:i,codeId:c,itemCode:x.itemCode,at:ts()});E.pick=null;return;}
+    if(a==='unlink'){await cc().collection('egsLinks').doc(i).delete();return;}
+    if(a==='del'){if(!confirm('حذف الصنف من الدليل؟ هيتشال ربطه بالشركة الحالية كمان.'))return;await cc().collection('egsLinks').doc(i).delete().catch(()=>{});await off().collection('eiItems').doc(i).delete();}
+  }catch(e){msg('تعذر التنفيذ: '+esc(e.message||e),1);}
+}
+document.getElementById('panel-einv').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)act(b.dataset.a,b.dataset.i,b.dataset.c);});
+window.EI={
+  co:v=>{E.cid=v;E.q='';E.st='';msg('');info();watch();},
+  sub:s=>{E.sub=s;E.q='';msg('');shell();},
+  q:v=>{E.q=v;list();},st:v=>{E.st=v;list();},pk:pk,imp:imp,render:render
+};
+window.renderEinv=render;
+})();
+</script>
+
+</body></html>';
   }
   function printHtml(html){
     const f=document.createElement('iframe');
