@@ -7104,6 +7104,7 @@ populateClientHelpers();
 .od-x{border:0;background:none;cursor:pointer;font-size:15px;opacity:.7}.od-empty{text-align:center;color:#6b7280;padding:26px}.od-hint{color:#6b7280;font-size:12.5px;margin:10px 0}
 .od-warn{background:#fff3cd;color:#664d03;border-radius:4px;padding:10px;margin-bottom:8px}.od-ok{background:#d4edda;color:#155724;border-radius:4px;padding:10px;margin-bottom:8px}
 .od-kan{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}.od-card{position:relative;background:#fff;border:1px solid #d8dadd;border-inline-start:4px solid #714b67;border-radius:4px;padding:12px;cursor:pointer}.od-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}.od-card .od-x{position:absolute;top:6px;left:6px}
+.b-valid{background:#c3e6cb;color:#0b4f1e}.b-invalid{background:#f5c6cb;color:#721c24}.od-step.on.bad{background:#dc3545}
 </style>
 <script>
 /* ===== سجل الإقرارات (VAT): متابعة المقدَّم والمتبقي + السداد + الإيصال ===== */
@@ -7417,7 +7418,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   /* ================= واجهة الفاتورة الإلكترونية (أسلوب Odoo) ================= */
   let EV={list:[],cur:null,tab:'info',q:'',iq:''};
   const OD={page:'dash',sub:'info',ft:'lines',f:'all',q:'',per:'month',cust:'',loaded:null};
-  const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
+  const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة',valid:'مقبولة',invalid:'مرفوضة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
   const MENU=[['dash','لوحة المعلومات'],['inv','الفواتير الصادرة'],['inc','الفواتير الواردة'],['notes','دائن / مدين'],['cust','العملاء'],['prod','المنتجات'],['sync','المزامنة'],['set','الإعدادات'],['log','السجل']];
   const fld=(l,i)=>'<div class="od-f"><label>'+l+'</label>'+i+'</div>';
   const optH=(arr,sel)=>arr.map(a=>'<option value="'+esc(a[0])+'"'+(String(a[0])===String(sel)?' selected':'')+'>'+esc(a[1])+'</option>').join('');
@@ -7425,7 +7426,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   const dayOf=ts=>{ const d=new Date(ts||Date.now()); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   const invDay=i=>i.dateAuto?dayOf(i.createdAt):(i.date||'');
   const sgnDoc=i=>i.docType==='C'?-1:1;
-  function invStatus(i){ if(i.status==='sent') return 'sent'; return (i.signed&&i.signedFp===fpOf(i))?'signed':'draft'; }
+  function invStatus(i){ if(i.etaStatus==='Valid') return 'valid'; if(i.etaStatus==='Invalid') return 'invalid'; if(i.etaUuid||i.status==='sent') return 'sent'; return (i.signed&&i.signedFp===fpOf(i))?'signed':'draft'; }
   async function audit(action,ref){ try{ let u=''; try{ u=(firebase.auth().currentUser||{}).email||''; }catch(e){} await col().doc(EV.cur.id).collection('auditLogs').add({ts:Date.now(),action:String(action),ref:String(ref||''),user:u}); }catch(e){} }
   async function persist(patch){ await col().doc(EV.cur.id).update(patch); Object.assign(EV.cur,patch); }
   async function evLoad(){
@@ -7491,13 +7492,13 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(!$('odMain')) return;
     const now=new Date(), cur=dayOf(now.getTime()).slice(0,7), prev=dayOf(new Date(now.getFullYear(),now.getMonth()-1,1).getTime()).slice(0,7);
     let L=INVS.filter(i=>OD.per==='all'||invDay(i).slice(0,7)===(OD.per==='month'?cur:prev)); if(OD.cust) L=L.filter(i=>i.buyerId===OD.cust);
-    const S={draft:0,signed:0,sent:0}; let val=0,tax=0,wht=0; const rev=[];
+    const S={draft:0,signed:0,sent:0,valid:0,invalid:0}; let val=0,tax=0,wht=0; const rev=[];
     L.forEach(i=>{ S[invStatus(i)]++; const t=calcInv(i), g=sgnDoc(i); val=r2(val+g*t.total); tax=r2(tax+g*t.tax); wht=r2(wht+g*t.wht); if(!i.buyer||!(i.lines||[]).length) rev.push(i); });
     const k=(l,v,c)=>'<div class="od-kpi" style="border-top-color:'+(c||'#714b67')+'"><span>'+l+'</span><b>'+v+'</b></div>';
     $('odMain').innerHTML='<div class="od-cp"><b>لوحة المعلومات</b><div class="od-btns"><select class="od-in" onchange="odSet(\'per\',this.value)">'+optH([['month','الشهر الحالي'],['prev','الشهر السابق'],['all','كل الفترات']],OD.per)+'</select><select class="od-in" onchange="odSet(\'cust\',this.value)"><option value="">كل العملاء</option>'+optH(EV.cur.buyers.map(b=>[b.id,b.name]),OD.cust)+'</select></div></div>'
-      +'<div class="od-kpis">'+k('إجمالي المستندات',L.length)+k('مسودات',S.draft,'#6c757d')+k('موقّعة (بانتظار الإرسال)',S.signed,'#017e84')+k('مُرسلة',S.sent,'#28a745')+k('تحتاج مراجعة',rev.length,'#dc3545')+k('إجمالي القيمة',money(val)+' ج')+k('إجمالي الضرائب',money(tax)+' ج')+k('خصم المنبع',money(wht)+' ج')+k('آخر مزامنة','لم تتم بعد','#adb5bd')+'</div>'
+      +'<div class="od-kpis">'+k('إجمالي المستندات',L.length)+k('مسودات',S.draft,'#6c757d')+k('موقّعة (بانتظار الإرسال)',S.signed,'#017e84')+k('مُرسلة (قيد المعالجة)',S.sent,'#17a2b8')+k('مقبولة من المصلحة',S.valid,'#28a745')+k('مرفوضة',S.invalid,'#dc3545')+k('تحتاج مراجعة',rev.length,'#dc3545')+k('إجمالي القيمة',money(val)+' ج')+k('إجمالي الضرائب',money(tax)+' ج')+k('خصم المنبع',money(wht)+' ج')+k('آخر مزامنة','لم تتم بعد','#adb5bd')+'</div>'
       +'<div class="od-sheet" style="margin-top:12px"><b>آخر المستندات</b><div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>'+(L.slice(0,6).map(i=>'<tr onclick="OD.page=\'inv\';evInvOpen(\''+i.id+'\')"><td>'+esc(i.no)+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+'</td><td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td></tr>').join('')||'<tr><td colspan="4" class="od-empty">لا توجد مستندات</td></tr>')+'</tbody></table></div></div>'
-      +'<div class="od-hint">الحالات المعروضة داخلية: «مُرسلة» تعني إنك علّمتها يدويًا. الاعتماد النهائي بيجي من المصلحة بعد تفعيل الإرسال والمتابعة (المرحلة الجاية).</div>';
+      +'<div class="od-hint">«مقبولة» و«مرفوضة» بتظهر بس بعد ما تضغط «تحقق من الحالة» ويرد عليك رد المصلحة. «مُرسلة» يعني المصلحة استلمتها وقيد المعالجة (أو اتعلّمت يدويًا).</div>';
   }
 
   /* ---------- قائمة الفواتير / الإشعارات ---------- */
@@ -7518,7 +7519,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function odList(){
     const notes=OD.page==='notes', r=odRows();
     $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\''+(notes?'C':'I')+'\')">جديد</button><b>'+(notes?'إشعارات الدائن والمدين':'الفواتير الصادرة')+'</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
-      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['signed','موقّعة'],['sent','مُرسلة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
+      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['signed','موقّعة'],['sent','مُرسلة'],['valid','مقبولة'],['invalid','مرفوضة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>التاريخ</th><th>العميل</th>'+(notes?'<th>النوع</th>':'')+'<th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
   window.odNew=function(t){
@@ -7548,16 +7549,16 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(OD.ft==='eta'){ const p=etaProblems();
       return (p.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+p.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')
         +fld('التوقيع','<span>'+(signedOk()?'موقّعة ✓':'غير موقّعة')+'</span>')+(INV.portalNo?fld('رقم البوابة','<span>'+esc(INV.portalNo)+'</span>'):'')
-        +'<div class="od-btns" style="margin-top:8px"><button class="od-btn" onclick="evSignTest()">🔌 اختبار التوقيع</button></div><p class="od-hint">الإرسال المباشر للمصلحة ومتابعة الحالة تلقائيًا لسه مش مفعّلين (المرحلة الجاية).</p>'; }
+        +'<div class="od-btns" style="margin-top:8px"><button class="od-btn" onclick="evSignTest()">🔌 اختبار التوقيع</button></div>'+etaInfo(); }
     return '<div class="od-wrap"><table class="od-table od-lines"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'
       +INV.lines.map((l,i)=>'<tr style="cursor:default"><td><b>'+esc(l.name)+'</b><br><small dir="ltr">'+esc(l.egs)+'</small></td>'+['qty','price','disc'].map(k=>'<td><input inputmode="decimal" value="'+esc(l[k])+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>').join('')+'<td>'+esc(taxText(l.tax))+'</td><td><input inputmode="decimal" value="'+esc(l.wht||0)+'" oninput="evLn('+i+',\'wht\',this.value)"></td><td id="ev_lt'+i+'" dir="ltr">'+money(calcLine(l).total)+' ج</td><td><button class="od-x" onclick="evLnDel('+i+')">🗑</button></td></tr>').join('')
       +'<tr style="cursor:default"><td colspan="8"><input id="ev_pick" list="ev_dl" placeholder="➕ أضف بند (اكتب كود أو اسم المنتج)" onchange="evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></td></tr></tbody></table></div><div class="od-tot" id="evInvTot">'+totHtml()+'</div>';
   }
   function odForm(){
     const c=EV.cur, M=$('odMain'); if(!M||!INV) return;
-    const steps=['draft','signed','sent'], ix=steps.indexOf(invStatus(INV)), isN=INV.docType==='C'||INV.docType==='D';
+    const stNow=invStatus(INV), steps=['draft','signed','sent',stNow==='invalid'?'invalid':'valid'], ix=steps.indexOf(stNow), isN=INV.docType==='C'||INV.docType==='D';
     M.innerHTML='<div class="od-cp"><div class="od-crumb"><a onclick="evInvClose()">'+(OD.page==='notes'?'الإشعارات':'الفواتير الصادرة')+'</a> / <b>'+esc(INV.no||'جديد')+'</b></div></div>'
-      +'<div class="od-sbar"><div class="od-btns"><button class="od-btn p" onclick="evInvSave()">💾 حفظ</button><button class="od-btn t" onclick="evInvSign()">🔏 توقيع</button>'+(signedOk()?'<button class="od-btn" onclick="evInvDlJson()">⬇ JSON</button>':'')+'<button class="od-btn" onclick="evInvSent()">'+(INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة')+'</button><button class="od-btn" onclick="evInvCopy()">📋 نسخ</button><button class="od-btn" onclick="evInvClose()">إغلاق</button></div><div class="od-steps">'+steps.map((s,i)=>'<span class="od-step'+(i===ix?' on':'')+'">'+ST_L[s]+'</span>').join('')+'</div></div>'
+      +'<div class="od-sbar"><div class="od-btns"><button class="od-btn p" onclick="evInvSave()">💾 حفظ</button><button class="od-btn t" onclick="evInvSign()">🔏 توقيع</button>'+(signedOk()?'<button class="od-btn" onclick="evInvDlJson()">⬇ JSON</button>':'')+(signedOk()&&!INV.etaUuid&&INV.sendState!=='sending'?'<button class="od-btn t" onclick="evInvSubmit()">📤 إرسال للمصلحة</button>':'')+(INV.etaUuid?'<button class="od-btn t" onclick="evInvCheck()">🔄 تحقق من الحالة</button>':'<button class="od-btn" onclick="evInvSent()">'+(INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة (يدوي)')+'</button>')+'<button class="od-btn" onclick="evInvCopy()">📋 نسخ</button><button class="od-btn" onclick="evInvClose()">إغلاق</button></div><div class="od-steps">'+steps.map((s,i)=>'<span class="od-step'+(i===ix?' on'+(s==='invalid'?' bad':''):'')+'">'+ST_L[s]+'</span>').join('')+'</div></div>'
       +'<div id="evInvMsg" class="od-toast"></div><div class="od-sheet"><div class="od-title"><small>'+DT_L[INV.docType||'I']+'</small><input id="ev_no" value="'+esc(INV.no)+'"></div><div class="od-grid"><div>'
       +fld('العميل','<select onchange="evInvBuyer(this.value)"><option value="">— اختر —</option>'+optH(c.buyers.map(b=>[b.id,b.name]),INV.buyerId)+'</select>')
       +fld('نوع المستند','<select onchange="evInvDT(this.value)">'+optH([['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']],INV.docType||'I')+'</select>')
@@ -7609,7 +7610,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(S==='info') h+='<div class="od-sheet">'+fld('الاسم','<input id="evi_name" value="'+esc(c.name)+'">')+fld('الرقم الضريبي','<input id="evi_rin" inputmode="numeric" dir="ltr" value="'+esc(c.rin)+'">')+fld('كود النشاط','<input id="evi_act" value="'+esc(c.activity)+'" placeholder="مثال: 6920 الأنشطة المحاسبية والمراجعة">')+'<div class="od-btns"><button class="od-btn p" onclick="evSaveInfo()">حفظ</button></div><div id="evMsg" class="od-toast"></div></div>';
     else if(S==='br') h+='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evBranchForm()">جديد</button></div></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الكود</th><th>الاسم</th><th>العنوان</th><th></th></tr></thead><tbody>'+(c.branches.map(b=>'<tr onclick="evBranchForm(\''+b.id+'\')"><td>'+esc(b.code)+'</td><td>'+esc(b.name)+'</td><td>'+esc([b.bld&&b.street?b.bld+' '+b.street:b.street,b.city,b.gov].filter(Boolean).join('، ')||'—')+'</td><td><button class="od-x" onclick="event.stopPropagation();evBranchDel(\''+b.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="4" class="od-empty">لا توجد فروع</td></tr>')+'</tbody></table></div>';
     else h+='<div class="od-sheet">'+fld('بيئة ETA','<select onchange="evSaveEnv(this.value)">'+optH([['pre','تجريبية (preprod)'],['prod','الإنتاج']],c.etaEnv||'pre')+'</select>')+fld('برنامج التوقيع','<span dir="ltr">'+SIGNER+'</span>')
-      +'<div class="od-btns" style="margin-top:8px"><button class="od-btn t" onclick="evSignTest()">🔌 اختبار التوقيع</button></div><div id="evInvMsg" class="od-toast"></div><p class="od-hint">شغّل run-signer.bat على جهاز التوكن وسيب نافذته مفتوحة. بيانات الدخول للمصلحة (Client ID / Secret) مش بتتكتب هنا؛ هتتخزن في مكان آمن بالخادم في مرحلة الإرسال.</p></div>';
+      +'<div class="od-btns" style="margin-top:8px"><button class="od-btn t" onclick="evSignTest()">🔌 اختبار التوقيع</button><button class="od-btn" onclick="evEtaTest()">🔑 اختبار الدخول للمصلحة</button></div><div id="evInvMsg" class="od-toast"></div><p class="od-hint">شغّل run-signer.bat على جهاز التوكن وسيب نافذته مفتوحة. بيانات الدخول للمصلحة (Client ID / Secret) مش بتتكتب في التطبيق: سجّلها مرة واحدة على جهازك بـ set-credentials.bat وبتتخزن مشفّرة لمستخدم ويندوز ده بس.</p></div>';
     $('odMain').innerHTML=h;
   }
   async function pLog(){
@@ -7785,7 +7786,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     catch(e){ m.textContent='✗ '+sgnErr(e); }
   };
   window.evInvSign=async function(){
-    invRead(); const m=$('evInvMsg'), pr=etaProblems();
+    invRead(); const m=$('evInvMsg'); if(INV.etaUuid||INV.sendState==='sending'){ m.textContent='المستند اتبعت (أو إرساله مش مؤكد) — مينفعش يتوقّع تاني'; return; } const pr=etaProblems();
     if(pr.length){ m.textContent='⚠ '+pr[0]+(pr.length>1?' (+'+(pr.length-1)+' كمان)':''); return; }
     try{
       const doc=etaDoc(), canon=etaCanon(doc); m.textContent='جاري الاتصال بالتوكن...';
@@ -7798,6 +7799,67 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evInvDlJson=function(){
     if(!signedOk()) return; const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([INV.signed],{type:'application/json'})); a.download=(INV.no||'invoice')+'-signed.json'; document.body.appendChild(a); a.click(); a.remove();
+  };
+
+
+  /* ---------- الإرسال للمصلحة عبر البرنامج المحلي + متابعة الحالة ---------- */
+  const envLbl=e=>e==='prod'?'الإنتاج (فواتير حقيقية)':'التجريبية (preprod)';
+  const safeJson=t=>{ try{ return JSON.parse(t); }catch(e){ return null; } };
+  function collectErr(o,out){
+    out=out||[]; if(o==null||typeof o==='string') return out;
+    if(Array.isArray(o)){ o.forEach(x=>collectErr(x,out)); return out; }
+    for(const k of Object.keys(o)){ const v=o[k];
+      if(typeof v==='string'&&v&&/^(message|error|errorAr|propertyPath)$/i.test(k)) out.push((k==='propertyPath'?'['+v+'] ':'')+v); else collectErr(v,out); }
+    return out;
+  }
+  const errList=o=>[...new Set(collectErr(o))].slice(0,12);
+  function etaInfo(){
+    const rows=[];
+    if(INV.etaUuid) rows.push(fld('UUID','<span dir="ltr">'+esc(INV.etaUuid)+'</span>'));
+    if(INV.longId) rows.push(fld('Long ID','<span dir="ltr">'+esc(INV.longId)+'</span>'));
+    if(INV.submissionId) rows.push(fld('رقم الإرسال','<span dir="ltr">'+esc(INV.submissionId)+'</span>'));
+    if(INV.etaStatus) rows.push(fld('حالة المصلحة','<span>'+esc(INV.etaStatus)+'</span>'));
+    let h=rows.join('');
+    if(INV.etaErr) h+='<div class="od-warn"><b>أخطاء من المصلحة:</b><br>'+esc(INV.etaErr).replace(/\n/g,'<br>')+'</div>';
+    if(INV.sendState==='sending') h+='<div class="od-warn">⚠ آخر إرسال نتيجته غير مؤكدة. <b>راجع «المستندات الصادرة» على بوابة المصلحة الأول</b>؛ لو المستند مش موجود هناك اضغط «السماح بإعادة الإرسال».<div class="od-btns" style="margin-top:6px"><button class="od-btn" onclick="evInvUnlock()">السماح بإعادة الإرسال</button></div></div>';
+    if(INV.etaResp) h+='<details><summary>الرد الكامل من المصلحة</summary><pre dir="ltr" style="white-space:pre-wrap;font-size:12px">'+esc(INV.etaResp)+'</pre></details>';
+    return h+'<p class="od-hint">البيئة الحالية: '+esc(envLbl(EV.cur.etaEnv))+'. الإرسال بيتم من خلال البرنامج المحلي على جهاز التوكن.</p>';
+  }
+  window.evEtaTest=async function(){
+    const m=$('evInvMsg'), c=EV.cur;
+    try{ m.textContent='جاري الدخول للمصلحة...'; await sgn('/eta/ping',{env:c.etaEnv||'pre',rin:c.rin}); m.textContent='✓ الدخول للمصلحة نجح ('+envLbl(c.etaEnv)+')'; }
+    catch(e){ m.textContent='✗ '+sgnErr(e); }
+  };
+  window.evInvUnlock=async function(){
+    if(!confirm('اتأكدت إن المستند مش موجود على بوابة المصلحة؟ لو موجود وبعته تاني هيتكرر.')) return;
+    INV.sendState=''; await evInvSave(); audit('السماح بإعادة الإرسال',INV.no); odForm();
+  };
+  window.evInvSubmit=async function(){
+    invRead(); const m=$('evInvMsg'), c=EV.cur, env=c.etaEnv||'pre';
+    if(!signedOk()){ m.textContent='وقّع الفاتورة الأول'; return; }
+    if(INV.etaUuid||INV.sendState==='sending'){ m.textContent='المستند ده اتبعت قبل كده أو إرساله مش مؤكد — ماتعيدش الإرسال. استخدم «تحقق من الحالة» أو راجع البوابة.'; return; }
+    if(!confirm('إرسال '+INV.no+' لمصلحة الضرائب؟\nالبيئة: '+envLbl(env)+(env==='prod'?'\n⚠ دي فاتورة حقيقية.':''))) return;
+    INV.sendState='sending'; INV.etaErr=''; await evInvSave();          // نسجّل «جاري الإرسال» قبل الطلب علشان ما يتكررش
+    let r;
+    try{ m.textContent='جاري الإرسال...'; r=await sgn('/eta/submit',{env,rin:c.rin,body:INV.signed}); }
+    catch(e){ INV.sendState=''; await evInvSave(); odForm(); $('evInvMsg').textContent='✗ '+sgnErr(e)+' (مفيش حاجة اتبعتت)'; return; }
+    const j=safeJson(r.body);
+    INV.etaResp=String(r.body||'').slice(0,4000);
+    if(r.code>=200&&r.code<300&&j&&j.acceptedDocuments&&j.acceptedDocuments.length){
+      const a=j.acceptedDocuments[0]; INV.etaUuid=a.uuid||''; INV.longId=a.longId||''; INV.submissionId=j.submissionUUID||j.submissionId||''; INV.etaStatus='Submitted'; INV.sendState='done'; INV.status='sent'; INV.etaErr='';
+      await evInvSave(); audit('إرسال للمصلحة',INV.no+' '+INV.etaUuid); odForm(); $('evInvMsg').textContent='✓ المصلحة استلمت المستند (قيد المعالجة). اضغط «تحقق من الحالة» بعد لحظات.'; return;
+    }
+    if(r.code===0||r.code>=500){ INV.sendState='sending'; await evInvSave(); audit('إرسال غير مؤكد',INV.no); odForm(); $('evInvMsg').textContent='⚠ النتيجة غير مؤكدة (HTTP '+r.code+'). راجع البوابة قبل أي إعادة إرسال.'; return; }
+    INV.sendState='failed'; INV.etaErr=((j&&j.rejectedDocuments&&j.rejectedDocuments.length)?errList(j.rejectedDocuments):errList(j)).join('\n')||('HTTP '+r.code);
+    await evInvSave(); audit('رفض عند الإرسال',INV.no); odForm(); OD.ft='eta'; odForm(); $('evInvMsg').textContent='✗ المصلحة رفضت الإرسال — التفاصيل في تبويب ETA';
+  };
+  window.evInvCheck=async function(){
+    const m=$('evInvMsg'), c=EV.cur; if(!INV.etaUuid){ m.textContent='مفيش UUID للمستند'; return; }
+    try{ m.textContent='جاري الاستعلام...'; const r=await sgn('/eta/document',{env:c.etaEnv||'pre',rin:c.rin,uuid:INV.etaUuid}), j=safeJson(r.body);
+      if(r.code!==200||!j){ m.textContent='✗ تعذّر الاستعلام (HTTP '+r.code+')'; return; }
+      INV.etaStatus=j.status||INV.etaStatus; INV.etaErr=(INV.etaStatus==='Invalid')?(errList(j.validationResults||j).join('\n')):''; INV.etaResp=String(r.body).slice(0,4000);
+      await evInvSave(); audit('استعلام حالة',INV.no+' '+INV.etaStatus); odForm(); $('evInvMsg').textContent='حالة المصلحة: '+INV.etaStatus+(INV.etaStatus==='Invalid'?' — التفاصيل في تبويب ETA':'');
+    }catch(e){ m.textContent='✗ '+sgnErr(e); }
   };
 
   /* ---------- الفواتير: نفس خطوات بوابة المصلحة الأربع ---------- */
@@ -7832,10 +7894,10 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     return p;
   }
   window.evInvSave=async function(){
-    invRead(); if(!INV.no){ $('evInvMsg').textContent='الرقم الداخلي مطلوب'; return; }
+    invRead(); if(INV.etaUuid&&INV.signedFp!==fp()){ $('evInvMsg').textContent='المستند اتبعت للمصلحة ومينفعش يتعدّل — اعمل إشعار دائن/مدين'; return; } if(!INV.no){ $('evInvMsg').textContent='الرقم الداخلي مطلوب'; return; }
     if(INVS.some(x=>x.id!==INV.id&&x.no===INV.no)){ $('evInvMsg').textContent='الرقم الداخلي مكرر'; return; }
     const id=INV.id||uid(), now=Date.now(), old=INVS.find(x=>x.id===id);
-    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,docType:INV.docType||'I',refUuid:INV.refUuid||'',poRef:INV.poRef||'',soRef:INV.soRef||'',signedAt:INV.signedAt||0,branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',signed:INV.signed||'',signedFp:INV.signedFp||'',createdAt:old?old.createdAt:now,updatedAt:now};
+    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,docType:INV.docType||'I',refUuid:INV.refUuid||'',poRef:INV.poRef||'',soRef:INV.soRef||'',signedAt:INV.signedAt||0,submissionId:INV.submissionId||'',etaUuid:INV.etaUuid||'',longId:INV.longId||'',etaStatus:INV.etaStatus||'',sendState:INV.sendState||'',etaErr:INV.etaErr||'',etaResp:INV.etaResp||'',branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',signed:INV.signed||'',signedFp:INV.signedFp||'',createdAt:old?old.createdAt:now,updatedAt:now};
     try{ await icol().doc(id).set(doc); INV.id=id; const i=INVS.findIndex(x=>x.id===id); if(i>=0) INVS[i]=Object.assign({id},doc); else INVS.unshift(Object.assign({id},doc)); $('evInvMsg').textContent='✓ تم الحفظ'; audit('حفظ '+DT_L[INV.docType||'I'],INV.no); }
     catch(e){ $('evInvMsg').textContent='تعذّر الحفظ: '+(e&&e.message||''); }
   };
