@@ -1268,8 +1268,8 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <div class="row-actions" style="margin-bottom:8px;"><button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button></div>
         <h2 style="text-align:center;">سجل إقرارات القيمة المضافة</h2>
         <div class="landing-cats">
-          <button type="button" class="landing-cat-btn" id="vrCatC" onclick="vrCat('شركات')">شركات</button>
-          <button type="button" class="landing-cat-btn" id="vrCatI" onclick="vrCat('فردي')">فردي</button>
+          <button type="button" class="landing-cat-btn" id="vrCatC" onclick="vrCat('فردي')">شركات</button>
+          <button type="button" class="landing-cat-btn" id="vrCatI" onclick="vrCat('شركات')">فردي</button>
         </div>
         <div class="vr-pdf" style="margin-top:16px;justify-content:center;"><select id="vrMonth2" onchange="vrMonth2()"></select><button class="act btn-primary btn-small vr-pdfbtn" onclick="vrPdf('')">⬇️ تنزيل تقرير PDF (شركات + فردي)</button></div>
       </div>
@@ -7081,6 +7081,8 @@ populateClientHelpers();
   const today=()=>new Date().toISOString().slice(0,10);
   const eligible=(c,ym)=>freqOf(c)==='m'||ym%100%3===0;
   const stateOf=d=>d&&d.filed?'done':'todo';
+  /* الاسم الظاهر فقط: القيمة المخزّنة في البيانات (شركات/فردي) ماتغيّرتش، لكن بتتعرض معكوسة في سجل الإقرارات */
+  const DN={'شركات':'فردي','فردي':'شركات'}, dn=c=>DN[c]||c;
   let ST={ym:prevYm(),rows:[],tok:0,filter:'all',fq:'all',q:'',cat:'',skipped:0,reg:[],homeAt:0,homeN:0};
 
   async function loadReg(){
@@ -7105,12 +7107,12 @@ populateClientHelpers();
     ST.cat=''; ST.tok++;
     $('vrChoose').style.display='block'; $('vrList').style.display='none';
     { let o=''; for(let i=0,m=prevYm();i<14;i++){ o+='<option value="'+m+'">'+ymLbl(m)+'</option>'; m=m%100===1?(Math.floor(m/100)-1)*100+12:m-1; } $('vrMonth2').innerHTML=o; $('vrMonth2').value=String(ST.ym); }
-    try{ const reg=await loadReg(); $('vrCatC').textContent='شركات ('+reg.filter(c=>c.category==='شركات').length+')'; $('vrCatI').textContent='فردي ('+reg.filter(c=>c.category==='فردي').length+')'; }catch(e){}
+    try{ const reg=await loadReg(); $('vrCatC').textContent='شركات ('+reg.filter(c=>c.category==='فردي').length+')'; $('vrCatI').textContent='فردي ('+reg.filter(c=>c.category==='شركات').length+')'; }catch(e){}
   };
   window.vrCat=function(cat){
     ST.cat=cat; ST.filter='all'; ST.fq='all'; ST.q=''; if($('vrSearch')) $('vrSearch').value='';
     $('vrChoose').style.display='none'; $('vrList').style.display='block';
-    $('vrTitle').textContent='إقرارات '+cat; $('vrAddFreq').value=cat==='فردي'?'q':'m';
+    $('vrTitle').textContent='إقرارات '+dn(cat); $('vrAddFreq').value=cat==='شركات'?'q':'m';
     window.scrollTo({top:0}); vrLoad();
   };
   window.vrAdd=async function(){
@@ -7172,7 +7174,7 @@ populateClientHelpers();
     try{
       if(!window.html2canvas) await lib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
       if(!window.jspdf) await lib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      const cats=scope?[scope]:['شركات','فردي'], groups=[]; let skipped=0;
+      const cats=scope?[scope]:['فردي','شركات'], groups=[]; let skipped=0;
       for(const cat of cats){
         const r=await fetchAll(ST.ym,cat); skipped+=r.skipped;
         const rows=r.rows.filter(x=>!fq||fq==='all'||freqOf(x.c)===fq).map(x=>{ const d=x.d||{}, f=!!d.filed; return {n:x.c.name,fq:freqOf(x.c)==='q'?'ربع سنوي':'شهري',sys:x.c.vatSys==='old'?'قديمة':(x.c.vatSys==='new'?'جديدة':'—'),f,at:f?(d.filedAt||''):'',pay:f?(d.pay||''):'',amt:Number(d.amount)||0,g:!f?0:(d.pay==='due'?1:(d.pay==='paid'?2:3))}; })
@@ -7195,13 +7197,13 @@ populateClientHelpers();
       const pageHtml=(rows,pi)=>{
         let h='<div dir="rtl" style="width:794px;height:1123px;box-sizing:border-box;padding:34px 34px 60px;background:#fff;color:#1c2b39;font-family:Cairo,Tahoma,Arial,sans-serif;position:relative;overflow:hidden">';
         if(pi===0){
-          h+='<div style="background:linear-gradient(120deg,#00699c,#2a9fd6);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px"><div style="font-size:13px;opacity:.9">مكتب الغريب للمحاسبة والمراجعة</div><div style="font-size:22px;font-weight:900;margin-top:2px">تقرير متابعة إقرارات القيمة المضافة</div><div style="font-size:13px;margin-top:6px;opacity:.95">الفترة: '+ymLbl(ST.ym)+' &nbsp;|&nbsp; '+(scope?esc(scope):'شركات وفردي')+(fq==='m'?' — شهري':(fq==='q'?' — ربع سنوي':''))+' &nbsp;|&nbsp; تاريخ التقرير: '+dt(today())+'</div></div>';
+          h+='<div style="background:linear-gradient(120deg,#00699c,#2a9fd6);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px"><div style="font-size:13px;opacity:.9">مكتب الغريب للمحاسبة والمراجعة</div><div style="font-size:22px;font-weight:900;margin-top:2px">تقرير متابعة إقرارات القيمة المضافة</div><div style="font-size:13px;margin-top:6px;opacity:.95">الفترة: '+ymLbl(ST.ym)+' &nbsp;|&nbsp; '+(scope?esc(dn(scope)):'شركات وفردي')+(fq==='m'?' — شهري':(fq==='q'?' — ربع سنوي':''))+' &nbsp;|&nbsp; تاريخ التقرير: '+dt(today())+'</div></div>';
           h+='<div style="display:flex;gap:8px;margin-bottom:8px">'+box('إجمالي العملاء',all.length,'#00699c')+box('تم التقديم',nDone,'#1f9d6c')+box('لم يتم التقديم',nTodo,'#e0483a')+box('مطلوب سداد',due.length,'#6d4adf',money(sum(due))+' ج.م')+box('تم السداد',paid.length,'#0b7ea8',money(sum(paid))+' ج.م')+'</div>';
           if(skipped) h+='<div style="font-size:11px;color:#5c7d90;margin-bottom:6px">تم استبعاد '+skipped+' عميل ربع سنوي لعدم استحقاق إقرار عن هذه الفترة.</div>';
         }
         h+='<table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="background:#00699c;color:#fff;font-size:12px"><th style="padding:8px 6px;width:30px">#</th><th style="padding:8px 6px;text-align:right">اسم العميل</th><th style="padding:8px 6px">الدورية</th><th style="padding:8px 6px">المنظومة</th><th style="padding:8px 6px">حالة الإقرار</th><th style="padding:8px 6px">تاريخ التقديم</th><th style="padding:8px 6px">السداد</th><th style="padding:8px 6px">المبلغ (ج.م)</th></tr></thead><tbody>';
         rows.forEach(it=>{
-          if(it.t==='cat'){ h+='<tr><td colspan="8" style="padding:8px 10px;background:#eaf3f8;color:#00699c;font-weight:900;font-size:13.5px;border-bottom:2px solid #00699c">'+esc(it.cat)+' — '+it.n+' عميل</td></tr>'; return; }
+          if(it.t==='cat'){ h+='<tr><td colspan="8" style="padding:8px 10px;background:#eaf3f8;color:#00699c;font-weight:900;font-size:13.5px;border-bottom:2px solid #00699c">'+esc(dn(it.cat))+' — '+it.n+' عميل</td></tr>'; return; }
           const r=it.r, c=r.f?'#1f9d6c':'#e0483a';
           h+='<tr><td style="'+td+'text-align:center;color:#5c7d90">'+it.i+'</td><td style="'+td+'font-weight:800">'+esc(r.n)+'</td><td style="'+td+'text-align:center">'+r.fq+'</td><td style="'+td+'text-align:center">'+r.sys+'</td>'
             +'<td style="'+td+'text-align:center"><span style="display:inline-block;padding:2px 10px;border-radius:12px;background:'+c+';color:#fff;font-weight:800;font-size:12px">'+(r.f?'تم التقديم':'لم يتم التقديم')+'</span></td>'
@@ -7221,7 +7223,7 @@ populateClientHelpers();
         if(i) doc.addPage();
         doc.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
       }
-      doc.save('إقرارات_القيمة_المضافة_'+(scope||'شركات_وفردي')+'_'+ymLbl(ST.ym).replace(' ','_')+'.pdf');
+      doc.save('إقرارات_القيمة_المضافة_'+(scope?dn(scope):'شركات_وفردي')+'_'+ymLbl(ST.ym).replace(' ','_')+'.pdf');
     }catch(e){ alert('تعذّر إنشاء التقرير: '+(e&&e.message||'')); }
     finally{ host.remove(); btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.textContent=b.dataset.t; }); }
   };
