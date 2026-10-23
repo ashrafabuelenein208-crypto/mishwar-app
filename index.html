@@ -944,6 +944,41 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     }catch(e){}
   })();
 </script>
+<style>
+/* ===== شاشة فاتورة المبيعات (شكل الكاشير) ===== */
+.pos{display:grid;gap:10px}.pos *{box-sizing:border-box}
+.pos-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pos-top h2{margin:0;font-size:22px;color:#1c2b39;display:flex;gap:8px;align-items:center}
+.pos-st{font-size:12px;font-weight:700;padding:3px 11px;border-radius:12px;background:#e9ecef;color:#495057}
+.pos-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pos-box{background:#fff;border:1px solid #cfd6dd;border-radius:6px;padding:10px;position:relative}
+.pos-box>legend,.pos-lg{font-weight:800;color:#0c7a6b;font-size:13px;margin:-2px 0 8px;display:block}
+.pos-r{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}.pos-r>label{min-width:78px;font-size:13px;font-weight:700;color:#1c2b39;text-align:left}
+.pos-r input,.pos-r select{flex:1;min-width:90px;border:1px solid #b9c3cc;border-radius:3px;padding:6px 8px;font:inherit;background:#fff;color:#212529}
+.pos-r input.cy{background:#7fcfcf;font-weight:800;text-align:center}
+.pos-r .go{flex:0 0 auto;min-width:0;width:38px;height:34px;border-radius:50%;border:0;background:#1d6fb8;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.pos-hl{background:#27e0e6;border-radius:3px;padding:3px 8px;font-weight:700;font-size:13px}
+.pos-tbl{overflow:auto;background:#fff;border:1px solid #9aa6b1;min-height:230px;max-height:46vh}
+.pos-tbl table{width:100%;border-collapse:collapse;min-width:760px;text-align:center}
+.pos-tbl th{background:linear-gradient(#ffe9a8,#f1c752);position:sticky;top:0;padding:6px;font-size:13px;border:1px solid #c9a63c;color:#3a2e0a}
+.pos-tbl td{padding:5px 6px;border-bottom:1px solid #e3e7eb;font-weight:700;font-size:14px}
+.pos-tbl td.nm{text-align:right}.pos-tbl tr:nth-child(even) td{background:#f3f6f8}
+.pos-tbl tr.last td{background:linear-gradient(#ffe0b0,#f6b765);color:#7a1020}
+.pos-tbl td input{width:72px;text-align:center;border:1px solid #b9c3cc;border-radius:3px;padding:4px;font:inherit;font-weight:700;background:#fff;color:#212529}
+.pos-x{width:26px;height:26px;border-radius:50%;border:0;background:#e0483a;color:#fff;font-weight:900;cursor:pointer}
+.pos-bot{display:grid;grid-template-columns:1.3fr 1fr;gap:10px}
+.pos-tots{display:grid;gap:7px}
+.pos-t{display:flex;justify-content:space-between;align-items:center;border-radius:4px;overflow:hidden;border:1px solid #cfd6dd;background:#fff}
+.pos-t>span:first-child{background:#2f4a45;color:#fff;padding:7px 12px;font-weight:800;min-width:150px;font-size:13px}
+.pos-t>span:last-child{padding:7px 14px;font-weight:800;flex:1;text-align:center}
+.pos-net{background:#000;color:#fff;border-radius:4px;text-align:center;padding:8px}.pos-net b{display:block;background:#222;color:#fff;font-size:13px;padding:4px;margin-bottom:6px}.pos-net div{font-size:34px;font-weight:900}
+.pos-cnt{display:flex;gap:8px}.pos-cnt div{flex:1;background:#dfe7ee;border-radius:3px;padding:5px 9px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;color:#35566e}
+.pos-keys{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.pos-k{border:0;border-radius:3px;color:#fff;font:inherit;font-weight:800;font-size:13px;padding:9px 14px;cursor:pointer}
+.pos-k small{opacity:.8;margin-inline-start:4px}
+.k-save{background:#2b8f6e}.k-sign{background:#1d6fb8}.k-send{background:#a3202b}.k-chk{background:#2fb344}.k-cp{background:#6a2a8c}.k-js{background:#4a5560}.k-cl{background:#8a1f1f}
+@media(max-width:760px){.pos-two,.pos-bot{grid-template-columns:1fr}.pos-net div{font-size:28px}}
+</style>
 </head>
 <body>
 
@@ -7537,7 +7572,11 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evInvDT=function(v){ invRead(); INV.docType=v; odForm(); };
   window.evFTab=function(t){ invRead(); OD.ft=t; odForm(); };
   function invRender(){ odForm(); }
-  function totHtml(){ const t=calcInv(INV); return [['الإجمالي قبل الخصم',t.gross],['الخصم',t.disc],['الصافي قبل الضريبة',t.net],['الضرائب',t.tax],['خصم من المنبع',t.wht],['الإجمالي',t.total]].map((x,i)=>'<div class="od-tr'+(i===5?' big':'')+'"><span>'+x[0]+'</span><span dir="ltr">'+money(x[1])+' ج.م</span></div>').join(''); }
+  function totHtml(){
+    const t=calcInv(INV), L=INV.lines||[], q=L.reduce((a,l)=>a+(+l.qty||0),0), m=x=>'<span dir="ltr">'+money(x)+'</span>';
+    return '<div class="pos-t"><span>الإجمالي بدون خصم</span>'+m(t.gross)+'</div><div class="pos-t"><span>الخصم</span>'+m(t.disc)+'</div><div class="pos-t"><span>الصافي قبل الضريبة</span>'+m(t.net)+'</div><div class="pos-t"><span>الضرائب (القيمة المضافة)</span>'+m(t.tax)+'</div><div class="pos-t"><span>خصم من المنبع</span>'+m(t.wht)+'</div>'
+      +'<div class="pos-net"><b>الإجمالي النهائي</b><div dir="ltr">'+money(t.total)+'</div></div><div class="pos-cnt"><div><span>عدد الأصناف</span><span>'+L.length+'</span></div><div><span>إجمالي الكميات</span><span>'+q+'</span></div></div>';
+  }
   function chatter(){
     const f=t=>new Date(t).toLocaleString('ar-EG'), e=[];
     if(INV.createdAt) e.push('📝 اتنشأ: '+f(INV.createdAt)); if(INV.updatedAt) e.push('💾 آخر حفظ: '+f(INV.updatedAt)); if(INV.signedAt) e.push('🔏 اتوقّع: '+f(INV.signedAt)); if(INV.status==='sent') e.push('✅ اتعلّم مُرسل'+(INV.portalNo?' — '+INV.portalNo:''));
@@ -7556,20 +7595,46 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   }
   function odForm(){
     const c=EV.cur, M=$('odMain'); if(!M||!INV) return;
-    const stNow=invStatus(INV), steps=['draft','signed','sent',stNow==='invalid'?'invalid':'valid'], ix=steps.indexOf(stNow), isN=INV.docType==='C'||INV.docType==='D';
-    M.innerHTML='<div class="od-cp"><div class="od-crumb"><a onclick="evInvClose()">'+(OD.page==='notes'?'الإشعارات':'الفواتير الصادرة')+'</a> / <b>'+esc(INV.no||'جديد')+'</b></div></div>'
-      +'<div class="od-sbar"><div class="od-btns"><button class="od-btn p" onclick="evInvSave()">💾 حفظ</button><button class="od-btn t" onclick="evInvSign()">🔏 توقيع</button>'+(signedOk()?'<button class="od-btn" onclick="evInvDlJson()">⬇ JSON</button>':'')+(signedOk()&&!INV.etaUuid&&INV.sendState!=='sending'?'<button class="od-btn t" onclick="evInvSubmit()">📤 إرسال للمصلحة</button>':'')+(INV.etaUuid?'<button class="od-btn t" onclick="evInvCheck()">🔄 تحقق من الحالة</button>':'<button class="od-btn" onclick="evInvSent()">'+(INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة (يدوي)')+'</button>')+'<button class="od-btn" onclick="evInvCopy()">📋 نسخ</button><button class="od-btn" onclick="evInvClose()">إغلاق</button></div><div class="od-steps">'+steps.map((s,i)=>'<span class="od-step'+(i===ix?' on'+(s==='invalid'?' bad':''):'')+'">'+ST_L[s]+'</span>').join('')+'</div></div>'
-      +'<div id="evInvMsg" class="od-toast"></div><div class="od-sheet"><div class="od-title"><small>'+DT_L[INV.docType||'I']+'</small><input id="ev_no" value="'+esc(INV.no)+'"></div><div class="od-grid"><div>'
-      +fld('العميل','<select onchange="evInvBuyer(this.value)"><option value="">— اختر —</option>'+optH(c.buyers.map(b=>[b.id,b.name]),INV.buyerId)+'</select>')
-      +fld('نوع المستند','<select onchange="evInvDT(this.value)">'+optH([['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']],INV.docType||'I')+'</select>')
-      +(isN?fld('UUID الأصلية','<input id="ev_ref" dir="ltr" value="'+esc(INV.refUuid)+'">'):'')
-      +'</div><div>'
-      +fld('تاريخ المستند','<label class="od-chk"><input type="checkbox" id="ev_auto" '+(INV.dateAuto?'checked':'')+' onchange="evInvAuto()"> تلقائي</label><input type="date" id="ev_date" value="'+esc(INV.date)+'" '+(INV.dateAuto?'disabled':'')+'>')
-      +fld('تاريخ التسليم','<input type="date" id="ev_svc" value="'+esc(INV.svcDate)+'">')
-      +fld('الفرع','<select onchange="evInvBranch(this.value)"><option value="">— اختر —</option>'+optH(c.branches.map(b=>[b.id,b.code+' / '+b.name]),INV.branchId)+'</select>')
-      +fld('العملة','<input value="EGP — جنيه مصري" disabled>')+'</div></div>'
-      +'<div class="od-tabs">'+[['lines','بنود المستند'],['extra','بيانات إضافية'],['eta','ETA والتوقيع']].map(t=>'<button class="od-tab'+(OD.ft===t[0]?' on':'')+'" onclick="evFTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div><div style="padding-top:10px">'+ftab()+'</div></div>'+chatter();
+    const st=invStatus(INV), isN=INV.docType==='C'||INV.docType==='D', pr=etaProblems(), L=INV.lines;
+    const inp=(i,k,w)=>'<td><input inputmode="decimal" value="'+esc(w)+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>';
+    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr class="'+(i===L.length-1?'last':'')+'"><td>'+(i+1)+'</td><td dir="ltr">'+esc(l.egs)+'</td><td class="nm">'+esc(l.name)+'</td><td>'+esc(unitLbl(l.unit))+'</td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="pos-x" onclick="evLnDel('+i+')">✕</button></td></tr>'; }).join('');
+    const key=(cls,fn,lbl,fk)=>'<button class="pos-k '+cls+'" onclick="'+fn+'">'+lbl+'<small>'+fk+'</small></button>';
+    const sOk=signedOk();
+    M.innerHTML='<div class="pos">'
+      +'<div class="pos-top"><h2>🛒 '+(isN?'إشعار '+(INV.docType==='C'?'دائن':'مدين'):'فاتورة مبيعات')+' <span class="pos-st">'+ST_L[st]+'</span></h2><div class="od-btns"><button class="od-btn" onclick="evInvClose()">‹ رجوع للقائمة</button></div></div>'
+      +'<div id="evInvMsg" class="od-toast"></div>'
+      +'<div class="pos-two">'
+      +'<div class="pos-box"><span class="pos-lg">بيانات الفاتورة</span>'
+        +'<div class="pos-r"><label>رقم الفاتورة</label><input id="ev_no" class="cy" value="'+esc(INV.no)+'"><label>النوع</label><select onchange="evInvDT(this.value)">'+optH([['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']],INV.docType||'I')+'</select></div>'
+        +'<div class="pos-r"><label>التاريخ</label><input type="date" id="ev_date" value="'+esc(INV.date)+'" '+(INV.dateAuto?'disabled':'')+'><label class="pos-hl" style="min-width:0"><input type="checkbox" id="ev_auto" style="flex:none;min-width:0" '+(INV.dateAuto?'checked':'')+' onchange="evInvAuto()"> تلقائي</label></div>'
+        +'<div class="pos-r"><label>العميل</label><select onchange="evInvBuyer(this.value)"><option value="">— اختر العميل —</option>'+optH(c.buyers.map(b=>[b.id,b.name]),INV.buyerId)+'</select></div>'
+        +'<div class="pos-r"><label>الفرع</label><select onchange="evInvBranch(this.value)"><option value="">— اختر —</option>'+optH(c.branches.map(b=>[b.id,b.code+' / '+b.name]),INV.branchId)+'</select></div>'
+        +'<div class="pos-r"><label>تاريخ التسليم</label><input type="date" id="ev_svc" value="'+esc(INV.svcDate)+'">'+(isN?'<label>UUID الأصلية</label><input id="ev_ref" dir="ltr" value="'+esc(INV.refUuid)+'">':'')+'</div>'
+      +'</div>'
+      +'<div class="pos-box"><span class="pos-lg">بيانات الصنف</span>'
+        +'<div class="pos-r"><label>بحث / كود</label><input id="ev_pick" list="ev_dl" placeholder="اكتب كود EGS أو اسم الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></div>'
+        +'<div class="pos-r"><label>الكمية</label><input id="ev_q" inputmode="decimal" value="1" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><label>الخصم %</label><input id="ev_d" inputmode="decimal" value="0"></div>'
+        +'<div class="pos-r"><label>السعر</label><input id="ev_p" inputmode="decimal" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><button class="go" onclick="evInvAddLine()" title="إضافة">+</button></div>'
+        +'<div class="pos-r"><label>مرجع أمر الشراء</label><input id="ev_po" value="'+esc(INV.poRef||'')+'"><label>أمر البيع</label><input id="ev_so" value="'+esc(INV.soRef||'')+'"></div>'
+      +'</div></div>'
+      +'<div class="pos-tbl"><table><thead><tr><th>م</th><th>كود</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th>حذف</th></tr></thead><tbody>'+(rows||'<tr><td colspan="11" style="padding:40px;opacity:.6">أضف الأصناف من خانة «بحث / كود» فوق</td></tr>')+'</tbody></table></div>'
+      +'<div class="pos-bot"><div class="pos-box"><span class="pos-lg">حالة المستند والمصلحة</span>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+'<div class="pos-r"><label>التوقيع</label><b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b></div>'+(INV.portalNo?'<div class="pos-r"><label>رقم البوابة</label><b>'+esc(INV.portalNo)+'</b></div>':'')+etaInfo()+'</div>'
+      +'<div class="pos-tots" id="evInvTot">'+totHtml()+'</div></div>'
+      +'<div class="pos-keys">'+key('k-save','evInvSave()','💾 حفظ الفاتورة','F5')+key('k-sign','evInvSign()','🔏 توقيع','F10')
+        +(sOk&&!INV.etaUuid&&INV.sendState!=='sending'?key('k-send','evInvSubmit()','📤 إرسال للمصلحة','F9'):'')
+        +(INV.etaUuid?key('k-chk','evInvCheck()','🔄 تحقق من الحالة','F1'):'<button class="pos-k k-chk" onclick="evInvSent()">'+(INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي')+'</button>')
+        +key('k-cp','evInvCopy()','📋 نسخ','F12')+(sOk?'<button class="pos-k k-js" onclick="evInvDlJson()">⬇ JSON</button>':'')+'<button class="pos-k k-cl" onclick="evInvClose()">إغلاق</button></div>'
+      +'</div>';
+    if(!window._posK){ window._posK=1; document.addEventListener('keydown',function(e){ if(!INV||!$('ev_no')) return; const f={F5:'evInvSave',F10:'evInvSign',F9:'evInvSubmit',F1:'evInvCheck',F12:'evInvCopy'}[e.key]; if(f&&window[f]){ e.preventDefault(); window[f](); } }); }
   }
+  window.evInvAddLine=function(){
+    invRead(); const q=nz($('ev_pick').value); if(!q) return;
+    const it=EV.cur.items.find(x=>nz(x.egs)===q)||EV.cur.items.find(x=>nz(x.name)===q)||EV.cur.items.find(x=>nz(x.name).includes(q)||nz(x.egs).includes(q));
+    if(!it){ $('evInvMsg').textContent='الصنف مش موجود — أضفه من قائمة المنتجات'; return; }
+    const qty=parseFloat(ad($('ev_q').value))||1, disc=parseFloat(ad($('ev_d').value))||0, pv=parseFloat(ad($('ev_p').value));
+    INV.lines.push({egs:it.egs,name:it.name,unit:it.unit,qty,price:isNaN(pv)?(it.price||0):pv,disc,wht:0,tax:it.tax});
+    invRender(); const e=$('ev_pick'); if(e) e.focus();
+  };
 
   /* ---------- العملاء / المنتجات ---------- */
   function pCust(){
