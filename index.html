@@ -7858,10 +7858,16 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<div class="od-btns" style="margin-top:8px"><button class="od-btn t" onclick="evSignTest()">🔌 اختبار التوقيع</button><button class="od-btn" onclick="evEtaTest()">🔑 اختبار الدخول للمصلحة</button></div><div id="evInvMsg" class="od-toast"></div><p class="od-hint">شغّل run-signer.bat على جهاز التوكن وسيب نافذته مفتوحة. بيانات الدخول للمصلحة (Client ID / Secret) مش بتتكتب في التطبيق: سجّلها مرة واحدة على جهازك بـ set-credentials.bat وبتتخزن مشفّرة لمستخدم ويندوز ده بس.</p></div>';
     $('odMain').innerHTML=h;
   }
+  window.evLogClear=function(){ requirePin(async()=>{
+    if(!confirm('مسح سجل العمليات كله للشركة دي؟\nالفواتير نفسها مش هتتأثر، بس السجل مش بيرجع.')) return;
+    try{ const ref=col().doc(EV.cur.id).collection('auditLogs'); let n=0;
+      for(;;){ const sn=await ref.limit(400).get(); if(sn.empty) break; const b=db.batch(); sn.docs.forEach(d=>b.delete(d.ref)); await b.commit(); n+=sn.size; }
+      pLog(); }
+    catch(e){ alert('تعذّر المسح: '+(e&&e.message||e)); } }); };
   async function pLog(){
     $('odMain').innerHTML='<p class="od-empty">جاري التحميل...</p>';
     try{ const sn=await col().doc(EV.cur.id).collection('auditLogs').orderBy('ts','desc').limit(100).get(); if(!$('odMain')) return;
-      $('odMain').innerHTML='<div class="od-cp"><b>سجل العمليات</b></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الوقت</th><th>العملية</th><th>المرجع</th><th>المستخدم</th></tr></thead><tbody>'+(sn.docs.map(d=>{ const x=d.data(); return '<tr style="cursor:default"><td>'+esc(new Date(x.ts).toLocaleString('ar-EG'))+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.ref)+'</td><td>'+esc(x.user||'—')+'</td></tr>'; }).join('')||'<tr><td colspan="4" class="od-empty">لا توجد عمليات مسجلة بعد</td></tr>')+'</tbody></table></div>'; }
+      $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn" onclick="evLogClear()">🗑 مسح السجل</button></div><b>سجل العمليات</b></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الوقت</th><th>العملية</th><th>المرجع</th><th>المستخدم</th></tr></thead><tbody>'+(sn.docs.map(d=>{ const x=d.data(); return '<tr style="cursor:default"><td>'+esc(new Date(x.ts).toLocaleString('ar-EG'))+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.ref)+'</td><td>'+esc(x.user||'—')+'</td></tr>'; }).join('')||'<tr><td colspan="4" class="od-empty">لا توجد عمليات مسجلة بعد</td></tr>')+'</tbody></table></div>'; }
     catch(e){ if($('odMain')) $('odMain').innerHTML='<p class="od-empty">تعذّر التحميل: '+esc(e&&e.message)+'</p>'; }
   }
   /* ---------- نموذج عام ---------- */
