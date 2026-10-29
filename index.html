@@ -7661,13 +7661,13 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
-  window.odNew=function(t){ window._ivSeen=null;
+  window.odNew=function(t){ window._ivSeen=null; window._ivReg='';
     const n=INVS.reduce((m,i)=>Math.max(m,parseInt((String(i.no).match(/(\d+)$/)||[0,0])[1])||0),0)+1;
     INV={id:null,no:({I:'INV-',C:'CN-',D:'DN-'}[t])+String(n).padStart(4,'0'),docType:t,refUuid:'',poRef:'',soRef:'',dateAuto:true,date:todayStr(),svcDate:'',branchId:(EV.cur.branches[0]||{}).id||'',buyerId:'',buyer:null,lines:[],status:'draft',portalNo:'',signed:'',signedFp:'',signedAt:0,createdAt:0,updatedAt:0};
     OD.ft='lines'; odForm();
   };
-  window.evInvOpen=function(id){ const i=INVS.find(x=>x.id===id); if(!i) return; window._ivSeen=null; INV=JSON.parse(JSON.stringify(i)); OD.ft='lines'; if(!$('odMain')) odRender(); else odForm(); };
-  window.evInvClose=function(){ if(INV) invRead(); INV=null; window._ivSeen=null; odRender(); };
+  window.evInvOpen=function(id){ const i=INVS.find(x=>x.id===id); if(!i) return; window._ivSeen=null; window._ivReg=''; INV=JSON.parse(JSON.stringify(i)); OD.ft='lines'; if(!$('odMain')) odRender(); else odForm(); };
+  window.evInvClose=function(){ if(INV) invRead(); INV=null; window._ivSeen=null; window._ivReg=''; odRender(); };
   window.evInvDel=function(id){ requirePin(async()=>{ if(!confirm('حذف المستند؟')) return; try{ await icol().doc(id).delete(); INVS=INVS.filter(x=>x.id!==id); if(INV&&INV.id===id) INV=null; audit('حذف مستند',id); odRender(); }catch(e){ alert('تعذّر الحذف: '+(e&&e.message||'')); } }); };
   function invRead(){
     if(!INV) return; const v=(id,k)=>{ const e=$(id); if(e) INV[k]=e.value.trim(); };
@@ -7705,7 +7705,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const inp=(i,k,w)=>'<td><input inputmode="decimal" value="'+esc(w)+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>';
     const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><b>'+esc(l.name)+'</b><small>'+esc(l.egs)+'</small></td><td>'+esc(unitLbl(l.unit))+'</td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
     const seg=[['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']].map(x=>'<button type="button" class="'+((INV.docType||'I')===x[0]?'on':'')+'" '+(lock?'disabled':'')+' onclick="evInvDT(\''+x[0]+'\')">'+x[1]+'</button>').join('');
-    const reg=INV.buyer?(INV.buyer.idn?'<span class="iv-reg">🪪 رقم التسجيل: '+esc(INV.buyer.idn)+'</span>':'<span class="iv-reg no">⚠ العميل ملوش رقم تسجيل</span>'):'';
+    const bb=INV.buyer, reg=bb?((bb.type==='B'&&!(bb.gov&&bb.city&&bb.street&&bb.bld))?'<span class="iv-reg no">⚠ عنوان العميل ناقص (المحافظة / المدينة / الشارع / المبنى)</span>':'<span class="iv-reg">✓ '+esc((BTYPES.find(x=>x[0]===bb.type)||['',''])[1].split(' (')[0])+(addrOf(bb)?' — '+esc(addrOf(bb)):'')+'</span>'):'';
     const f=(l,h)=>'<div class="iv-f"><label>'+l+'</label>'+h+'</div>';
     const b=(cls,fn,lbl,fk)=>'<button class="iv-b '+cls+'" onclick="'+fn+'">'+lbl+(fk?'<small>'+fk+'</small>':'')+'</button>';
     M.innerHTML='<div class="iv'+(first?' iv-anim':'')+'">'
@@ -7715,7 +7715,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
         +f('رقم المستند','<input id="ev_no" value="'+esc(INV.no)+'" dir="ltr">')
         +f('التاريخ','<div class="iv-row"><input type="date" id="ev_date" value="'+esc(INV.date)+'" '+(INV.dateAuto?'disabled':'')+'><label class="iv-sw"><input type="checkbox" id="ev_auto" '+(INV.dateAuto?'checked':'')+' onchange="evInvAuto()"> تلقائي</label></div>')
         +f('تاريخ التسليم','<input type="date" id="ev_svc" value="'+esc(INV.svcDate)+'">')
-        +f('العميل','<select onchange="evInvBuyer(this.value)"><option value="">— اختر العميل —</option>'+optH(c.buyers.map(x=>[x.id,x.name]),INV.buyerId)+'</select>'+reg)
+        +f('رقم التسجيل الضريبي','<input id="ev_reg" inputmode="numeric" dir="ltr" autocomplete="off" placeholder="اكتب الرقم والعميل يظهر لوحده" value="'+esc(INV.buyer?INV.buyer.idn:(window._ivReg||''))+'" oninput="evInvReg(this.value)"><div id="ev_reghint">'+regHint()+'</div>')
+        +f('اسم العميل','<input id="ev_bname" list="ev_bl" autocomplete="off" placeholder="أو ابحث بالاسم" value="'+esc(INV.buyer?INV.buyer.name:'')+'" onchange="evInvBName(this.value)"><datalist id="ev_bl">'+c.buyers.slice(0,3000).map(x=>'<option value="'+esc(x.name)+'"></option>').join('')+'</datalist>'+reg)
         +f('الفرع','<select onchange="evInvBranch(this.value)"><option value="">— اختر —</option>'+optH(c.branches.map(x=>[x.id,x.code+' / '+x.name]),INV.branchId)+'</select>')
         +(isN?f('UUID الفاتورة الأصلية','<input id="ev_ref" dir="ltr" value="'+esc(INV.refUuid)+'">'):'')
         +f('مرجع أمر الشراء','<input id="ev_po" value="'+esc(INV.poRef||'')+'">')
@@ -7745,11 +7746,20 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   };
 
   /* ---------- العملاء / المنتجات ---------- */
-  function pCust(){
-    const c=EV.cur;
-    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evBuyerForm()">جديد</button><b>العملاء</b></div></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الاسم</th><th>النوع</th><th>رقم التسجيل</th><th>العنوان</th><th></th></tr></thead><tbody>'
-      +(c.buyers.map(b=>'<tr onclick="evBuyerForm(\''+b.id+'\')"><td>'+esc(b.name)+'</td><td>'+esc((BTYPES.find(t=>t[0]===b.type)||['',''])[1].split(' (')[0])+'</td><td dir="ltr" style="text-align:right">'+esc(b.idn||'—')+'</td><td>'+esc(bAddr(b)||'—')+'</td><td><button class="od-x" onclick="event.stopPropagation();evBuyerDel(\''+b.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="5" class="od-empty">لا يوجد عملاء</td></tr>')+'</tbody></table></div>';
+  const bTypeLbl=b=>(BTYPES.find(t=>t[0]===b.type)||['',''])[1].split(' (')[0];
+  function odCustRows(){
+    const q=nz(EV.cq), tb=$('odTbC'); if(!tb) return;
+    const L=EV.cur.buyers.filter(b=>!q||nz(b.name).includes(q)||nz(b.idn).includes(q));
+    tb.innerHTML=L.slice(0,200).map(b=>'<tr onclick="evBuyerForm(\''+b.id+'\')"><td>'+esc(b.name)+'</td><td>'+esc(bTypeLbl(b))+'</td><td dir="ltr" style="text-align:right">'+esc(b.idn||'—')+'</td><td>'+esc(bAddr(b)||'—')+'</td><td><button class="od-x" onclick="event.stopPropagation();evBuyerDel(\''+b.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="5" class="od-empty">لا يوجد عملاء — أضف عميل أو استورد من Excel</td></tr>';
+    const n=$('odCntC'); if(n) n.textContent=L.length+' عميل'+(L.length>200?' (بيظهر أول 200 — استخدم البحث)':'');
   }
+  function pCust(){
+    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evBuyerForm()">جديد</button><button class="od-btn" onclick="document.getElementById(\'evBImp\').click()">⬆ استيراد عملاء</button><button class="od-btn" onclick="evBuyerTemplate()">⬇ قالب Excel</button><b>العملاء</b></div><input class="od-search" id="evCq" placeholder="🔍 بحث بالاسم أو رقم التسجيل" value="'+esc(EV.cq||'')+'" oninput="evCqChg()"></div>'
+      +'<input type="file" id="evBImp" accept=".xlsx,.csv" style="display:none" onchange="evBuyerImport(this)"><div id="evMsg" class="od-toast"></div><div class="od-chips"><span class="od-cnt" id="odCntC"></span></div>'
+      +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الاسم</th><th>النوع</th><th>رقم التسجيل</th><th>العنوان</th><th></th></tr></thead><tbody id="odTbC"></tbody></table></div>';
+    odCustRows();
+  }
+  window.evCqChg=()=>{ EV.cq=$('evCq').value; odCustRows(); };
   const EG_B={approved:['sent','معتمد'],requested:['signed','ينتظر الاعتماد'],draft:['draft','غير مُسجل']};
   function odProdRows(){
     const q=nz(EV.iq), L=EV.cur.items.filter(i=>!q||nz(i.name).includes(q)||nz(i.egs).includes(q)), tb=$('odTbP'); if(!tb) return;
@@ -7862,9 +7872,47 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   };
 
   /* ---------- المشترين ---------- */
-  window.evBuyerForm=function(id){
-    const b=id?EV.cur.buyers.find(x=>x.id===id):{type:'B'};
-    form(id?'تعديل مشتري':'مشتري جديد',[{k:'name',label:'اسم المشتري',req:1},{k:'type',label:'النوع',type:'select',opts:BTYPES},{k:'idn',label:'الرقم الضريبي / القومي / جواز السفر'},{k:'gov',label:'المحافظة'},{k:'city',label:'المدينة / المنطقة'},{k:'street',label:'الشارع'},{k:'bld',label:'رقم المبنى'},{k:'addr',label:'عنوان نصي (اختياري)'},{k:'phone',label:'الموبايل'}],b,async v=>{ const e=chkBuyer(v); if(e){ $('evFormMsg').textContent=e; return false; } await mutate('buyers',a=>upsert(a,id,v)); renderTab(); });
+  const buyerSnap=b=>({name:b.name,type:b.type,idn:b.idn||'',addr:b.addr||'',gov:b.gov||'',city:b.city||'',street:b.street||'',bld:b.bld||'',phone:b.phone||''});
+  window.evBuyerForm=function(id,pre){
+    const b=id?EV.cur.buyers.find(x=>x.id===id):Object.assign({type:'B'},pre||{});
+    form(id?'تعديل مشتري':'مشتري جديد',[{k:'name',label:'اسم المشتري',req:1},{k:'type',label:'النوع',type:'select',opts:BTYPES},{k:'idn',label:'الرقم الضريبي / القومي / جواز السفر'},{k:'gov',label:'المحافظة'},{k:'city',label:'المدينة / المنطقة'},{k:'street',label:'الشارع'},{k:'bld',label:'رقم المبنى'},{k:'addr',label:'عنوان نصي (اختياري)'},{k:'phone',label:'الموبايل'}],b,async v=>{ const e=chkBuyer(v); if(e){ $('evFormMsg').textContent=e; return false; } await mutate('buyers',a=>upsert(a,id,v)); if(pre&&INV){ const nb=EV.cur.buyers.find(x=>x.idn&&x.idn===v.idn); if(nb){ INV.buyerId=nb.id; INV.buyer=buyerSnap(nb); window._ivReg=''; } } renderTab(); });
+  };
+  window.evBuyerTemplate=async function(){
+    const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('العملاء',{views:[{rightToLeft:true}]});
+    ws.addRow(['اسم العميل *','رقم التسجيل الضريبي / القومي / جواز السفر *','النوع (شركة / شخص / أجنبي — اختياري)','المحافظة','المدينة / المنطقة','الشارع','رقم المبنى','الموبايل']);
+    ws.addRow(['شركة النور للتجارة','123456789','شركة','القاهرة','مدينة نصر','شارع مصطفى النحاس','12','01000000000']);
+    ws.addRow(['أحمد محمد علي','29001010101234','شخص','الجيزة','الدقي','شارع التحرير','5','']);
+    ws.getRow(1).font={bold:true}; ws.columns.forEach((c,i)=>{ c.width=[32,34,30,14,18,26,12,16][i]; });
+    [2,8,7].forEach(i=>{ ws.getColumn(i).numFmt='@'; });
+    const buf=await wb.xlsx.writeBuffer(), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([buf])); a.download='قالب_العملاء.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+  };
+  function mapBuyerRow(r){
+    const name=String(r[0]||'').trim(); let idn=ad(r[1]).replace(/\s/g,'');
+    if(!name) return {err:'الاسم ناقص'};
+    if(/^\d+$/.test(idn)){ if(idn.length===8) idn='0'+idn; else if(idn.length===13) idn='0'+idn; }   /* الإكسيل بيشيل الصفر من الأول */
+    const tx=String(r[2]||'').trim(); let type;
+    if(/شخص|طبيع|^p$/i.test(tx)) type='P'; else if(/اجنب|أجنب|جواز|^f$/i.test(tx)) type='F'; else if(/شرك|جه|^b$/i.test(tx)) type='B';
+    else type=!idn?'B':(/^\d{9}$/.test(idn)?'B':(/^\d{14}$/.test(idn)?'P':'F'));
+    const v={name,type,idn,gov:String(r[3]||'').trim(),city:String(r[4]||'').trim(),street:String(r[5]||'').trim(),bld:ad(r[6]).trim(),phone:ad(r[7]).replace(/\s/g,'')};
+    const e=chkBuyer(v); if(e) return {err:name+': '+e};
+    return {b:v, noAddr:type==='B'&&!(v.gov&&v.city&&v.street&&v.bld)};
+  }
+  window.evBuyerImport=async function(inp){
+    const f=inp.files&&inp.files[0]; if(!f) return; const msg=$('evMsg'); msg.textContent='جاري القراءة...';
+    try{
+      let rows;
+      if(/\.csv$/i.test(f.name)) rows=parseCsv(new TextDecoder('utf-8').decode(await f.arrayBuffer()));
+      else{ const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer()); const ws=wb.worksheets[0]; rows=[]; ws.eachRow({includeEmpty:false},r=>{ const a=[]; for(let i=1;i<=8;i++) a.push(cellTxt(r.getCell(i).value)); rows.push(a); }); }
+      let hdr=false; if(rows.length&&/اسم|name/i.test(String(rows[0][0]||''))){ rows=rows.slice(1); hdr=true; }
+      const good=[], bad=[]; let noAddr=0, add=0, upd=0;
+      rows.forEach((r,n)=>{ if(!r.some(x=>String(x||'').trim()!=='')) return; const m=mapBuyerRow(r); if(m.err){ bad.push('صف '+(n+(hdr?2:1))+': '+m.err); return; } if(m.noAddr) noAddr++; good.push(m.b); });
+      if(!good.length){ msg.textContent='مفيش عملاء صالحين في الملف'+(bad.length?' ('+bad.slice(0,3).join('، ')+')':''); inp.value=''; return; }
+      await mutate('buyers',cur=>{ add=0; upd=0; good.forEach(b=>{ const i=cur.findIndex(x=>b.idn?x.idn===b.idn:(!x.idn&&nz(x.name)===nz(b.name)));
+        if(i>=0){ const keep={}; for(const k in b) if(String(b[k]||'').trim()!=='') keep[k]=b[k]; cur[i]=Object.assign({},cur[i],keep); upd++; } else { cur.push(Object.assign({id:uid()},b)); add++; } }); return cur; });
+      renderTab();
+      $('evMsg').textContent='✓ تمت إضافة '+add+' عميل · تحديث '+upd+(noAddr?' · ⚠ '+noAddr+' شركة عنوانها ناقص (المصلحة بتطلب المحافظة والمدينة والشارع ورقم المبنى)':'')+(bad.length?' · تم تجاهل '+bad.length+' ('+bad.slice(0,3).join('، ')+')':'');
+    }catch(e){ msg.textContent='تعذّر الاستيراد: '+(e&&e.message||''); }
+    inp.value='';
   };
   window.evBuyerDel=async function(id){ if(!confirm('حذف المشتري؟')) return; await mutate('buyers',a=>a.filter(x=>x.id!==id)); renderTab(); };
 
@@ -8051,8 +8099,26 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function calcLine(l){ const gross=r2((+l.qty||0)*(+l.price||0)), disc=r2(gross*(+l.disc||0)/100), net=r2(gross-disc), tax=r2(net*((l.tax&&l.tax.rate)||0)/100), wht=r2(net*(+l.wht||0)/100); return {gross,disc,net,tax,wht,total:r2(net+tax-wht)}; }
   function calcInv(inv){ const t={gross:0,disc:0,net:0,tax:0,wht:0,total:0}; (inv.lines||[]).forEach(l=>{ const c=calcLine(l); for(const k in t) t[k]=r2(t[k]+c[k]); }); return t; }
   window.evInvAuto=function(){ $('ev_date').disabled=$('ev_auto').checked; };
-  window.evInvBranch=function(v){ INV.branchId=v; invRender(); };
-  window.evInvBuyer=function(v){ INV.buyerId=v; const b=EV.cur.buyers.find(x=>x.id===v); INV.buyer=b?{name:b.name,type:b.type,idn:b.idn||'',addr:b.addr||'',gov:b.gov||'',city:b.city||'',street:b.street||'',bld:b.bld||'',phone:b.phone||''}:null; invRender(); };
+  window.evInvBranch=function(v){ invRead(); INV.branchId=v; invRender(); };
+  const findBuyer=d=>{ if(!d) return null; const bs=EV.cur.buyers; return bs.find(b=>b.idn===d)||(d.length===8?bs.find(b=>b.idn==='0'+d):null)||(d.length===13?bs.find(b=>b.idn==='0'+d):null)||null; };
+  const setBuyer=b=>{ INV.buyerId=b?b.id:''; INV.buyer=b?buyerSnap(b):null; };
+  function regHint(){ const d=window._ivReg||''; if(INV&&!INV.buyer&&d.length>=9&&!findBuyer(d)) return '<span class="iv-reg no">مفيش عميل بالرقم ده</span> <button type="button" class="iv-b" style="padding:4px 14px" onclick="evInvNewBuyer()">＋ إضافة عميل</button>'; return ''; }
+  const refocus=id=>{ const e=$(id); if(e){ e.focus(); try{ const n=e.value.length; e.setSelectionRange(n,n); }catch(x){} } };
+  window.evInvReg=function(v){
+    const d=ad(v).replace(/[^0-9A-Za-z]/g,''); window._ivReg=d;
+    const hit=findBuyer(d);
+    if(hit){ if(INV.buyerId!==hit.id){ invRead(); setBuyer(hit); window._ivReg=''; invRender(); refocus('ev_reg'); } return; }
+    if(INV.buyer&&INV.buyer.idn!==d){ invRead(); setBuyer(null); window._ivReg=d; invRender(); refocus('ev_reg'); return; }
+    const h=$('ev_reghint'); if(h) h.innerHTML=regHint();
+  };
+  window.evInvBName=function(v){
+    const n=nz(v); if(!n){ if(INV.buyer){ invRead(); setBuyer(null); window._ivReg=''; invRender(); } return; }
+    let hit=EV.cur.buyers.find(b=>nz(b.name)===n); if(!hit){ const m=EV.cur.buyers.filter(b=>nz(b.name).includes(n)); if(m.length===1) hit=m[0]; }
+    if(!hit){ $('evInvMsg').textContent='مفيش عميل بالاسم ده — جرّب رقم التسجيل أو أضفه'; return; }
+    invRead(); setBuyer(hit); window._ivReg=''; invRender();
+  };
+  window.evInvNewBuyer=function(){ invRead(); const d=window._ivReg||''; evBuyerForm(null,{idn:d,type:d.length===14?'P':(d.length===9?'B':'F')}); };
+  window.evInvBuyer=function(v){ invRead(); setBuyer(EV.cur.buyers.find(x=>x.id===v)||null); invRender(); };
   window.evInvAddLine=function(){
     const inp=$('ev_pick'), q=nz(inp.value); if(!q) return;
     const it=EV.cur.items.find(x=>nz(x.egs)===q)||EV.cur.items.find(x=>nz(x.name)===q)||EV.cur.items.find(x=>nz(x.name).includes(q)||nz(x.egs).includes(q));
