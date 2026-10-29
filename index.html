@@ -7142,6 +7142,53 @@ populateClientHelpers();
 .od-warn{background:#fff3cd;color:#664d03;border-radius:4px;padding:10px;margin-bottom:8px}.od-ok{background:#d4edda;color:#155724;border-radius:4px;padding:10px;margin-bottom:8px}
 .od-kan{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}.od-card{position:relative;background:#fff;border:1px solid #d8dadd;border-inline-start:4px solid #714b67;border-radius:4px;padding:12px;cursor:pointer}.od-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}.od-card .od-x{position:absolute;top:6px;left:6px}
 .b-valid{background:#c3e6cb;color:#0b4f1e}.b-invalid{background:#f5c6cb;color:#721c24}.od-step.on.bad{background:#dc3545}
+
+/* ===== الفاتورة الإلكترونية: تصميم متناسق مع التطبيق ===== */
+.od{background:transparent;color:var(--ink);border-radius:20px;overflow:visible;min-height:60vh}
+.od-nav{background:linear-gradient(135deg,#00699c,#0a8fc7);border-radius:20px;padding:6px 10px;min-height:56px;gap:8px;box-shadow:0 8px 22px rgba(0,105,156,.28);margin-bottom:14px}
+.od-nb{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);padding:0;font-size:22px;line-height:1;transition:transform .2s,background .2s}.od-nb:hover{background:rgba(255,255,255,.32);transform:scale(1.1)}
+.od-nav>b{font-weight:900}
+.od-sel{border-radius:20px;padding:7px 12px;font-weight:700}
+.od-menu{gap:4px}.od-menu button{border-radius:20px;padding:9px 15px;font-weight:700;opacity:.9;transition:transform .2s cubic-bezier(.2,.9,.3,1.3),background .2s}.od-menu button:hover{background:rgba(255,255,255,.18);transform:translateY(-2px)}
+.od-menu button.on{background:#fff;color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.od-main{padding:4px 2px}
+.od-btn{position:relative;overflow:hidden;border:1.5px solid var(--line);background:var(--panel);color:var(--navy);border-radius:24px;padding:10px 20px;font-weight:800;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s,filter .2s}
+.od-btn::before{content:"";position:absolute;top:0;bottom:0;width:45%;right:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);pointer-events:none}
+.od-btn.p{background:linear-gradient(135deg,#00699c,#0a8fc7);border-color:transparent;color:#fff}
+.od-btn.t{background:linear-gradient(135deg,#1f9d6c,#2bbf88);border-color:transparent;color:#fff}
+@media(hover:hover){.od-btn:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,105,156,.28);filter:brightness(1.05)}.od-btn:not(:disabled):hover::before{right:130%;transition:right .6s}}
+.od-btn:not(:disabled):active{transform:scale(.94);box-shadow:none}
+.od-search,.od-in,.od-f input,.od-f select,.od-lines input,#ev_pick{border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--panel);color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.od-f input:disabled{background:var(--paper);color:var(--navy-dim)}
+.od-search:focus,.od-in:focus,.od-f input:focus,.od-f select:focus,.od-lines input:focus,#ev_pick:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,105,156,.18)}
+.od-lines input,#ev_pick{padding:6px 8px;border-radius:9px}
+.od-f>label{color:var(--navy-dim);font-weight:800}
+.od-chip{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:20px;padding:6px 14px;font-weight:700;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),background .2s}.od-chip:hover{transform:translateY(-2px)}
+.od-chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.od-wrap,.od-sheet,.od-sbar,.od-chat,.od-kpi,.od-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,.06);color:var(--ink)}
+.od-sheet{padding:18px}.od-wrap{overflow-x:auto}
+.od-table th{background:var(--paper);color:var(--navy-dim);border-bottom:1.5px solid var(--line);padding:11px 10px}
+.od-table td{border-bottom:1px solid var(--line);padding:11px 10px;color:var(--ink)}
+.od-table tbody tr{transition:background .15s}.od-table tbody tr:hover td{background:rgba(0,105,156,.08)}
+.od-badge{border-radius:20px;padding:3px 11px}
+.od-kpi{border-top:4px solid var(--navy);padding:14px 16px;transition:transform .2s,box-shadow .2s}.od-kpi b{color:var(--navy);font-size:22px}
+.od-kpi:hover,.od-card:hover{transform:translateY(-4px);box-shadow:0 10px 22px rgba(0,105,156,.18)}
+.od-card{border-inline-start:5px solid var(--navy);padding:14px;transition:transform .2s,box-shadow .2s}
+.od-steps{gap:6px;flex-wrap:wrap}.od-step{clip-path:none;border-radius:20px;margin:0;padding:6px 16px;background:var(--paper);color:var(--navy-dim);border:1px solid var(--line)}
+.od-step.on{background:var(--navy);border-color:var(--navy);color:#fff}.od-step.on.bad{background:var(--red);border-color:var(--red)}
+.od-tabs{border-bottom:1.5px solid var(--line);gap:4px}.od-tab{border-radius:12px 12px 0 0;color:var(--navy-dim);font-weight:700;transition:background .2s}.od-tab:hover{background:rgba(0,105,156,.08)}
+.od-tab.on{color:var(--navy);border-bottom-color:var(--bronze);border-bottom-width:3px;background:rgba(0,105,156,.06)}
+.od-crumb a,.od-toast{color:var(--navy)}.od-title small,.od-empty,.od-hint,.od-cnt{color:var(--navy-dim)}
+.od-tr.big{border-top:2px dashed var(--line);color:var(--navy);font-size:17px}
+.od-warn{background:var(--bronze-soft);color:var(--ink);border-radius:14px;border-inline-start:5px solid var(--bronze)}
+.od-ok{background:var(--green-soft);color:var(--ink);border-radius:14px;border-inline-start:5px solid var(--green)}
+.od-x{border-radius:50%;transition:transform .2s,opacity .2s}.od-x:hover{opacity:1;transform:scale(1.2) rotate(8deg)}
+@media(prefers-reduced-motion:no-preference){
+.od-nav,.od-main>*{animation:icRise .5s cubic-bezier(.2,.8,.2,1) both}
+.od-main>*:nth-child(2){animation-delay:.06s}.od-main>*:nth-child(3){animation-delay:.12s}.od-main>*:nth-child(4){animation-delay:.18s}
+.od-kpi,.od-card{animation:icRise .5s cubic-bezier(.2,.8,.2,1) both}.od-kpi:nth-child(2),.od-card:nth-child(2){animation-delay:.07s}.od-kpi:nth-child(3),.od-card:nth-child(3){animation-delay:.14s}.od-kpi:nth-child(4),.od-card:nth-child(4){animation-delay:.21s}
+}
+@media(prefers-reduced-motion:reduce){.od-btn::before{display:none}.od *{transition:none!important}}
 </style>
 <script>
 /* ===== سجل الإقرارات (VAT): متابعة المقدَّم والمتبقي + السداد + الإيصال ===== */
