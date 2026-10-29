@@ -945,39 +945,63 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
   })();
 </script>
 <style>
-/* ===== شاشة فاتورة المبيعات (شكل الكاشير) ===== */
-.pos{display:grid;gap:10px}.pos *{box-sizing:border-box}
-.pos-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.pos-top h2{margin:0;font-size:22px;color:#1c2b39;display:flex;gap:8px;align-items:center}
-.pos-st{font-size:12px;font-weight:700;padding:3px 11px;border-radius:12px;background:#e9ecef;color:#495057}
-.pos-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.pos-box{background:#fff;border:1px solid #cfd6dd;border-radius:6px;padding:10px;position:relative}
-.pos-box>legend,.pos-lg{font-weight:800;color:#0c7a6b;font-size:13px;margin:-2px 0 8px;display:block}
-.pos-r{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}.pos-r>label{min-width:78px;font-size:13px;font-weight:700;color:#1c2b39;text-align:left}
-.pos-r input,.pos-r select{flex:1;min-width:90px;border:1px solid #b9c3cc;border-radius:3px;padding:6px 8px;font:inherit;background:#fff;color:#212529}
-.pos-r input.cy{background:#7fcfcf;font-weight:800;text-align:center}
-.pos-r .go{flex:0 0 auto;min-width:0;width:38px;height:34px;border-radius:50%;border:0;background:#1d6fb8;color:#fff;font-size:22px;cursor:pointer;line-height:1}
-.pos-hl{background:#27e0e6;border-radius:3px;padding:3px 8px;font-weight:700;font-size:13px}
-.pos-tbl{overflow:auto;background:#fff;border:1px solid #9aa6b1;min-height:230px;max-height:46vh}
-.pos-tbl table{width:100%;border-collapse:collapse;min-width:760px;text-align:center}
-.pos-tbl th{background:linear-gradient(#ffe9a8,#f1c752);position:sticky;top:0;padding:6px;font-size:13px;border:1px solid #c9a63c;color:#3a2e0a}
-.pos-tbl td{padding:5px 6px;border-bottom:1px solid #e3e7eb;font-weight:700;font-size:14px}
-.pos-tbl td.nm{text-align:right}.pos-tbl tr:nth-child(even) td{background:#f3f6f8}
-.pos-tbl tr.last td{background:linear-gradient(#ffe0b0,#f6b765);color:#7a1020}
-.pos-tbl td input{width:72px;text-align:center;border:1px solid #b9c3cc;border-radius:3px;padding:4px;font:inherit;font-weight:700;background:#fff;color:#212529}
-.pos-x{width:26px;height:26px;border-radius:50%;border:0;background:#e0483a;color:#fff;font-weight:900;cursor:pointer}
-.pos-bot{display:grid;grid-template-columns:1.3fr 1fr;gap:10px}
-.pos-tots{display:grid;gap:7px}
-.pos-t{display:flex;justify-content:space-between;align-items:center;border-radius:4px;overflow:hidden;border:1px solid #cfd6dd;background:#fff}
-.pos-t>span:first-child{background:#2f4a45;color:#fff;padding:7px 12px;font-weight:800;min-width:150px;font-size:13px}
-.pos-t>span:last-child{padding:7px 14px;font-weight:800;flex:1;text-align:center}
-.pos-net{background:#000;color:#fff;border-radius:4px;text-align:center;padding:8px}.pos-net b{display:block;background:#222;color:#fff;font-size:13px;padding:4px;margin-bottom:6px}.pos-net div{font-size:34px;font-weight:900}
-.pos-cnt{display:flex;gap:8px}.pos-cnt div{flex:1;background:#dfe7ee;border-radius:3px;padding:5px 9px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;color:#35566e}
-.pos-keys{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.pos-k{border:0;border-radius:3px;color:#fff;font:inherit;font-weight:800;font-size:13px;padding:9px 14px;cursor:pointer}
-.pos-k small{opacity:.8;margin-inline-start:4px}
-.k-save{background:#2b8f6e}.k-sign{background:#1d6fb8}.k-send{background:#a3202b}.k-chk{background:#2fb344}.k-cp{background:#6a2a8c}.k-js{background:#4a5560}.k-cl{background:#8a1f1f}
-@media(max-width:760px){.pos-two,.pos-bot{grid-template-columns:1fr}.pos-net div{font-size:28px}}
+/* ===== شاشة إنشاء الفاتورة: متناسقة مع باقي التطبيق ===== */
+.iv{display:grid;gap:14px;padding-bottom:6px}.iv *{box-sizing:border-box}
+.iv-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.iv-back{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);color:var(--navy);font-size:24px;line-height:1;cursor:pointer;transition:transform .2s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s}
+.iv-back:hover{transform:scale(1.1);box-shadow:0 6px 14px rgba(0,105,156,.22)}
+.iv-head h2{margin:0;font-size:22px;font-weight:900;color:var(--ink);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.iv-no{font-size:13px;font-weight:800;color:var(--navy);background:rgba(0,105,156,.1);padding:4px 12px;border-radius:20px;direction:ltr}
+.iv-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 4px 14px rgba(0,0,0,.06);color:var(--ink)}
+.iv-ct{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-weight:900;font-size:15px;color:var(--ink)}
+.iv-ct i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;color:#fff;background:linear-gradient(135deg,#00699c,#0a8fc7);box-shadow:0 4px 10px rgba(0,105,156,.3)}
+.iv-seg{display:inline-flex;gap:4px;background:var(--paper);border:1.5px solid var(--line);border-radius:24px;padding:4px;margin-bottom:16px;flex-wrap:wrap}
+.iv-seg button{border:0;background:none;color:var(--navy-dim);font:inherit;font-weight:800;padding:8px 18px;border-radius:20px;cursor:pointer;transition:background .25s,color .25s,transform .18s cubic-bezier(.2,.9,.3,1.3)}
+.iv-seg button:hover:not(:disabled){transform:translateY(-2px)}.iv-seg button:disabled{opacity:.55;cursor:not-allowed}
+.iv-seg button.on{background:linear-gradient(135deg,#00699c,#0a8fc7);color:#fff;box-shadow:0 4px 12px rgba(0,105,156,.35)}
+.iv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.iv-f{display:grid;gap:5px;min-width:0}.iv-f>label{font-size:12.5px;font-weight:800;color:var(--navy-dim)}
+.iv-f input,.iv-f select,.iv-add input{width:100%;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel);color:var(--ink);font:inherit;transition:border-color .2s,box-shadow .2s}
+.iv-f input:focus,.iv-f select:focus,.iv-add input:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,105,156,.18)}
+.iv-f input:disabled{background:var(--paper);color:var(--navy-dim)}
+.iv-row{display:flex;gap:8px;align-items:center}.iv-row input[type=date]{flex:1}
+.iv-sw{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--navy);white-space:nowrap;cursor:pointer}.iv-sw input{width:auto!important;accent-color:var(--navy)}
+.iv-reg{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--green);background:var(--green-soft);border-radius:20px;padding:3px 11px;width:max-content;direction:ltr;animation:icRise .35s both}
+.iv-reg.no{color:var(--red);background:var(--red-soft);direction:rtl}
+.iv-add{display:grid;grid-template-columns:2.4fr .8fr .8fr 1fr auto;gap:10px;align-items:end;background:var(--paper);border:1.5px dashed var(--line);border-radius:16px;padding:12px;margin-bottom:14px}
+.iv-go{height:44px;padding:0 22px;border:0;border-radius:24px;background:linear-gradient(135deg,#1f9d6c,#2bbf88);color:#fff;font:inherit;font-weight:900;cursor:pointer;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s}
+.iv-go:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(31,157,108,.35)}.iv-go:active{transform:scale(.94)}
+.iv-tbl{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:48vh}
+.iv-tbl table{width:100%;border-collapse:collapse;min-width:780px;text-align:center}
+.iv-tbl th{position:sticky;top:0;z-index:1;background:var(--paper);color:var(--navy-dim);font-size:12.5px;font-weight:800;padding:11px 8px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+.iv-tbl td{padding:9px 8px;border-bottom:1px solid var(--line);font-weight:700;font-size:14px;color:var(--ink)}
+.iv-tbl tbody tr{transition:background .15s;animation:icRise .35s cubic-bezier(.2,.8,.2,1) both}.iv-tbl tbody tr:hover td{background:rgba(0,105,156,.07)}
+.iv-tbl td.nm{text-align:right;min-width:170px}.iv-tbl td small{display:block;color:var(--navy-dim);font-weight:600;direction:ltr;text-align:right}
+.iv-tbl td input{width:76px;text-align:center;border:1.5px solid var(--line);border-radius:9px;padding:6px;font:inherit;font-weight:700;background:var(--panel);color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.iv-tbl td input:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,105,156,.18)}
+.iv-lt{color:var(--navy);font-weight:900;white-space:nowrap}
+.iv-x{width:30px;height:30px;border-radius:50%;border:0;background:var(--red-soft);color:var(--red);font-weight:900;cursor:pointer;transition:transform .2s,background .2s,color .2s}.iv-x:hover{transform:scale(1.15) rotate(8deg);background:var(--red);color:#fff}
+.iv-empty{padding:34px 10px!important;color:var(--navy-dim);font-weight:700}.iv-empty b{display:block;font-size:30px;margin-bottom:6px;animation:ivBob 2.4s ease-in-out infinite}
+@keyframes ivBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.iv-two{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start}
+.iv-tots{display:grid;gap:8px}
+.iv-t{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:12px;background:var(--paper);font-weight:700;font-size:13.5px}.iv-t>span:first-child{color:var(--navy-dim)}.iv-t>span:last-child{font-weight:900}
+.iv-net{border-radius:18px;padding:14px 16px;text-align:center;color:#fff;background:linear-gradient(135deg,#00699c,#0a8fc7);box-shadow:0 8px 22px rgba(0,105,156,.3);position:relative;overflow:hidden}
+.iv-net::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-18deg);animation:evSheen 3.6s ease-in-out infinite}
+.iv-net b{display:block;font-size:13px;opacity:.9;margin-bottom:2px}.iv-net div{font-size:32px;font-weight:900;letter-spacing:.3px}
+.iv-cnt{display:flex;gap:8px}.iv-cnt div{flex:1;display:flex;justify-content:space-between;background:var(--paper);border-radius:12px;padding:8px 12px;font-size:12.5px;font-weight:800;color:var(--navy-dim)}
+.iv-bar{position:sticky;bottom:10px;z-index:5;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.16)}
+.iv-b{border:1.5px solid var(--line);background:var(--panel);color:var(--navy);border-radius:24px;padding:10px 18px;font:inherit;font-weight:800;cursor:pointer;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s,filter .2s}
+.iv-b small{opacity:.75;margin-inline-start:6px;font-weight:700}
+.iv-b:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,105,156,.22)}.iv-b:active{transform:scale(.94)}
+.iv-b.p{background:linear-gradient(135deg,#00699c,#0a8fc7);border-color:transparent;color:#fff}
+.iv-b.g{background:linear-gradient(135deg,#1f9d6c,#2bbf88);border-color:transparent;color:#fff}
+.iv-b.r{background:linear-gradient(135deg,#e0483a,#c0392b);border-color:transparent;color:#fff}
+.iv-anim .iv-card,.iv-anim .iv-head,.iv-anim .iv-bar{animation:icRise .5s cubic-bezier(.2,.8,.2,1) both}
+.iv-anim .iv-card:nth-of-type(1){animation-delay:.05s}.iv-anim .iv-card:nth-of-type(2){animation-delay:.12s}.iv-anim .iv-two .iv-card:nth-child(1){animation-delay:.19s}.iv-anim .iv-two .iv-card:nth-child(2){animation-delay:.26s}.iv-anim .iv-bar{animation-delay:.32s}
+@media(max-width:860px){.iv-grid{grid-template-columns:1fr 1fr}.iv-add{grid-template-columns:1fr 1fr}.iv-add .iv-f:first-child{grid-column:1/-1}.iv-go{grid-column:1/-1}.iv-two{grid-template-columns:1fr}}
+@media(max-width:520px){.iv-grid{grid-template-columns:1fr}.iv-net div{font-size:26px}}
+@media(prefers-reduced-motion:reduce){.iv *,.iv-net::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -7633,29 +7657,29 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   }
   function odList(){
     const r=odRows();
-    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\'I\')">+ فاتورة</button><button class="od-btn" onclick="odNew(\'C\')">+ إشعار دائن</button><button class="od-btn" onclick="odNew(\'D\')">+ إشعار مدين</button><b>الفواتير الصادرة</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل أو رقم التسجيل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
+    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\'I\')">＋ إنشاء فاتورة</button><b>الفواتير الصادرة</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل أو رقم التسجيل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
       +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
-  window.odNew=function(t){
+  window.odNew=function(t){ window._ivSeen=null;
     const n=INVS.reduce((m,i)=>Math.max(m,parseInt((String(i.no).match(/(\d+)$/)||[0,0])[1])||0),0)+1;
     INV={id:null,no:({I:'INV-',C:'CN-',D:'DN-'}[t])+String(n).padStart(4,'0'),docType:t,refUuid:'',poRef:'',soRef:'',dateAuto:true,date:todayStr(),svcDate:'',branchId:(EV.cur.branches[0]||{}).id||'',buyerId:'',buyer:null,lines:[],status:'draft',portalNo:'',signed:'',signedFp:'',signedAt:0,createdAt:0,updatedAt:0};
     OD.ft='lines'; odForm();
   };
-  window.evInvOpen=function(id){ const i=INVS.find(x=>x.id===id); if(!i) return; INV=JSON.parse(JSON.stringify(i)); OD.ft='lines'; if(!$('odMain')) odRender(); else odForm(); };
-  window.evInvClose=function(){ if(INV) invRead(); INV=null; odRender(); };
+  window.evInvOpen=function(id){ const i=INVS.find(x=>x.id===id); if(!i) return; window._ivSeen=null; INV=JSON.parse(JSON.stringify(i)); OD.ft='lines'; if(!$('odMain')) odRender(); else odForm(); };
+  window.evInvClose=function(){ if(INV) invRead(); INV=null; window._ivSeen=null; odRender(); };
   window.evInvDel=function(id){ requirePin(async()=>{ if(!confirm('حذف المستند؟')) return; try{ await icol().doc(id).delete(); INVS=INVS.filter(x=>x.id!==id); if(INV&&INV.id===id) INV=null; audit('حذف مستند',id); odRender(); }catch(e){ alert('تعذّر الحذف: '+(e&&e.message||'')); } }); };
   function invRead(){
     if(!INV) return; const v=(id,k)=>{ const e=$(id); if(e) INV[k]=e.value.trim(); };
     v('ev_no','no'); v('ev_date','date'); v('ev_svc','svcDate'); v('ev_ref','refUuid'); v('ev_po','poRef'); v('ev_so','soRef'); const a=$('ev_auto'); if(a) INV.dateAuto=a.checked;
   }
-  window.evInvDT=function(v){ invRead(); INV.docType=v; odForm(); };
+  window.evInvDT=function(v){ invRead(); INV.docType=v; if(!INV.id){ const m=String(INV.no).match(/^(?:INV|CN|DN)-(\d+)$/); if(m) INV.no=({I:'INV-',C:'CN-',D:'DN-'}[v])+m[1]; } odForm(); };
   window.evFTab=function(t){ invRead(); OD.ft=t; odForm(); };
   function invRender(){ odForm(); }
   function totHtml(){
     const t=calcInv(INV), L=INV.lines||[], q=L.reduce((a,l)=>a+(+l.qty||0),0), m=x=>'<span dir="ltr">'+money(x)+'</span>';
-    return '<div class="pos-t"><span>الإجمالي بدون خصم</span>'+m(t.gross)+'</div><div class="pos-t"><span>الخصم</span>'+m(t.disc)+'</div><div class="pos-t"><span>الصافي قبل الضريبة</span>'+m(t.net)+'</div><div class="pos-t"><span>الضرائب (القيمة المضافة)</span>'+m(t.tax)+'</div><div class="pos-t"><span>خصم من المنبع</span>'+m(t.wht)+'</div>'
-      +'<div class="pos-net"><b>الإجمالي النهائي</b><div dir="ltr">'+money(t.total)+'</div></div><div class="pos-cnt"><div><span>عدد الأصناف</span><span>'+L.length+'</span></div><div><span>إجمالي الكميات</span><span>'+q+'</span></div></div>';
+    return '<div class="iv-t"><span>الإجمالي بدون خصم</span>'+m(t.gross)+'</div><div class="iv-t"><span>الخصم</span>'+m(t.disc)+'</div><div class="iv-t"><span>الصافي قبل الضريبة</span>'+m(t.net)+'</div><div class="iv-t"><span>الضرائب (القيمة المضافة)</span>'+m(t.tax)+'</div><div class="iv-t"><span>خصم من المنبع</span>'+m(t.wht)+'</div>'
+      +'<div class="iv-net"><b>الإجمالي النهائي</b><div dir="ltr">'+money(t.total)+' ج</div></div><div class="iv-cnt"><div><span>عدد الأصناف</span><span>'+L.length+'</span></div><div><span>إجمالي الكميات</span><span>'+q+'</span></div></div>';
   }
   function chatter(){
     const f=t=>new Date(t).toLocaleString('ar-EG'), e=[];
@@ -7675,35 +7699,39 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   }
   function odForm(){
     const c=EV.cur, M=$('odMain'); if(!M||!INV) return;
-    const st=invStatus(INV), isN=INV.docType==='C'||INV.docType==='D', pr=etaProblems(), L=INV.lines;
+    const st=invStatus(INV), isN=INV.docType==='C'||INV.docType==='D', pr=etaProblems(), L=INV.lines, sOk=signedOk();
+    const first=!window._ivSeen; window._ivSeen=1;
+    const lock=!!INV.etaUuid;
     const inp=(i,k,w)=>'<td><input inputmode="decimal" value="'+esc(w)+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>';
-    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr class="'+(i===L.length-1?'last':'')+'"><td>'+(i+1)+'</td><td dir="ltr">'+esc(l.egs)+'</td><td class="nm">'+esc(l.name)+'</td><td>'+esc(unitLbl(l.unit))+'</td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="pos-x" onclick="evLnDel('+i+')">✕</button></td></tr>'; }).join('');
-    const key=(cls,fn,lbl,fk)=>'<button class="pos-k '+cls+'" onclick="'+fn+'">'+lbl+'<small>'+fk+'</small></button>';
-    const sOk=signedOk();
-    M.innerHTML='<div class="pos">'
-      +'<div class="pos-top"><h2>🛒 '+(isN?'إشعار '+(INV.docType==='C'?'دائن':'مدين'):'فاتورة مبيعات')+' <span class="pos-st">'+ST_L[st]+'</span></h2><div class="od-btns"><button class="od-btn" onclick="evInvClose()">‹ رجوع للقائمة</button></div></div>'
+    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><b>'+esc(l.name)+'</b><small>'+esc(l.egs)+'</small></td><td>'+esc(unitLbl(l.unit))+'</td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
+    const seg=[['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']].map(x=>'<button type="button" class="'+((INV.docType||'I')===x[0]?'on':'')+'" '+(lock?'disabled':'')+' onclick="evInvDT(\''+x[0]+'\')">'+x[1]+'</button>').join('');
+    const reg=INV.buyer?(INV.buyer.idn?'<span class="iv-reg">🪪 رقم التسجيل: '+esc(INV.buyer.idn)+'</span>':'<span class="iv-reg no">⚠ العميل ملوش رقم تسجيل</span>'):'';
+    const f=(l,h)=>'<div class="iv-f"><label>'+l+'</label>'+h+'</div>';
+    const b=(cls,fn,lbl,fk)=>'<button class="iv-b '+cls+'" onclick="'+fn+'">'+lbl+(fk?'<small>'+fk+'</small>':'')+'</button>';
+    M.innerHTML='<div class="iv'+(first?' iv-anim':'')+'">'
+      +'<div class="iv-head"><button class="iv-back" onclick="evInvClose()" title="رجوع للقائمة">‹</button><h2>'+(isN?'إشعار '+(INV.docType==='C'?'دائن':'مدين'):'فاتورة مبيعات')+' <span class="iv-no">'+esc(INV.no)+'</span><span class="od-badge b-'+st+'">'+ST_L[st]+'</span></h2></div>'
       +'<div id="evInvMsg" class="od-toast"></div>'
-      +'<div class="pos-two">'
-      +'<div class="pos-box"><span class="pos-lg">بيانات الفاتورة</span>'
-        +'<div class="pos-r"><label>رقم الفاتورة</label><input id="ev_no" class="cy" value="'+esc(INV.no)+'"><label>النوع</label><select onchange="evInvDT(this.value)">'+optH([['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']],INV.docType||'I')+'</select></div>'
-        +'<div class="pos-r"><label>التاريخ</label><input type="date" id="ev_date" value="'+esc(INV.date)+'" '+(INV.dateAuto?'disabled':'')+'><label class="pos-hl" style="min-width:0"><input type="checkbox" id="ev_auto" style="flex:none;min-width:0" '+(INV.dateAuto?'checked':'')+' onchange="evInvAuto()"> تلقائي</label></div>'
-        +'<div class="pos-r"><label>العميل</label><select onchange="evInvBuyer(this.value)"><option value="">— اختر العميل —</option>'+optH(c.buyers.map(b=>[b.id,b.name]),INV.buyerId)+'</select></div>'
-        +'<div class="pos-r"><label>الفرع</label><select onchange="evInvBranch(this.value)"><option value="">— اختر —</option>'+optH(c.branches.map(b=>[b.id,b.code+' / '+b.name]),INV.branchId)+'</select></div>'
-        +'<div class="pos-r"><label>تاريخ التسليم</label><input type="date" id="ev_svc" value="'+esc(INV.svcDate)+'">'+(isN?'<label>UUID الأصلية</label><input id="ev_ref" dir="ltr" value="'+esc(INV.refUuid)+'">':'')+'</div>'
-      +'</div>'
-      +'<div class="pos-box"><span class="pos-lg">بيانات الصنف</span>'
-        +'<div class="pos-r"><label>بحث / كود</label><input id="ev_pick" list="ev_dl" placeholder="اكتب كود EGS أو اسم الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></div>'
-        +'<div class="pos-r"><label>الكمية</label><input id="ev_q" inputmode="decimal" value="1" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><label>الخصم %</label><input id="ev_d" inputmode="decimal" value="0"></div>'
-        +'<div class="pos-r"><label>السعر</label><input id="ev_p" inputmode="decimal" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()"><button class="go" onclick="evInvAddLine()" title="إضافة">+</button></div>'
-        +'<div class="pos-r"><label>مرجع أمر الشراء</label><input id="ev_po" value="'+esc(INV.poRef||'')+'"><label>أمر البيع</label><input id="ev_so" value="'+esc(INV.soRef||'')+'"></div>'
-      +'</div></div>'
-      +'<div class="pos-tbl"><table><thead><tr><th>م</th><th>كود</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th>حذف</th></tr></thead><tbody>'+(rows||'<tr><td colspan="11" style="padding:40px;opacity:.6">أضف الأصناف من خانة «بحث / كود» فوق</td></tr>')+'</tbody></table></div>'
-      +'<div class="pos-bot"><div class="pos-box"><span class="pos-lg">حالة المستند والمصلحة</span>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+'<div class="pos-r"><label>التوقيع</label><b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b></div>'+(INV.portalNo?'<div class="pos-r"><label>رقم البوابة</label><b>'+esc(INV.portalNo)+'</b></div>':'')+etaInfo()+'</div>'
-      +'<div class="pos-tots" id="evInvTot">'+totHtml()+'</div></div>'
-      +'<div class="pos-keys">'+key('k-save','evInvSave()','💾 حفظ الفاتورة','F5')+key('k-sign','evInvSign()','🔏 توقيع','F10')
-        +(sOk&&!INV.etaUuid&&INV.sendState!=='sending'?key('k-send','evInvSubmit()','📤 إرسال للمصلحة','F9'):'')
-        +(INV.etaUuid?key('k-chk','evInvCheck()','🔄 تحقق من الحالة','F1'):'<button class="pos-k k-chk" onclick="evInvSent()">'+(INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي')+'</button>')
-        +key('k-cp','evInvCopy()','📋 نسخ','F12')+(sOk?'<button class="pos-k k-js" onclick="evInvDlJson()">⬇ JSON</button>':'')+'<button class="pos-k k-cl" onclick="evInvClose()">إغلاق</button></div>'
+      +'<section class="iv-card"><div class="iv-ct"><i>1</i>بيانات المستند</div><div class="iv-seg">'+seg+'</div><div class="iv-grid">'
+        +f('رقم المستند','<input id="ev_no" value="'+esc(INV.no)+'" dir="ltr">')
+        +f('التاريخ','<div class="iv-row"><input type="date" id="ev_date" value="'+esc(INV.date)+'" '+(INV.dateAuto?'disabled':'')+'><label class="iv-sw"><input type="checkbox" id="ev_auto" '+(INV.dateAuto?'checked':'')+' onchange="evInvAuto()"> تلقائي</label></div>')
+        +f('تاريخ التسليم','<input type="date" id="ev_svc" value="'+esc(INV.svcDate)+'">')
+        +f('العميل','<select onchange="evInvBuyer(this.value)"><option value="">— اختر العميل —</option>'+optH(c.buyers.map(x=>[x.id,x.name]),INV.buyerId)+'</select>'+reg)
+        +f('الفرع','<select onchange="evInvBranch(this.value)"><option value="">— اختر —</option>'+optH(c.branches.map(x=>[x.id,x.code+' / '+x.name]),INV.branchId)+'</select>')
+        +(isN?f('UUID الفاتورة الأصلية','<input id="ev_ref" dir="ltr" value="'+esc(INV.refUuid)+'">'):'')
+        +f('مرجع أمر الشراء','<input id="ev_po" value="'+esc(INV.poRef||'')+'">')
+        +f('مرجع أمر البيع','<input id="ev_so" value="'+esc(INV.soRef||'')+'">')
+      +'</div></section>'
+      +'<section class="iv-card"><div class="iv-ct"><i>2</i>الأصناف</div>'
+        +'<div class="iv-add">'+f('الصنف (كود EGS أو الاسم)','<input id="ev_pick" list="ev_dl" placeholder="ابحث عن صنف..." onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist>')
+          +f('الكمية','<input id="ev_q" inputmode="decimal" value="1" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')+f('خصم %','<input id="ev_d" inputmode="decimal" value="0">')+f('السعر','<input id="ev_p" inputmode="decimal" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')
+          +'<button class="iv-go" onclick="evInvAddLine()">＋ إضافة</button></div>'
+        +'<div class="iv-tbl"><table><thead><tr><th>م</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="iv-empty"><b>🧾</b>لسه مفيش أصناف — ابحث عن صنف فوق وأضفه</td></tr>')+'</tbody></table></div></section>'
+      +'<div class="iv-two"><section class="iv-card"><div class="iv-ct"><i>3</i>الحالة والتوقيع</div>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+fld('التوقيع','<b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b>')+(INV.portalNo?fld('رقم البوابة','<b>'+esc(INV.portalNo)+'</b>'):'')+etaInfo()+'</section>'
+      +'<section class="iv-card"><div class="iv-ct"><i>4</i>الإجماليات</div><div class="iv-tots" id="evInvTot">'+totHtml()+'</div></section></div>'
+      +'<div class="iv-bar">'+b('p','evInvSave()','💾 حفظ','F5')+b('g','evInvSign()','🔏 توقيع','F10')
+        +(sOk&&!INV.etaUuid&&INV.sendState!=='sending'?b('r','evInvSubmit()','📤 إرسال للمصلحة','F9'):'')
+        +(INV.etaUuid?b('','evInvCheck()','🔄 تحقق من الحالة','F1'):b('','evInvSent()',INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي'))
+        +b('','evInvCopy()','📋 نسخ','F12')+(sOk?b('','evInvDlJson()','⬇ JSON'):'')+b('','evInvClose()','إغلاق')+'</div>'
       +'</div>';
     if(!window._posK){ window._posK=1; document.addEventListener('keydown',function(e){ if(!INV||!$('ev_no')) return; const f={F5:'evInvSave',F10:'evInvSign',F9:'evInvSubmit',F1:'evInvCheck',F12:'evInvCopy'}[e.key]; if(f&&window[f]){ e.preventDefault(); window[f](); } }); }
   }
@@ -8029,7 +8057,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const inp=$('ev_pick'), q=nz(inp.value); if(!q) return;
     const it=EV.cur.items.find(x=>nz(x.egs)===q)||EV.cur.items.find(x=>nz(x.name)===q)||EV.cur.items.find(x=>nz(x.name).includes(q)||nz(x.egs).includes(q));
     if(!it){ $('evInvMsg').textContent='الصنف مش موجود — أضفه من تبويب الأصناف'; return; }
-    INV.lines.push({egs:it.egs,name:it.name,unit:it.unit,qty:1,price:it.price||0,disc:0,wht:0,tax:it.tax}); invRender();
+    const qv=parseFloat(ad(($('ev_q')||{}).value||'')), dv=parseFloat(ad(($('ev_d')||{}).value||'')), pv=parseFloat(ad(($('ev_p')||{}).value||'')); INV.lines.push({egs:it.egs,name:it.name,unit:it.unit,qty:(qv>0?qv:1),price:isNaN(pv)?(it.price||0):pv,disc:isNaN(dv)?0:dv,wht:0,tax:it.tax}); invRender(); try{ $('ev_pick').focus(); }catch(e){}
   };
   window.evLn=function(i,k,v){ INV.lines[i][k]=parseFloat(ad(v))||0; const c=calcLine(INV.lines[i]); const e=$('ev_lt'+i); if(e) e.textContent=money(c.total)+' ج'; const t=$('evInvTot'); if(t) t.innerHTML=totHtml(); };
   window.evLnDel=function(i){ INV.lines.splice(i,1); invRender(); };
