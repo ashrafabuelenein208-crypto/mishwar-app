@@ -6727,6 +6727,55 @@ populateClientHelpers();
   window.finPreChanged=()=>{ if(PRE) renderPreTbl(); };
   window.finCancelPre=()=>{ PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre(); };
 
+
+  /* ترحيل فواتير من الفواتير الإلكترونية للموقف الضريبي لنفس العميل (بدون تكرار) */
+  window.finPushInvoices=async function(clientId,tax,newRows){
+    const col=savedCol(clientId); if(!col) throw new Error('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');
+    const byM={}; newRows.forEach(r=>{ const m=ym(r.date); (byM[m]=byM[m]||[]).push(r); });
+    const docs=(await col.get()).docs.map(d=>d.data()).filter(d=>d&&d.ym); let added=0;
+    for(const m of Object.keys(byM).map(Number)){
+      const mref=col.doc(String(m)), old=await mref.collection('rows').get(), prev=docs.find(d=>d.ym===m);
+      const rate=prev&&prev.rate!=null?prev.rate:0.14, t=prev&&prev.taxId?String(prev.taxId):tax;
+      const oldRows=[]; old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>oldRows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10],src:a[11]||''})));
+      byM[m].forEach(r=>{ r.sTax=t; });
+      const nk=r=>[r.sTax,r.bTax,r.num,r.type].join('|'), have=new Set(oldRows.map(nk)), fresh=byM[m].filter(r=>!have.has(nk(r)));
+      if(!fresh.length) continue; added+=fresh.length;
+      const c=calc(oldRows.concat(fresh),t,rate,0), batch=db.batch(); old.docs.forEach(d=>batch.delete(d.ref));
+      const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400), SRC='الفواتير الإلكترونية';
+      for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
+      batch.set(mref,{ym:m,taxId:t,rate,credit:0,openCredit:prev&&prev.openCredit!=null?num(prev.openCredit):0,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:(prev&&prev.sourceFile)?(prev.sourceFile.indexOf(SRC)>=0?prev.sourceFile:prev.sourceFile+' + '+SRC):SRC,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await batch.commit(); if(CID===clientId) delete DET[m];
+    }
+    if(added){
+      const all=(await col.get()).docs.map(d=>d.data()).filter(d=>d&&d.ym).sort((a,b)=>a.ym-b.ym), ch=chain(all);
+      if(ch.length){ const b=db.batch(); ch.forEach(d=>{ const u={credit:d.credit,net:d.net}; if(d===all[0]) u.openCredit=num(d.openCredit); b.update(col.doc(String(d.ym)),u); }); await b.commit(); }
+      if(CID===clientId) loadSaved();
+    }
+    return added;
+  };
+
+
+  /* سحب فاتورة اتحوّلت من التطبيق (للتجربة أو للتصحيح) — بيمسح صفوف التطبيق بس */
+  window.finRemoveInvoice=async function(clientId,m,key){
+    const col=savedCol(clientId); if(!col) throw new Error('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');
+    const mref=col.doc(String(m)), snap=await mref.get(); if(!snap.exists) return 0;
+    const prev=snap.data(), old=await mref.collection('rows').get(), rows=[];
+    old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>rows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10],src:a[11]||''})));
+    const keep=rows.filter(r=>!(r.src&&String(r.num)===String(key.num)&&r.type===key.type)), removed=rows.length-keep.length; if(!removed) return 0;
+    const batch=db.batch(); old.docs.forEach(d=>batch.delete(d.ref));
+    if(!keep.length) batch.delete(mref);
+    else{
+      const c=calc(keep,String(prev.taxId),prev.rate!=null?prev.rate:0.14,0), flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400);
+      for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
+      batch.update(mref,{S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    await batch.commit();
+    const all=(await col.get()).docs.map(d=>d.data()).filter(d=>d&&d.ym).sort((a,b)=>a.ym-b.ym), ch=chain(all);
+    if(ch.length){ const b=db.batch(); ch.forEach(d=>{ const u={credit:d.credit,net:d.net}; if(d===all[0]) u.openCredit=num(d.openCredit); b.update(col.doc(String(d.ym)),u); }); await b.commit(); }
+    if(CID===clientId){ delete DET[m]; loadSaved(); }
+    return removed;
+  };
+
   /* ---------- الحفظ في المركز المالي ---------- */
   window.finSave=async function(){
     if(!PRE) return;
@@ -6743,14 +6792,15 @@ populateClientHelpers();
         let c=x.c, srcFile=PRE.file;
         const prev=SAVED.find(d=>d.ym===x.m);
         if(!replace&&old.docs.length){
-          const oldRows=[]; old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>oldRows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10]})));
-          const key=r=>[r.sTax,r.bTax,r.num,r.type,r.date.getTime(),r.val,r.vat].join('|'), have=new Set(oldRows.map(key));
-          const merged=oldRows.concat(x.rows.filter(r=>!have.has(key(r))));
+          const oldRows=[]; old.docs.map(d=>d.data()).sort((a,b)=>a.i-b.i).forEach(p=>JSON.parse(p.rows).forEach(a=>oldRows.push({type:a[0],date:new Date(a[1]),val:a[2],vat:a[3],wh:a[4],tot:a[5],num:a[6],sTax:a[7],sName:a[8],bTax:a[9],bName:a[10],src:a[11]||''})));
+          const nk=r=>[r.sTax,r.bTax,r.num,r.type].join('|'), newK=new Set(x.rows.map(nk)), keptRows=oldRows.filter(r=>!(r.src&&newK.has(nk(r))));   /* صف مرحّل من التطبيق ويطلع في ملف المصلحة = ياخد مكانه */
+          const key=r=>[r.sTax,r.bTax,r.num,r.type,r.date.getTime(),r.val,r.vat].join('|'), have=new Set(keptRows.map(key));
+          const merged=keptRows.concat(x.rows.filter(r=>!have.has(key(r))));
           c=calc(merged,tax,rate,0);
           if(prev&&prev.sourceFile&&prev.sourceFile!==PRE.file) srcFile=prev.sourceFile+' + '+PRE.file;
         }
         old.docs.forEach(d=>batch.delete(d.ref));
-        const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName]), parts=Math.ceil(flat.length/400);
+        const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400);
         for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
         batch.set(mref,{ym:x.m,taxId:tax,rate,credit:0,openCredit:(firstNow&&x.m===minNew&&openIn!=null)?openIn:(prev&&prev.openCredit!=null?num(prev.openCredit):0),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         await batch.commit(); delete DET[x.m];
@@ -7733,7 +7783,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<section class="iv-card"><div class="iv-ct"><i>4</i>الإجماليات</div><div class="iv-tots" id="evInvTot">'+totHtml()+'</div></section></div>'
       +'<div class="iv-bar">'+b('p','evInvSave()','💾 حفظ','F5')+b('g','evInvSign()','🔏 توقيع','F10')
         +(sOk&&!INV.etaUuid&&INV.sendState!=='sending'?b('r','evInvSubmit()','📤 إرسال للمصلحة','F9'):'')
-        +(INV.etaUuid?b('','evInvCheck()','🔄 تحقق من الحالة','F1'):b('','evInvSent()',INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي'))
+        +(INV.etaStatus!=='Invalid'?b('','evInvToPos()',INV.posSynced?'📊 ترحيل تاني للموقف':(INV.etaStatus==='Valid'?'📊 ترحيل للموقف الضريبي':'📊 ترحيل تجريبي للموقف')):'')+(INV.posSynced?b('','evInvUnPos()','↩ سحب من الموقف'):'')+(INV.etaUuid?b('','evInvCheck()','🔄 تحقق من الحالة','F1'):b('','evInvSent()',INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي'))
         +b('','evInvCopy()','📋 نسخ','F12')+(sOk?b('','evInvDlJson()','⬇ JSON'):'')+b('','evInvClose()','إغلاق')+'</div>'
       +'</div>';
     if(!window._posK){ window._posK=1; document.addEventListener('keydown',function(e){ if(!INV||!$('ev_no')) return; const f={F5:'evInvSave',F10:'evInvSign',F9:'evInvSubmit',F1:'evInvCheck',F12:'evInvCopy'}[e.key]; if(f&&window[f]){ e.preventDefault(); window[f](); } }); }
@@ -8083,6 +8133,33 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     INV.sendState='failed'; INV.etaErr=((j&&j.rejectedDocuments&&j.rejectedDocuments.length)?errList(j.rejectedDocuments):errList(j)).join('\n')||('HTTP '+r.code);
     await evInvSave(); audit('رفض عند الإرسال',INV.no); odForm(); OD.ft='eta'; odForm(); $('evInvMsg').textContent='✗ المصلحة رفضت الإرسال — التفاصيل في تبويب ETA';
   };
+  const CAIRO_D=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'});
+  async function posSync(inv){
+    const c=EV.cur, rin=String((c&&c.rin)||'').replace(/\D/g,'');
+    if(inv.etaStatus==='Invalid') return {ok:false,msg:'المصلحة رفضت الفاتورة دي (غير صحيحة) — مش بتتحوّل للموقف'};
+    const cl=(typeof loadClients==='function'?loadClients():[]).find(x=>rin&&String(x.taxRegNo||'').replace(/\D/g,'')===rin);
+    if(!cl) return {ok:false,msg:'مفيش عميل في الموقف الضريبي بنفس الرقم الضريبي ('+(rin||'فاضي')+') — سجّل الرقم في بيانات العميل'};
+    if(!window.finPushInvoices) return {ok:false,msg:'وحدة الموقف الضريبي مش جاهزة'};
+    let iso=''; try{ iso=JSON.parse(inv.signed).documents[0].dateTimeIssued; }catch(e){}
+    const dt=iso?new Date(iso):new Date((inv.date||todayStr())+'T00:00:00Z'), p=CAIRO_D.format(dt).split('-').map(Number);
+    const t=calcInv(inv), b=inv.buyer||{};
+    const row={type:({I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'})[inv.docType||'I'],date:new Date(Date.UTC(p[0],p[1]-1,p[2])),val:t.net,vat:t.tax,wh:t.wht,tot:t.total,num:inv.no,sTax:rin,sName:c.name||'',bTax:String(b.idn||'').replace(/\s/g,''),bName:b.name||'',src:'app'};
+    const n=await window.finPushInvoices(cl.id,rin,[row]);
+    return {ok:true,n,client:cl.name,cid:cl.id,ym:row.date.getUTCFullYear()*100+row.date.getUTCMonth()+1,type:row.type};
+  }
+  window.evInvToPos=async function(){
+    const m=$('evInvMsg'); invRead();
+    if(INV.etaStatus!=='Valid'&&!confirm('الفاتورة دي لسه مش «صحيحة» عند المصلحة (مسودة/غير مؤكدة).\nهتتضاف فعلاً على الموقف الضريبي للشركة، وتقدر تسحبها بعدها بزرار «↩ سحب من الموقف». متابعة؟')) return;
+    m.textContent='جاري الترحيل للموقف الضريبي...';
+    try{ const r=await posSync(INV); if(!r.ok){ m.textContent='✗ '+r.msg; return; } INV.posSynced=Date.now(); INV.posYm=r.ym; INV.posCid=r.cid; INV.posType=r.type; await evInvSave(); odForm(); $('evInvMsg').textContent=r.n?('✓ اتحوّلت للموقف الضريبي — '+r.client):'✓ موجودة بالفعل في الموقف الضريبي'; }
+    catch(e){ m.textContent='✗ تعذّر الترحيل: '+(e&&e.message||e); }
+  };
+  window.evInvUnPos=async function(){
+    const m=$('evInvMsg'); if(!INV.posSynced||!INV.posYm||!INV.posCid){ m.textContent='الفاتورة دي مش مرحّلة'; return; }
+    if(!confirm('سحب '+INV.no+' من الموقف الضريبي؟')) return;
+    try{ const n=await window.finRemoveInvoice(INV.posCid,INV.posYm,{num:INV.no,type:INV.posType||'فاتورة'}); INV.posSynced=0; INV.posYm=0; INV.posCid=''; INV.posType=''; await evInvSave(); odForm(); $('evInvMsg').textContent=n?'✓ اتسحبت من الموقف الضريبي':'مكانتش موجودة في الموقف (اتشالت بالفعل)'; }
+    catch(e){ m.textContent='✗ تعذّر السحب: '+(e&&e.message||e); }
+  };
   window.evInvCheck=async function(){
     const m=$('evInvMsg'), c=EV.cur; if(!INV.etaUuid){ m.textContent='مفيش UUID للمستند'; return; }
     try{ m.textContent='جاري الاستعلام...'; const r=await sgn('/eta/document',{env:c.etaEnv||'pre',rin:c.rin,uuid:INV.etaUuid}), j=safeJson(r.body);
@@ -8146,7 +8223,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     invRead(); if(INV.etaUuid&&INV.signedFp!==fp()){ $('evInvMsg').textContent='المستند اتبعت للمصلحة ومينفعش يتعدّل — اعمل إشعار دائن/مدين'; return; } if(!INV.no){ $('evInvMsg').textContent='الرقم الداخلي مطلوب'; return; }
     if(INVS.some(x=>x.id!==INV.id&&x.no===INV.no)){ $('evInvMsg').textContent='الرقم الداخلي مكرر'; return; }
     const id=INV.id||uid(), now=Date.now(), old=INVS.find(x=>x.id===id);
-    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,docType:INV.docType||'I',refUuid:INV.refUuid||'',poRef:INV.poRef||'',soRef:INV.soRef||'',signedAt:INV.signedAt||0,submissionId:INV.submissionId||'',etaUuid:INV.etaUuid||'',longId:INV.longId||'',etaStatus:INV.etaStatus||'',sendState:INV.sendState||'',etaErr:INV.etaErr||'',etaResp:INV.etaResp||'',branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',signed:INV.signed||'',signedFp:INV.signedFp||'',createdAt:old?old.createdAt:now,updatedAt:now};
+    const doc={no:INV.no,dateAuto:INV.dateAuto,date:INV.date,svcDate:INV.svcDate,docType:INV.docType||'I',refUuid:INV.refUuid||'',poRef:INV.poRef||'',soRef:INV.soRef||'',signedAt:INV.signedAt||0,posSynced:INV.posSynced||0,posYm:INV.posYm||0,posCid:INV.posCid||'',posType:INV.posType||'',submissionId:INV.submissionId||'',etaUuid:INV.etaUuid||'',longId:INV.longId||'',etaStatus:INV.etaStatus||'',sendState:INV.sendState||'',etaErr:INV.etaErr||'',etaResp:INV.etaResp||'',branchId:INV.branchId,buyerId:INV.buyerId,buyer:INV.buyer,lines:INV.lines,status:INV.status,portalNo:INV.portalNo||'',signed:INV.signed||'',signedFp:INV.signedFp||'',createdAt:old?old.createdAt:now,updatedAt:now};
     try{ await icol().doc(id).set(doc); INV.id=id; const i=INVS.findIndex(x=>x.id===id); if(i>=0) INVS[i]=Object.assign({id},doc); else INVS.unshift(Object.assign({id},doc)); $('evInvMsg').textContent='✓ تم الحفظ'; audit('حفظ '+DT_L[INV.docType||'I'],INV.no); }
     catch(e){ $('evInvMsg').textContent='تعذّر الحفظ: '+(e&&e.message||''); }
   };
