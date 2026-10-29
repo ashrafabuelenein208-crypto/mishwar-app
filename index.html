@@ -7515,7 +7515,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   const BTYPES=[['B','شركة / جهة (رقم تسجيل ضريبي)'],['P','شخص طبيعي (رقم قومي)'],['F','أجنبي (جواز سفر)']];
   /* ================= واجهة الفاتورة الإلكترونية (أسلوب Odoo) ================= */
   let EV={list:[],cur:null,tab:'info',q:'',iq:''};
-  const OD={page:'dash',sub:'info',ft:'lines',f:'all',q:'',per:'month',cust:'',loaded:null};
+  const OD={page:'dash',sub:'info',ft:'lines',f:'all',q:'',mon:'',loaded:null};
   const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة',valid:'مقبولة',invalid:'مرفوضة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
   const MENU=[['dash','لوحة المعلومات'],['inv','الفواتير الصادرة'],['inc','الفواتير الواردة'],['notes','دائن / مدين'],['cust','العملاء'],['prod','المنتجات'],['sync','المزامنة'],['set','الإعدادات'],['log','السجل']];
   const fld=(l,i)=>'<div class="od-f"><label>'+l+'</label>'+i+'</div>';
@@ -7584,19 +7584,34 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   }
 
   /* ---------- لوحة المعلومات ---------- */
+  let INC=[], INCFOR=null;   /* الفواتير الواردة (المشتريات): هتتملّي من المزامنة مع المصلحة */
+  async function loadInc(){
+    if(INCFOR===EV.cur.id) return;
+    try{ const sn=await col().doc(EV.cur.id).collection('incoming').get(); INC=sn.docs.map(d=>d.data()); }catch(e){ INC=[]; }
+    INCFOR=EV.cur.id;
+  }
   async function pDash(){
     const M=$('odMain'); M.innerHTML='<p class="od-empty">جاري التحميل...</p>';
-    try{ await loadInvs(); }catch(e){ if($('odMain')) $('odMain').innerHTML='<p class="od-empty">تعذّر التحميل: '+esc(e&&e.message)+'</p>'; return; }
+    try{ await loadInvs(); await loadInc(); }catch(e){ if($('odMain')) $('odMain').innerHTML='<p class="od-empty">تعذّر التحميل: '+esc(e&&e.message)+'</p>'; return; }
     if(!$('odMain')) return;
-    const now=new Date(), cur=dayOf(now.getTime()).slice(0,7), prev=dayOf(new Date(now.getFullYear(),now.getMonth()-1,1).getTime()).slice(0,7);
-    let L=INVS.filter(i=>OD.per==='all'||invDay(i).slice(0,7)===(OD.per==='month'?cur:prev)); if(OD.cust) L=L.filter(i=>i.buyerId===OD.cust);
-    const S={draft:0,signed:0,sent:0,valid:0,invalid:0}; let val=0,tax=0,wht=0; const rev=[];
-    L.forEach(i=>{ S[invStatus(i)]++; const t=calcInv(i), g=sgnDoc(i); val=r2(val+g*t.total); tax=r2(tax+g*t.tax); wht=r2(wht+g*t.wht); if(!i.buyer||!(i.lines||[]).length) rev.push(i); });
-    const k=(l,v,c)=>'<div class="od-kpi" style="border-top-color:'+(c||'#714b67')+'"><span>'+l+'</span><b>'+v+'</b></div>';
-    $('odMain').innerHTML='<div class="od-cp"><b>لوحة المعلومات</b><div class="od-btns"><select class="od-in" onchange="odSet(\'per\',this.value)">'+optH([['month','الشهر الحالي'],['prev','الشهر السابق'],['all','كل الفترات']],OD.per)+'</select><select class="od-in" onchange="odSet(\'cust\',this.value)"><option value="">كل العملاء</option>'+optH(EV.cur.buyers.map(b=>[b.id,b.name]),OD.cust)+'</select></div></div>'
-      +'<div class="od-kpis">'+k('إجمالي المستندات',L.length)+k('مسودات',S.draft,'#6c757d')+k('موقّعة (بانتظار الإرسال)',S.signed,'#017e84')+k('مُرسلة (قيد المعالجة)',S.sent,'#17a2b8')+k('مقبولة من المصلحة',S.valid,'#28a745')+k('مرفوضة',S.invalid,'#dc3545')+k('تحتاج مراجعة',rev.length,'#dc3545')+k('إجمالي القيمة',money(val)+' ج')+k('إجمالي الضرائب',money(tax)+' ج')+k('خصم المنبع',money(wht)+' ج')+k('آخر مزامنة','لم تتم بعد','#adb5bd')+'</div>'
-      +'<div class="od-sheet" style="margin-top:12px"><b>آخر المستندات</b><div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>'+(L.slice(0,6).map(i=>'<tr onclick="OD.page=\'inv\';evInvOpen(\''+i.id+'\')"><td>'+esc(i.no)+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+'</td><td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td></tr>').join('')||'<tr><td colspan="4" class="od-empty">لا توجد مستندات</td></tr>')+'</tbody></table></div></div>'
-      +'<div class="od-hint">«مقبولة» و«مرفوضة» بتظهر بس بعد ما تضغط «تحقق من الحالة» ويرد عليك رد المصلحة. «مُرسلة» يعني المصلحة استلمتها وقيد المعالجة (أو اتعلّمت يدويًا).</div>';
+    const AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const lbl=m=>{ const a=String(m).split('-'); return (AR[+a[1]-1]||m)+' '+a[0]; };
+    const cur=dayOf(Date.now()).slice(0,7);
+    const sent=i=>{ const s=invStatus(i); return s==='sent'||s==='valid'; };      /* المرسلة للمصلحة بس */
+    const incMon=x=>String(x.date||'').slice(0,7);
+    const set=new Set([cur]); INVS.filter(sent).forEach(i=>set.add(invDay(i).slice(0,7))); INC.forEach(x=>{ if(incMon(x)) set.add(incMon(x)); });
+    const mons=[...set].filter(Boolean).sort().reverse();
+    const mon=(OD.mon==='all'||mons.includes(OD.mon))?OD.mon:cur;
+    const inP=m=>mon==='all'||m===mon;
+    const SL=INVS.filter(i=>sent(i)&&inP(invDay(i).slice(0,7)));
+    let sales=0; SL.forEach(i=>{ sales=r2(sales+sgnDoc(i)*calcInv(i).total); });
+    const PL=INC.filter(x=>inP(incMon(x)));
+    let buys=0; PL.forEach(x=>{ buys=r2(buys+(x.docType==='C'?-1:1)*(+x.total||0)); });
+    const k=(l,v,sub,c)=>'<div class="od-kpi" style="border-top-color:'+(c||'#714b67')+'"><span>'+l+'</span><b>'+v+'</b>'+(sub?'<small style="display:block;color:#6b7280;margin-top:2px">'+sub+'</small>':'')+'</div>';
+    $('odMain').innerHTML='<div class="od-cp"><b>لوحة المعلومات</b><div class="od-btns"><select class="od-in" onchange="odSet(\'mon\',this.value)">'+optH([['all','كل الشهور']].concat(mons.map(m=>[m,lbl(m)])),mon)+'</select></div></div>'
+      +'<div class="od-kpis">'+k('إجمالي المستندات',SL.length+PL.length,SL.length+' مبيعات · '+PL.length+' مشتريات')
+      +k('إجمالي المبيعات',money(sales)+' ج',SL.length+' مستند','#28a745')
+      +k('إجمالي المشتريات',money(buys)+' ج',INC.length?(PL.length+' مستند'):'بتظهر بعد تفعيل المزامنة','#e67e22')+'</div>';
   }
 
   /* ---------- قائمة الفواتير / الإشعارات ---------- */
