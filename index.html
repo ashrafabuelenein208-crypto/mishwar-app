@@ -7186,6 +7186,7 @@ populateClientHelpers();
 .od-f input:disabled{background:var(--paper);color:var(--navy-dim)}
 .od-search:focus,.od-in:focus,.od-f input:focus,.od-f select:focus,.od-lines input:focus,#ev_pick:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,105,156,.18)}
 .od-lines input,#ev_pick{padding:6px 8px;border-radius:9px}
+.iv-nmi,.iv-unit{border:1.5px solid var(--line);border-radius:9px;padding:6px 8px;font:inherit;background:var(--panel);color:var(--ink)}.iv-nmi{width:100%;min-width:150px;margin-bottom:2px}.iv-unit:disabled,.iv-nmi:disabled{opacity:.7}
 .od-f>label{color:var(--navy-dim);font-weight:800}
 .od-chip{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:20px;padding:6px 14px;font-weight:700;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),background .2s}.od-chip:hover{transform:translateY(-2px)}
 .od-chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -7697,13 +7698,14 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +INV.lines.map((l,i)=>'<tr style="cursor:default"><td><b>'+esc(l.name)+'</b><br><small dir="ltr">'+esc(l.egs)+'</small></td>'+['qty','price','disc'].map(k=>'<td><input inputmode="decimal" value="'+esc(l[k])+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>').join('')+'<td>'+esc(taxText(l.tax))+'</td><td><input inputmode="decimal" value="'+esc(l.wht||0)+'" oninput="evLn('+i+',\'wht\',this.value)"></td><td id="ev_lt'+i+'" dir="ltr">'+money(calcLine(l).total)+' ج</td><td><button class="od-x" onclick="evLnDel('+i+')">🗑</button></td></tr>').join('')
       +'<tr style="cursor:default"><td colspan="8"><input id="ev_pick" list="ev_dl" placeholder="➕ أضف بند (اكتب كود أو اسم المنتج)" onchange="evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></td></tr></tbody></table></div><div class="od-tot" id="evInvTot">'+totHtml()+'</div>';
   }
+  function unitOpts(u){ const a=UNITS.some(x=>x[0]===u)?UNITS:UNITS.concat([[u,u]]); return a.map(x=>'<option value="'+esc(x[0])+'"'+(x[0]===u?' selected':'')+'>'+esc(x[1])+' ('+esc(x[0])+')</option>').join(''); }
   function odForm(){
     const c=EV.cur, M=$('odMain'); if(!M||!INV) return;
     const st=invStatus(INV), isN=INV.docType==='C'||INV.docType==='D', pr=etaProblems(), L=INV.lines, sOk=signedOk();
     const first=!window._ivSeen; window._ivSeen=1;
     const lock=!!INV.etaUuid;
     const inp=(i,k,w)=>'<td><input inputmode="decimal" value="'+esc(w)+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>';
-    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><b>'+esc(l.name)+'</b><small>'+esc(l.egs)+'</small></td><td>'+esc(unitLbl(l.unit))+'</td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
+    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><input class="iv-nmi" value="'+esc(l.name)+'" '+(lock?'disabled':'')+' oninput="evLnS('+i+',\'name\',this.value)"><small>'+esc(l.egs)+'</small></td><td><select class="iv-unit" '+(lock?'disabled':'')+' onchange="evLnS('+i+',\'unit\',this.value)">'+unitOpts(l.unit)+'</select></td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td>'+esc(taxText(l.tax))+'</td>'+inp(i,'wht',l.wht||0)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
     const seg=[['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']].map(x=>'<button type="button" class="'+((INV.docType||'I')===x[0]?'on':'')+'" '+(lock?'disabled':'')+' onclick="evInvDT(\''+x[0]+'\')">'+x[1]+'</button>').join('');
     const bb=INV.buyer, reg=bb?((bb.type==='B'&&!(bb.gov&&bb.city&&bb.street&&bb.bld))?'<span class="iv-reg no">⚠ عنوان العميل ناقص (المحافظة / المدينة / الشارع / المبنى)</span>':'<span class="iv-reg">✓ '+esc((BTYPES.find(x=>x[0]===bb.type)||['',''])[1].split(' (')[0])+(addrOf(bb)?' — '+esc(addrOf(bb)):'')+'</span>'):'';
     const f=(l,h)=>'<div class="iv-f"><label>'+l+'</label>'+h+'</div>';
@@ -7725,7 +7727,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<section class="iv-card"><div class="iv-ct"><i>2</i>الأصناف</div>'
         +'<div class="iv-add">'+f('الصنف (كود EGS أو الاسم)','<input id="ev_pick" list="ev_dl" placeholder="ابحث عن صنف..." onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist>')
           +f('الكمية','<input id="ev_q" inputmode="decimal" value="1" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')+f('خصم %','<input id="ev_d" inputmode="decimal" value="0">')+f('السعر','<input id="ev_p" inputmode="decimal" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')
-          +'<button class="iv-go" onclick="evInvAddLine()">＋ إضافة</button></div>'
+          +f('الوصف (اختياري)','<input id="ev_ds" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')+f('الوحدة','<select id="ev_un"><option value="">من الصنف</option>'+UNITS.map(u=>'<option value="'+u[0]+'">'+u[1]+'</option>').join('')+'</select>')+'<button class="iv-go" onclick="evInvAddLine()">＋ إضافة</button></div>'
         +'<div class="iv-tbl"><table><thead><tr><th>م</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="iv-empty"><b>🧾</b>لسه مفيش أصناف — ابحث عن صنف فوق وأضفه</td></tr>')+'</tbody></table></div></section>'
       +'<div class="iv-two"><section class="iv-card"><div class="iv-ct"><i>3</i>الحالة والتوقيع</div>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+fld('التوقيع','<b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b>')+(INV.portalNo?fld('رقم البوابة','<b>'+esc(INV.portalNo)+'</b>'):'')+etaInfo()+'</section>'
       +'<section class="iv-card"><div class="iv-ct"><i>4</i>الإجماليات</div><div class="iv-tots" id="evInvTot">'+totHtml()+'</div></section></div>'
@@ -7979,7 +7981,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const addr=(o,code)=>Object.assign(code!==undefined?{branchID:String(code)}:{},{country:'EG',governate:o.gov||'',regionCity:o.city||'',street:o.street||'',buildingNumber:o.bld||''});
     const lines=INV.lines.map(l=>{ const k=calcLine(l), t=l.tax||{kind:'v14',rate:14}, m=VAT_SUB[t.kind]||['T1','V009'], tx=[{taxType:m[0],amount:k.tax,subType:m[1],rate:+t.rate||0}];
       if(+l.wht>0) tx.push({taxType:'T4',amount:k.wht,subType:'W004',rate:+l.wht});
-      return {description:l.name,itemType:'EGS',itemCode:l.egs,unitType:l.unit,quantity:+l.qty,internalCode:String(l.egs).split('-').slice(2).join('-'),salesTotal:k.gross,total:k.total,valueDifference:0,totalTaxableFees:0,netTotal:k.net,itemsDiscount:0,unitValue:{currencySold:'EGP',amountEGP:+l.price},discount:{rate:+l.disc||0,amount:k.disc},taxableItems:tx}; });
+      return {description:String(l.name||'').trim(),itemType:'EGS',itemCode:l.egs,unitType:l.unit,quantity:+l.qty,internalCode:String(l.egs).split('-').slice(2).join('-'),salesTotal:k.gross,total:k.total,valueDifference:0,totalTaxableFees:0,netTotal:k.net,itemsDiscount:0,unitValue:{currencySold:'EGP',amountEGP:+l.price},discount:{rate:+l.disc||0,amount:k.disc},taxableItems:tx}; });
     const tt={}; lines.forEach(l=>l.taxableItems.forEach(x=>{ tt[x.taxType]=r2((tt[x.taxType]||0)+x.amount); }));
     const T=calcInv(INV), rcv={type:by.type,id:by.idn,name:by.name};
     const rcvAddr=by.type==='B'||by.gov||by.city||by.street||by.bld; const rc=rcvAddr?{address:addr(by),type:by.type,id:by.idn,name:by.name}:rcv;
@@ -7993,7 +7995,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(by&&by.type==='B'&&!(by.gov&&by.city&&by.street&&by.bld)) p.push('عنوان المشتري (شركة): المحافظة والمدينة والشارع ورقم المبنى مطلوبين');
     if(by&&!by.idn) p.push('رقم تسجيل المشتري ناقص');
     if((INV.docType==='C'||INV.docType==='D')&&!INV.refUuid) p.push('إشعار دائن/مدين: UUID الفاتورة الأصلية مطلوب');
-    INV.lines.forEach((l,i)=>{ if(chkEgs(l.egs)) p.push('بند '+(i+1)+': صيغة EGS غلط'); });
+    INV.lines.forEach((l,i)=>{ if(chkEgs(l.egs)) p.push('بند '+(i+1)+': صيغة EGS غلط'); if(!String(l.name||'').trim()) p.push('بند '+(i+1)+': الوصف فاضي'); });
     return p;
   }
   async function sgn(path,body){
@@ -8123,9 +8125,10 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const inp=$('ev_pick'), q=nz(inp.value); if(!q) return;
     const it=EV.cur.items.find(x=>nz(x.egs)===q)||EV.cur.items.find(x=>nz(x.name)===q)||EV.cur.items.find(x=>nz(x.name).includes(q)||nz(x.egs).includes(q));
     if(!it){ $('evInvMsg').textContent='الصنف مش موجود — أضفه من تبويب الأصناف'; return; }
-    const qv=parseFloat(ad(($('ev_q')||{}).value||'')), dv=parseFloat(ad(($('ev_d')||{}).value||'')), pv=parseFloat(ad(($('ev_p')||{}).value||'')); INV.lines.push({egs:it.egs,name:it.name,unit:it.unit,qty:(qv>0?qv:1),price:isNaN(pv)?(it.price||0):pv,disc:isNaN(dv)?0:dv,wht:0,tax:it.tax}); invRender(); try{ $('ev_pick').focus(); }catch(e){}
+    const ds=String(($('ev_ds')||{}).value||'').trim(), un=($('ev_un')||{}).value||'', qv=parseFloat(ad(($('ev_q')||{}).value||'')), dv=parseFloat(ad(($('ev_d')||{}).value||'')), pv=parseFloat(ad(($('ev_p')||{}).value||'')); INV.lines.push({egs:it.egs,name:(ds||it.name),unit:(un||it.unit),qty:(qv>0?qv:1),price:isNaN(pv)?(it.price||0):pv,disc:isNaN(dv)?0:dv,wht:0,tax:it.tax}); invRender(); try{ $('ev_pick').focus(); }catch(e){}
   };
   window.evLn=function(i,k,v){ INV.lines[i][k]=parseFloat(ad(v))||0; const c=calcLine(INV.lines[i]); const e=$('ev_lt'+i); if(e) e.textContent=money(c.total)+' ج'; const t=$('evInvTot'); if(t) t.innerHTML=totHtml(); };
+  window.evLnS=function(i,k,v){ if(INV.etaUuid||!INV.lines[i]) return; INV.lines[i][k]=v; };
   window.evLnDel=function(i){ INV.lines.splice(i,1); invRender(); };
   function addrOf(b){ return b?[b.street&&((b.bld?b.bld+' ':'')+b.street),b.city,b.gov].filter(Boolean).join('، '):''; }
   function problems(){
