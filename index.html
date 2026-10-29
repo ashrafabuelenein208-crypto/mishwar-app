@@ -895,7 +895,7 @@ nav.tabs button[data-tab=trip]{--c1:#ff9a5a;--c2:#f0476b}nav.tabs button[data-ta
 nav.tabs button[data-tab=clients]{--c1:#2fe0b0;--c2:#0a9b8e}nav.tabs button[data-tab=poas]{--c1:#ffc83d;--c2:#f08a00}
 nav.tabs button[data-tab=cash]{--c1:#4be07a;--c2:#12a150}nav.tabs button[data-tab=alerts]{--c1:#ff7a8a;--c2:#e0234e}
 nav.tabs button[data-tab=chat]{--c1:#6ab7ff;--c2:#3b5bff}nav.tabs button[data-tab=owner]{--c1:#c77dff;--c2:#7b2ff7}
-nav.tabs button[data-tab=ownerclients]{--c1:#ffb347;--c2:#e8590c}
+nav.tabs button[data-tab=ownerclients]{--c1:#ffb347;--c2:#e8590c}nav.tabs button[data-tab=einv]{--c1:#5ee0ff;--c2:#0b7fd6}
 nav.tabs button .ic-wrap{position:relative;background:linear-gradient(145deg,var(--c1),var(--c2))!important;color:#fff;box-shadow:0 6px 14px -4px var(--c2),inset 0 1px 0 rgba(255,255,255,.45);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s}
 nav.tabs button .ic-wrap::after{content:"";position:absolute;inset:-3px;border-radius:13px;border:2px solid transparent;opacity:0}
 nav.tabs button .ic{width:20px;height:20px;stroke-width:1.9}
@@ -1123,6 +1123,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     <button data-tab="trip"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span class="lbl">تسجيل مشوار</span></button>
     <button data-tab="log"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><span class="lbl">سجل المشاوير</span></button>
     <button data-tab="clients"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.6 3-6 7-6s7 2.4 7 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.8 0 5 1.8 5 4.5"/></svg></span><span class="lbl">العملاء</span></button>
+    <button data-tab="einv"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><span class="lbl">الفاتورة الإلكترونية</span></button>
     <button data-tab="poas"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">التوكيلات</span></button>
     <button data-tab="cash"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></svg></span><span class="lbl">الحساب مع صاحب المكتب</span></button>
     <button data-tab="alerts"><span class="ic-wrap"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="lbl">التنبيهات</span></button>
@@ -1269,6 +1270,11 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     </section>
   </div>
 
+  <!-- E-INVOICE -->
+  <div class="panel" id="panel-einv">
+    <div id="clientsEinvView" style="display:block;"><div id="odApp" class="od"></div></div>
+  </div>
+
   <!-- CLIENTS -->
   <div class="panel" id="panel-clients">
     <div id="clientsLandingView">
@@ -1278,7 +1284,6 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('فردي')">فردي</button>
         <button type="button" class="landing-cat-btn" onclick="openClientCategoryList('غير مسجل')">غير مسجل</button>
         <button type="button" class="landing-cat-btn" onclick="vrOpen()">سجل الإقرارات</button>
-        <button type="button" class="landing-cat-btn" onclick="evOpen()">الفاتورة الإلكترونية</button>
         <button type="button" class="landing-cat-btn" onclick="finOverviewOpen()">الموقف الضريبي لكل العملاء</button>
       </div>
     </div>
@@ -1323,7 +1328,6 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
       <input type="file" id="taxYearImportFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple style="display:none;" onchange="uploadTaxYearFile(this)">
       <div id="taxYearFilesList"></div>
     </div>
-    <div id="clientsEinvView" style="display:none;"><div id="odApp" class="od"></div></div>
     <div id="clientsVatView" style="display:none;">
       <div id="vrChoose">
         <div class="row-actions" style="margin-bottom:8px;"><button class="act btn-ghost btn-small" onclick="showClientsLanding()">‹ رجوع</button></div>
@@ -3559,6 +3563,7 @@ function activateTab(tabName){
   btn.classList.add('active');
   document.getElementById('panel-'+tabName).classList.add('active');
   if(tabName === 'clients') showClientsLanding();
+  if(tabName === 'einv' && window.evOpen) window.evOpen();
   if(tabName === 'poas') renderPoaTab();
   if(tabName === 'cash') renderCashTab();
   if(tabName === 'alerts') renderAlertsTab();
@@ -4317,7 +4322,7 @@ function showClientsList(){
   document.getElementById('clientsTaxYearDetailView').style.display = 'none';
 }
 function showClientsLanding(){
-  { ['clientsVatView','clientsEinvView'].forEach(id=>{ const v = document.getElementById(id); if(v) v.style.display = 'none'; }); }
+  { ['clientsVatView'].forEach(id=>{ const v = document.getElementById(id); if(v) v.style.display = 'none'; }); }
   document.getElementById('clientsFormView').style.display = 'none';
   document.getElementById('clientsListView').style.display = 'none';
   document.getElementById('clientsCategoryHubView').style.display = 'none';
@@ -6396,7 +6401,7 @@ populateClientHelpers();
   };
   const svg=n=>'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(P[n]||P.file)+'</svg>';
   window.ic=svg;
-  const TAB={home:'home',trip:'pin',log:'list',clients:'users',poas:'doc',cash:'wallet',alerts:'bell',chat:'chat',owner:'chart',ownerclients:'briefcase'};
+  const TAB={home:'home',trip:'pin',log:'list',clients:'users',einv:'receipt',poas:'doc',cash:'wallet',alerts:'bell',chat:'chat',owner:'chart',ownerclients:'briefcase'};
   const HUB=[['شركات','building'],['فردي','user'],['غير مسجل','user'],['بيانات','building'],['الدخل','coins'],['القيمة','receipt'],['مستندات','folder'],['حسابات','calc'],['الموقف','chart']];
   function deco(){
     document.querySelectorAll('nav.tabs button[data-tab] .ic-wrap:not([data-d])').forEach(w=>{
@@ -7612,7 +7617,6 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const sn=await icol().get(); INVS=sn.docs.map(d=>Object.assign({},d.data(),{id:d.id})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)); OD.loaded=EV.cur.id;
   }
   window.evOpen=async function(){
-    ['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView','clientsFinView','clientsVatView'].forEach(id=>{const e=$(id);if(e)e.style.display='none';});
     $('clientsEinvView').style.display='block'; window.scrollTo({top:0});
     $('odApp').innerHTML='<p class="od-empty">جاري التحميل...</p>';
     try{ await evLoad(); }catch(e){ $('odApp').innerHTML='<p class="od-empty">'+esc(e&&e.message)+'</p>'; return; }
@@ -7621,7 +7625,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function renderTab(){ odRender(); }
   function odBar(){
     const c=EV.cur;
-    return '<div class="od-nav"><button class="od-nb" onclick="showClientsLanding()" title="رجوع للتطبيق">‹</button><b>الفاتورة الإلكترونية</b>'
+    return '<div class="od-nav"><button class="od-nb" onclick="activateTab(\'home\')" title="رجوع للرئيسية">‹</button><b>الفاتورة الإلكترونية</b>'
       +'<select class="od-sel" onchange="odCo(this.value)">'+(c?'':'<option value="" selected>— اختر شركة —</option>')+EV.list.map(x=>'<option value="'+esc(x.id)+'"'+(c&&c.id===x.id?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'<option value="__all">⚙ إدارة الشركات</option></select>'
       +(c?'<div class="od-menu">'+MENU.map(m=>'<button class="'+(OD.page===m[0]?'on':'')+'" onclick="odGo(\''+m[0]+'\')">'+m[1]+'</button>').join('')+'</div>':'')+'</div>';
   }
