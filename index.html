@@ -7703,14 +7703,17 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const q=nz(OD.q); if(!OUT_F.includes(OD.f)) OD.f='all';
     let L=INVS.filter(i=>{ const s=invStatus(i); return s==='draft'||s==='valid'; });
     if(OD.f!=='all') L=L.filter(i=>invStatus(i)===OD.f);
+    if(OD.m) L=L.filter(i=>invDay(i).slice(0,7)===OD.m);
     if(q) L=L.filter(i=>nz(i.no).includes(q)||nz(i.buyer&&i.buyer.name).includes(q)||nz(i.buyer&&i.buyer.idn).includes(q));
-    return {n:L.length,h:L.map(i=>'<tr onclick="evInvOpen(\''+i.id+'\')"><td>'+esc(i.no)+'</td><td>'+esc(DT_L[i.docType||'I']||'فاتورة')+'</td><td>'+esc(invDay(i))+(i.dateAuto?' <small>(تلقائي)</small>':'')+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+(i.buyer&&i.buyer.idn?'<br><small dir="ltr" style="color:#6b7280">'+esc(i.buyer.idn)+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td><td><button class="od-x" onclick="event.stopPropagation();evInvDel(\''+i.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="7" class="od-empty">لا توجد سجلات</td></tr>'};
+    OD.vis=L.map(i=>i.id);
+    return {n:L.length,h:L.map(i=>'<tr onclick="evInvOpen(\''+i.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" '+((OD.sel||{})[i.id]?'checked ':'')+'onchange="evSel(\''+i.id+'\',this.checked)"></td><td>'+esc(i.no)+(i.posSynced?' <small title="اتحوّلت للموقف الضريبي">📊</small>':'')+'</td><td>'+esc(DT_L[i.docType||'I']||'فاتورة')+'</td><td>'+esc(invDay(i))+(i.dateAuto?' <small>(تلقائي)</small>':'')+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+(i.buyer&&i.buyer.idn?'<br><small dir="ltr" style="color:#6b7280">'+esc(i.buyer.idn)+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td><td><button class="od-x" onclick="event.stopPropagation();evInvDel(\''+i.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="8" class="od-empty">لا توجد سجلات</td></tr>'};
   }
   function odList(){
     const r=odRows();
     $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\'I\')">＋ إنشاء فاتورة</button><b>الفواتير الصادرة</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل أو رقم التسجيل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
-      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
-      +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
+      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span>'+(function(){ const AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], ms=[...new Set(INVS.map(i=>invDay(i).slice(0,7)).filter(Boolean))].sort().reverse(); return '<select class="od-search" style="max-width:170px" onchange="odSet(\'m\',this.value)"><option value="">كل الشهور</option>'+ms.map(m=>{ const a=m.split('-'); return '<option value="'+m+'"'+(OD.m===m?' selected':'')+'>'+(AR[+a[1]-1]||m)+' '+a[0]+'</option>'; }).join('')+'</select>'; })()+'</div>'
+      +'<div class="od-chips"><button class="od-btn p" onclick="evPosBulk()">📊 ترحيل المحدد للموقف الضريبي</button><span class="od-cnt" id="odSelCnt">'+Object.values(OD.sel||{}).filter(Boolean).length+' محدد</span><span id="odSelMsg" style="font-size:12.5px;opacity:.85"></span></div>'
+      +'<div class="od-wrap"><table class="od-table"><thead><tr><th><input type="checkbox" title="تحديد الكل" onchange="evSelAll(this.checked)"></th><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
   window.odNew=function(t){ window._ivSeen=null; window._ivReg='';
     const n=INVS.reduce((m,i)=>Math.max(m,parseInt((String(i.no).match(/(\d+)$/)||[0,0])[1])||0),0)+1;
@@ -8134,19 +8137,44 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     await evInvSave(); audit('رفض عند الإرسال',INV.no); odForm(); OD.ft='eta'; odForm(); $('evInvMsg').textContent='✗ المصلحة رفضت الإرسال — التفاصيل في تبويب ETA';
   };
   const CAIRO_D=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'});
-  async function posSync(inv){
+  function posBuild(inv){
     const c=EV.cur, rin=String((c&&c.rin)||'').replace(/\D/g,'');
     if(inv.etaStatus==='Invalid') return {ok:false,msg:'المصلحة رفضت الفاتورة دي (غير صحيحة) — مش بتتحوّل للموقف'};
     const cl=(typeof loadClients==='function'?loadClients():[]).find(x=>rin&&String(x.taxRegNo||'').replace(/\D/g,'')===rin);
     if(!cl) return {ok:false,msg:'مفيش عميل في الموقف الضريبي بنفس الرقم الضريبي ('+(rin||'فاضي')+') — سجّل الرقم في بيانات العميل'};
     if(!window.finPushInvoices) return {ok:false,msg:'وحدة الموقف الضريبي مش جاهزة'};
     let iso=''; try{ iso=JSON.parse(inv.signed).documents[0].dateTimeIssued; }catch(e){}
-    const dt=iso?new Date(iso):new Date((inv.date||todayStr())+'T00:00:00Z'), p=CAIRO_D.format(dt).split('-').map(Number);
-    const t=calcInv(inv), b=inv.buyer||{};
-    const row={type:({I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'})[inv.docType||'I'],date:new Date(Date.UTC(p[0],p[1]-1,p[2])),val:t.net,vat:t.tax,wh:t.wht,tot:t.total,num:inv.no,sTax:rin,sName:c.name||'',bTax:String(b.idn||'').replace(/\s/g,''),bName:b.name||'',src:'app'};
-    const n=await window.finPushInvoices(cl.id,rin,[row]);
-    return {ok:true,n,client:cl.name,cid:cl.id,ym:row.date.getUTCFullYear()*100+row.date.getUTCMonth()+1,type:row.type};
+    const dt=iso?new Date(iso):new Date((invDay(inv)||todayStr())+'T00:00:00Z'), p=CAIRO_D.format(dt).split('-').map(Number);
+    const t=calcInv(inv), bu=inv.buyer||{};
+    const row={type:({I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'})[inv.docType||'I'],date:new Date(Date.UTC(p[0],p[1]-1,p[2])),val:t.net,vat:t.tax,wh:t.wht,tot:t.total,num:inv.no,sTax:rin,sName:c.name||'',bTax:String(bu.idn||'').replace(/\s/g,''),bName:bu.name||'',src:'app'};
+    return {ok:true,row,cl,rin,ym:row.date.getUTCFullYear()*100+row.date.getUTCMonth()+1};
   }
+  async function posSync(inv){
+    const x=posBuild(inv); if(!x.ok) return x;
+    const n=await window.finPushInvoices(x.cl.id,x.rin,[x.row]);
+    return {ok:true,n,client:x.cl.name,cid:x.cl.id,ym:x.ym,type:x.row.type};
+  }
+  /* ---------- ترحيل مجموعة فواتير مرة واحدة ---------- */
+  const selCnt=()=>{ const e=$('odSelCnt'); if(e) e.textContent=Object.values(OD.sel||{}).filter(Boolean).length+' محدد'; };
+  window.evSel=function(id,v){ OD.sel=OD.sel||{}; OD.sel[id]=!!v; selCnt(); };
+  window.evSelAll=function(v){ OD.sel=OD.sel||{}; (OD.vis||[]).forEach(id=>{ OD.sel[id]=!!v; }); odQ(OD.q); selCnt(); };
+  window.evPosBulk=async function(){
+    const m=$('odSelMsg'), say=t=>{ if(m) m.textContent=t; };
+    const L=Object.keys(OD.sel||{}).filter(k=>OD.sel[k]).map(id=>INVS.find(x=>x.id===id)).filter(Boolean);
+    if(!L.length){ say('حدّد فواتير الأول: علّم ✓ جنب كل فاتورة، أو الخانة اللي فوق لتحديد الكل'); return; }
+    let use=L.filter(i=>i.etaStatus==='Valid'); const dr=L.filter(i=>i.etaStatus!=='Valid');
+    if(dr.length&&confirm(dr.length+' من المحدد لسه مش «صحيحة» عند المصلحة (مسودة).\nتضيفها للموقف كمان؟\nموافق = تضيف الكل، إلغاء = المقبولة بس')) use=L.slice();
+    if(!use.length){ say('مفيش فواتير مقبولة في المحدد'); return; }
+    const bl=use.map(posBuild), bad=bl.find(x=>!x.ok); if(bad){ say('✗ '+bad.msg); return; }
+    if(!confirm('ترحيل '+use.length+' فاتورة للموقف الضريبي لـ «'+bl[0].cl.name+'»؟')) return;
+    say('جاري الترحيل...');
+    try{
+      const n=await window.finPushInvoices(bl[0].cl.id,bl[0].rin,bl.map(x=>x.row)), now=Date.now(), batch=db.batch();
+      use.forEach((i,k)=>{ const u={posSynced:now,posYm:bl[k].ym,posCid:bl[0].cl.id,posType:bl[k].row.type}; batch.update(icol().doc(i.id),u); Object.assign(i,u); });
+      await batch.commit(); audit('ترحيل للموقف الضريبي',use.length+' فاتورة'); OD.sel={}; odList();
+      const r=$('odSelMsg'); if(r) r.textContent='✓ اتحوّل '+n+' فاتورة للموقف الضريبي'+(use.length-n>0?' — '+(use.length-n)+' كانت موجودة قبل كده':'')+(L.length>use.length?' — اتخطّيت '+(L.length-use.length)+' مسودة':'');
+    }catch(e){ say('✗ تعذّر الترحيل: '+(e&&e.message||e)); }
+  };
   window.evInvToPos=async function(){
     const m=$('evInvMsg'); invRead();
     if(INV.etaStatus!=='Valid'&&!confirm('الفاتورة دي لسه مش «صحيحة» عند المصلحة (مسودة/غير مؤكدة).\nهتتضاف فعلاً على الموقف الضريبي للشركة، وتقدر تسحبها بعدها بزرار «↩ سحب من الموقف». متابعة؟')) return;
