@@ -7517,7 +7517,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   let EV={list:[],cur:null,tab:'info',q:'',iq:''};
   const OD={page:'dash',sub:'info',ft:'lines',f:'all',q:'',mon:'',loaded:null};
   const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة',valid:'مقبولة',invalid:'مرفوضة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
-  const MENU=[['dash','لوحة المعلومات'],['inv','الفواتير الصادرة'],['inc','الفواتير الواردة'],['notes','دائن / مدين'],['cust','العملاء'],['prod','المنتجات'],['sync','المزامنة'],['set','الإعدادات'],['log','السجل']];
+  const MENU=[['dash','لوحة المعلومات'],['inv','الفواتير الصادرة'],['inc','الفواتير الواردة'],['cust','العملاء'],['prod','المنتجات'],['sync','المزامنة'],['set','الإعدادات'],['log','السجل']];
   const fld=(l,i)=>'<div class="od-f"><label>'+l+'</label>'+i+'</div>';
   const optH=(arr,sel)=>arr.map(a=>'<option value="'+esc(a[0])+'"'+(String(a[0])===String(sel)?' selected':'')+'>'+esc(a[1])+'</option>').join('');
   const badge=s=>'<span class="od-badge b-'+s+'">'+ST_L[s]+'</span>';
@@ -7554,7 +7554,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const A=$('odApp'); if(!A) return;
     if(!EV.cur){ A.innerHTML=odBar()+'<div class="od-main">'+companiesView()+'</div>'; return; }
     A.innerHTML=odBar()+'<div class="od-main" id="odMain"></div>';
-    ({dash:pDash,inv:pInv,notes:pInv,inc:pInc,cust:pCust,prod:pProd,sync:pSync,set:pSet,log:pLog}[OD.page]||pDash)();
+    ({dash:pDash,inv:pInv,inc:pInc,cust:pCust,prod:pProd,sync:pSync,set:pSet,log:pLog}[OD.page]||pDash)();
   }
   window.odCo=function(v){ INV=null; INVS=[]; OD.loaded=null; EV.cur=(v&&v!=='__all')?(EV.list.find(x=>x.id===v)||null):null; OD.page='dash'; odRender(); };
   window.odGo=function(p){ if(INV){ invRead(); } INV=null; OD.page=p; OD.f='all'; OD.q=''; odRender(); };
@@ -7622,18 +7622,20 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     if(INV){ odForm(); return; }
     odList();
   }
+  /* الصادرة: مسودة + مقبولة بس. النوع (فاتورة / إشعار دائن / إشعار مدين) قبل التاريخ، ورقم تسجيل العميل تحت اسمه */
+  const OUT_F=['all','draft','valid'];
   function odRows(){
-    const notes=OD.page==='notes', q=nz(OD.q);
-    let L=INVS.filter(i=>notes?(i.docType==='C'||i.docType==='D'):(!i.docType||i.docType==='I'));
+    const q=nz(OD.q); if(!OUT_F.includes(OD.f)) OD.f='all';
+    let L=INVS.filter(i=>{ const s=invStatus(i); return s==='draft'||s==='valid'; });
     if(OD.f!=='all') L=L.filter(i=>invStatus(i)===OD.f);
-    if(q) L=L.filter(i=>nz(i.no).includes(q)||nz(i.buyer&&i.buyer.name).includes(q));
-    return {n:L.length,h:L.map(i=>'<tr onclick="evInvOpen(\''+i.id+'\')"><td>'+esc(i.no)+'</td><td>'+esc(invDay(i))+(i.dateAuto?' <small>(تلقائي)</small>':'')+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+'</td>'+(notes?'<td>'+DT_L[i.docType]+'</td>':'')+'<td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td><td><button class="od-x" onclick="event.stopPropagation();evInvDel(\''+i.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="7" class="od-empty">لا توجد سجلات</td></tr>'};
+    if(q) L=L.filter(i=>nz(i.no).includes(q)||nz(i.buyer&&i.buyer.name).includes(q)||nz(i.buyer&&i.buyer.idn).includes(q));
+    return {n:L.length,h:L.map(i=>'<tr onclick="evInvOpen(\''+i.id+'\')"><td>'+esc(i.no)+'</td><td>'+esc(DT_L[i.docType||'I']||'فاتورة')+'</td><td>'+esc(invDay(i))+(i.dateAuto?' <small>(تلقائي)</small>':'')+'</td><td>'+esc(i.buyer?i.buyer.name:'—')+(i.buyer&&i.buyer.idn?'<br><small dir="ltr" style="color:#6b7280">'+esc(i.buyer.idn)+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+money(calcInv(i).total)+'</td><td>'+badge(invStatus(i))+'</td><td><button class="od-x" onclick="event.stopPropagation();evInvDel(\''+i.id+'\')">🗑</button></td></tr>').join('')||'<tr><td colspan="7" class="od-empty">لا توجد سجلات</td></tr>'};
   }
   function odList(){
-    const notes=OD.page==='notes', r=odRows();
-    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\''+(notes?'C':'I')+'\')">جديد</button><b>'+(notes?'إشعارات الدائن والمدين':'الفواتير الصادرة')+'</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
-      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['signed','موقّعة'],['sent','مُرسلة'],['valid','مقبولة'],['invalid','مرفوضة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
-      +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>التاريخ</th><th>العميل</th>'+(notes?'<th>النوع</th>':'')+'<th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
+    const r=odRows();
+    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\'I\')">+ فاتورة</button><button class="od-btn" onclick="odNew(\'C\')">+ إشعار دائن</button><button class="od-btn" onclick="odNew(\'D\')">+ إشعار مدين</button><b>الفواتير الصادرة</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل أو رقم التسجيل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
+      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span></div>'
+      +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
   window.odNew=function(t){
     const n=INVS.reduce((m,i)=>Math.max(m,parseInt((String(i.no).match(/(\d+)$/)||[0,0])[1])||0),0)+1;
@@ -7735,7 +7737,14 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evIqChg=()=>{ EV.iq=$('evIq').value; odProdRows(); };
 
   /* ---------- الواردة / المزامنة / الإعدادات / السجل ---------- */
-  function pInc(){ $('odMain').innerHTML='<div class="od-cp"><b>الفواتير الواردة</b></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>التاريخ</th><th>المصدر</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody><tr><td colspan="5" class="od-empty">لا توجد فواتير واردة. بتظهر هنا بعد تفعيل المزامنة مع المصلحة.</td></tr></tbody></table></div>'; }
+  async function pInc(){
+    const M=$('odMain'); M.innerHTML='<p class="od-empty">جاري التحميل...</p>';
+    try{ await loadInc(); }catch(e){}
+    if(!$('odMain')) return;
+    const L=INC.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    $('odMain').innerHTML='<div class="od-cp"><b>الفواتير الواردة</b><span class="od-cnt">'+L.length+' سجل</span></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>المورد / رقم التسجيل</th><th>الإجمالي</th></tr></thead><tbody>'
+      +(L.map(x=>'<tr><td>'+esc(x.no||'')+'</td><td>'+esc(DT_L[x.docType||'I']||'فاتورة')+'</td><td>'+esc(x.date||'')+'</td><td>'+esc(x.name||'—')+(x.rin?'<br><small dir="ltr" style="color:#6b7280">'+esc(x.rin)+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+money(x.total)+'</td></tr>').join('')||'<tr><td colspan="5" class="od-empty">لا توجد فواتير واردة. بتظهر هنا بعد تفعيل المزامنة مع المصلحة.</td></tr>')+'</tbody></table></div>';
+  }
   function pSync(){
     $('odMain').innerHTML='<div class="od-cp"><b>مزامنة منظومة الضرائب</b></div><div class="od-sheet">'+fld('الحالة','<span class="od-badge b-draft">غير مفعّلة</span>')+fld('آخر مزامنة','<span>لم تتم بعد</span>')
       +'<p>المزامنة (جلب الصادر والوارد وتحديث الحالات) محتاجة Cloud Function بتكلم المصلحة بأمان، ولسه مش متنفّذة. لما تتفعّل هتلاقي هنا: مزامنة يدوية ومجدولة، اختيار الفترة، وعدّادات (مضاف / محدّث / تعذّر جلبه).</p><div class="od-btns"><button class="od-btn" disabled>🔄 مزامنة الآن</button></div></div>';
