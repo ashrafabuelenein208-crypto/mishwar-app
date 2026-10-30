@@ -8371,7 +8371,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function vcLev(a,b){ const m=a.length,n=b.length; if(Math.abs(m-n)>1) return 9; const d=[]; for(let i=0;i<=m;i++){ d[i]=[i]; } for(let j=1;j<=n;j++) d[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[m][n]; }
   function vcTm(a,b){ if(!a||!b) return false; if(a===b) return true; const mn=Math.min(a.length,b.length); if(mn>=3&&(a.startsWith(b)||b.startsWith(a))) return true; if(mn>=4&&vcLev(a,b)<=1) return true; if('بلوفك'.includes(a[0])&&a.length>3&&vcTm(a.slice(1),b)) return true; if('بلوفك'.includes(b[0])&&b.length>3&&vcTm(a,b.slice(1))) return true; return false; }
   function vcTokens(text){
-    const raw=vcNorm(text).split(/[\s,،.؛;:!?؟\-_/\\()]+/).filter(Boolean), out=[];
+    let tx=vcNorm(text).replace(/\u066B/g,'.').replace(/(\d)[,\u066C\u060C](?=\d{3}(?!\d))/g,'$1').replace(/(\d)\.(\d)/g,'$1§$2').replace(/(\d)([^\d\s§])/g,'$1 $2').replace(/([^\d\s§])(\d)/g,'$1 $2');
+    const raw=tx.split(/[\s,،.؛;:!?؟\-_/\\()]+/).filter(Boolean).map(w=>w.replace('§','.')), out=[];
     const isNum=w=>/^\d+(\.\d+)?$/.test(w)||Object.prototype.hasOwnProperty.call(VC_NUM,w)||w==='الاف'||w==='آلاف';
     const val=w=>/^\d/.test(w)?parseFloat(w):VC_NUM[w];
     let i=0;
@@ -8444,7 +8445,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       +'<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:17px;">🎤 فاتورة بالصوت</b><button onclick="evVcClose()" style="border:0;background:#eef2f6;border-radius:50%;width:34px;height:34px;font-size:16px;">✕</button></div>'
       +'<div style="font-size:12.5px;color:#556;margin:8px 0 12px;line-height:1.7;">قول مثلًا: «فاتورة لشركة النور، ٣ كراسي بسعر ١٠٠٠، و٢ مكتب بسعر ٥٠٠٠». الأصناف والعملاء لازم تكون متسجلة في التطبيق.</div>'
       +(SR?'<button id="vcMic" onclick="evVcMic()" style="width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(135deg,#00699c,#2a9fd6);color:#fff;font:inherit;font-weight:900;font-size:16px;">🎤 اضغط وتكلم</button>':'<div style="padding:10px;background:#fff6dd;border-radius:10px;font-size:12.5px;color:#7a5a00;">المتصفح ده مش بيدعم التسجيل الصوتي — اكتب الطلب في الخانة، أو افتح التطبيق من Chrome.</div>')
-      +'<textarea id="vcTx" rows="3" placeholder="الكلام هيظهر هنا — تقدر تعدّله أو تكتبه بنفسك" style="'+ta+'margin-top:10px;"></textarea>'
+      +'<button onclick="evVcKb()" style="margin-top:8px;width:100%;padding:11px;border:1px solid #c9d3dd;background:#f5f8fb;color:#223;border-radius:12px;font:inherit;font-weight:800;">⌨️ أو اكتب / املي بمايك الكيبورد (أدق للعربي)</button>'
+      +'<textarea id="vcTx" rows="4" placeholder="الكلام هيظهر هنا — تقدر تعدّله أو تكتبه بنفسك" style="'+ta+'margin-top:10px;font-size:16px;"></textarea>'
       +'<button onclick="evVcAnalyze()" style="margin-top:8px;width:100%;padding:11px;border:1px solid #00699c;background:#fff;color:#00699c;border-radius:12px;font:inherit;font-weight:800;">تحليل الكلام</button>'
       +'<div id="vcPrev"></div></div>';
     document.body.appendChild(d);
@@ -8453,13 +8455,18 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evVcMic=function(){
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition, b=$('vcMic'), tx=$('vcTx'); if(!SR||!tx) return;
     if(VC.rec){ try{ VC.rec.stop(); }catch(e){} return; }
-    const r=new SR(); r.lang='ar-EG'; r.interimResults=true; r.continuous=true; VC.rec=r; VC.base=tx.value?tx.value.trim()+' ':''; let fin='';
-    r.onstart=()=>{ if(b){ b.textContent='⏹ بسمعك... اضغط للإيقاف'; b.style.background='#d9363e'; } };
-    r.onresult=e=>{ let it=''; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) fin+=t+' '; else it+=t; } tx.value=VC.base+fin+it; };
-    r.onerror=e=>{ const m=e.error==='not-allowed'?'اسمح للمتصفح باستخدام الميكروفون':(e.error==='no-speech'?'مسمعتش صوت — جرّب تاني':'تعذّر التسجيل ('+e.error+')'); VC.note=[m]; vcPrev(); };
-    r.onend=()=>{ VC.rec=null; if(b){ b.textContent='🎤 اضغط وتكلم'; b.style.background='linear-gradient(135deg,#00699c,#2a9fd6)'; } if(tx.value.trim()) evVcAnalyze(); };
-    try{ r.start(); }catch(e){ VC.rec=null; }
+    const r=new SR(); r.lang=VC.lang||'ar-EG'; r.interimResults=true; r.continuous=false; r.maxAlternatives=1; VC.rec=r; VC.err=''; VC.base=tx.value?tx.value.trim()+' ':''; let got=false;
+    const reset=()=>{ if(b){ b.textContent='🎤 اضغط وتكلم'; b.style.background='linear-gradient(135deg,#00699c,#2a9fd6)'; } };
+    r.onstart=()=>{ VC.note=[]; vcPrev(); if(b){ b.textContent='⏹ بسمعك... اتكلم دلوقتي'; b.style.background='#d9363e'; } };
+    r.onresult=e=>{ got=true; let t=''; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript+' '; tx.value=VC.base+t.trim(); };
+    r.onerror=e=>{ VC.err=e.error;
+      if(e.error==='language-not-supported'&&VC.lang!=='ar'){ VC.lang='ar'; VC.rec=null; reset(); setTimeout(evVcMic,150); return; }
+      const m={'not-allowed':'الميكروفون مقفول — افتح إعدادات الموقع في Chrome واسمح بالميكروفون','service-not-allowed':'التسجيل الصوتي مش متاح للتطبيق ده على جهازك — استخدم مايك الكيبورد (الزرار اللي تحت)','network':'التعرف على الصوت محتاج إنترنت شغال','no-speech':'مسمعتش صوت — قرّب من الميكروفون وجرّب تاني','audio-capture':'مفيش ميكروفون شغال على الجهاز','aborted':''}[e.error];
+      VC.note=[m===undefined?'تعذّر التسجيل ('+e.error+') — استخدم مايك الكيبورد':m].filter(Boolean); vcPrev(); };
+    r.onend=()=>{ VC.rec=null; reset(); if(got&&tx.value.trim()) evVcAnalyze(); else if(!VC.err){ VC.note=['مسمعتش حاجة — جرّب تاني أو استخدم مايك الكيبورد']; vcPrev(); } };
+    try{ r.start(); }catch(e){ VC.rec=null; reset(); VC.note=['تعذّر تشغيل الميكروفون — استخدم مايك الكيبورد']; vcPrev(); }
   };
+  window.evVcKb=function(){ const t=$('vcTx'); if(t){ t.focus(); try{ t.scrollIntoView({block:'center'}); }catch(e){} } };
   window.evVcAnalyze=function(){ const tx=$('vcTx'); if(!tx||!tx.value.trim()){ VC.note=['اتكلم أو اكتب الطلب الأول']; vcPrev(); return; } const r=vcParse(tx.value); VC.buyer=r.buyer; VC.rows=r.rows; VC.note=r.note; vcPrev(); };
   window.evVcBuyer=function(v){ VC.buyer=v; };
   window.evVcSet=function(i,k,v){ const r=VC.rows[i]; if(!r) return; if(k==='id'){ r.id=v; const it=(EV.cur.items||[]).find(x=>x.id===v); if(it) r.p=+it.price||0; vcPrev(); } else r[k]=parseFloat(ad(v))||0; };
