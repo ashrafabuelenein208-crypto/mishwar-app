@@ -7788,7 +7788,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
         +'<div class="iv-tbl"><table><thead><tr><th>م</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="iv-empty"><b>🧾</b>لسه مفيش أصناف — ابحث عن صنف فوق وأضفه</td></tr>')+'</tbody></table></div></section>'
       +'<div class="iv-two"><section class="iv-card"><div class="iv-ct"><i>3</i>الحالة والتوقيع</div>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+fld('التوقيع','<b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b>')+(INV.portalNo?fld('رقم البوابة','<b>'+esc(INV.portalNo)+'</b>'):'')+etaInfo()+'</section>'
       +'<section class="iv-card"><div class="iv-ct"><i>4</i>الإجماليات</div><div class="iv-tots" id="evInvTot">'+totHtml()+'</div></section></div>'
-      +'<div class="iv-bar">'+b('p','evInvSave()','💾 حفظ','F5')+b('g','evInvSign()','🔏 توقيع','F10')
+      +'<div class="iv-bar">'+b('p','evInvSave()','💾 حفظ','F5')+b('g','evInvSign()','🔏 توقيع','F10')+b('','evInvPdf()','📄 تنزيل PDF')
         +(sOk&&!INV.etaUuid&&INV.sendState!=='sending'?b('r','evInvSubmit()','📤 إرسال للمصلحة','F9'):'')
         +(INV.etaStatus!=='Invalid'?b('','evInvToPos()',INV.posSynced?'📊 ترحيل تاني للموقف':(INV.etaStatus==='Valid'?'📊 ترحيل للموقف الضريبي':'📊 ترحيل تجريبي للموقف')):'')+(INV.posSynced?b('','evInvUnPos()','↩ سحب من الموقف'):'')+(INV.etaUuid?b('','evInvCheck()','🔄 تحقق من الحالة','F1'):b('','evInvSent()',INV.status==='sent'?'↩ إلغاء «مُرسلة»':'✔ تعليم مُرسلة يدوي'))
         +b('','evInvCopy()','📋 نسخ','F12')+(sOk?b('','evInvDlJson()','⬇ JSON'):'')+b('','evInvClose()','إغلاق')+'</div>'
@@ -8126,6 +8126,64 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evInvUnlock=async function(){
     if(!confirm('اتأكدت إن المستند مش موجود على بوابة المصلحة؟ لو موجود وبعته تاني هيتكرر.')) return;
     INV.sendState=''; await evInvSave(); audit('السماح بإعادة الإرسال',INV.no); odForm();
+  };
+  /* ---------- تنزيل الفاتورة PDF ---------- */
+  window.evInvPdf=async function(){
+    invRead(); const m=$('evInvMsg'), say=s=>{ if(m) m.textContent=s; };
+    if(!INV||!(INV.lines||[]).length){ say('مفيش بنود في الفاتورة'); return; }
+    const c=EV.cur, b=c.branches.find(x=>x.id===INV.branchId)||{}, by=INV.buyer||{}, t=calcInv(INV), L=INV.lines||[];
+    const host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;';
+    const lj=s=>new Promise((ok,no)=>{ const e=document.createElement('script'); e.src=s; e.onload=ok; e.onerror=()=>no(new Error('تعذّر تحميل مكتبة الـ PDF — تأكد من الإنترنت')); document.head.appendChild(e); });
+    try{
+      say('جاري تجهيز الـ PDF...');
+      if(!window.html2canvas) await lj('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      if(!window.jspdf) await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      let qr='';
+      if(INV.etaUuid&&INV.longId){
+        try{
+          if(!window.QRCode) await lj('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
+          const base=(c.etaEnv==='prod')?'https://invoicing.eta.gov.eg':'https://preprod.invoicing.eta.gov.eg';
+          const q=document.createElement('div'); new QRCode(q,{text:base+'/documents/'+INV.etaUuid+'/share/'+INV.longId,width:120,height:120,correctLevel:QRCode.CorrectLevel.M});
+          const cv=q.querySelector('canvas'); if(cv) qr=cv.toDataURL('image/png');
+        }catch(e){ qr=''; }
+      }
+      const addr=x=>[x.bld&&x.street?x.bld+' '+x.street:x.street,x.city,x.gov].filter(Boolean).join('، ');
+      const dt=(DT_L[INV.docType||'I']||'فاتورة'), st=ST_L[invStatus(INV)]||'';
+      const td='padding:7px 6px;border-bottom:1px solid #e3e8ee;text-align:center;font-size:12.5px;';
+      const th='padding:8px 6px;background:#00699c;color:#fff;font-size:12.5px;font-weight:800;';
+      const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'text-align:right;"><b>'+esc(l.name)+'</b>'+(l.egs?'<br><span dir="ltr" style="font-size:10.5px;color:#667;">'+esc(l.egs)+'</span>':'')+'</td><td style="'+td+'">'+esc(l.unit||'')+'</td><td style="'+td+'" dir="ltr">'+money(l.price)+'</td><td style="'+td+'">'+esc(l.qty)+'</td><td style="'+td+'">'+(+l.disc||0)+'%</td><td style="'+td+'">'+esc(taxText(l.tax))+'</td><td style="'+td+'font-weight:800;" dir="ltr">'+money(k.total)+'</td></tr>'; }).join('');
+      const tr=(a,v,bold)=>'<tr><td style="padding:6px 10px;'+(bold?'font-weight:900;background:#eaf4fa;font-size:14px;':'color:#445;')+'">'+a+'</td><td dir="ltr" style="padding:6px 10px;text-align:left;'+(bold?'font-weight:900;background:#eaf4fa;font-size:14px;':'font-weight:700;')+'">'+v+'</td></tr>';
+      const meta=(a,v)=>v?'<div style="margin:3px 0;"><span style="color:#667;">'+a+': </span><b>'+esc(v)+'</b></div>':'';
+      host.innerHTML='<div id="ivPdfPg" dir="rtl" style="width:794px;box-sizing:border-box;padding:38px 40px;background:#fff;color:#111;font-family:inherit;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:3px solid #00699c;padding-bottom:14px;">'
+          +'<div><div style="font-size:22px;font-weight:900;color:#00699c;">'+esc(c.name)+'</div>'
+          +'<div style="margin-top:6px;font-size:12.5px;">الرقم الضريبي: <b dir="ltr">'+esc(c.rin||'')+'</b></div>'
+          +(addr(b)?'<div style="font-size:12.5px;margin-top:2px;">'+esc(addr(b))+'</div>':'')+'</div>'
+          +'<div style="text-align:left;"><div style="font-size:24px;font-weight:900;">'+esc(dt)+'</div><div dir="ltr" style="font-size:15px;font-weight:800;color:#00699c;">'+esc(INV.no)+'</div>'+(st?'<div style="margin-top:4px;font-size:12.5px;color:#667;">الحالة: '+esc(st)+'</div>':'')+'</div></div>'
+        +'<div style="display:flex;gap:18px;margin-top:16px;font-size:13px;">'
+          +'<div style="flex:1;background:#f5f8fb;border-radius:10px;padding:10px 14px;"><div style="font-weight:900;color:#00699c;margin-bottom:5px;">بيانات المستند</div>'+meta('التاريخ',INV.date)+meta('تاريخ الخدمة',INV.svcDate)+meta('الفرع',b.code?b.code+' / '+(b.name||''):'')+meta('مرجع أمر الشراء',INV.poRef)+meta('مرجع أمر البيع',INV.soRef)+'</div>'
+          +'<div style="flex:1;background:#f5f8fb;border-radius:10px;padding:10px 14px;"><div style="font-weight:900;color:#00699c;margin-bottom:5px;">العميل</div>'+meta('الاسم',by.name)+meta('الرقم الضريبي / القومي',by.idn)+meta('العنوان',addr(by))+'</div></div>'
+        +'<table style="width:100%;border-collapse:collapse;margin-top:18px;"><thead><tr><th style="'+th+'">م</th><th style="'+th+'text-align:right;">الصنف</th><th style="'+th+'">الوحدة</th><th style="'+th+'">السعر</th><th style="'+th+'">الكمية</th><th style="'+th+'">خصم</th><th style="'+th+'">الضريبة</th><th style="'+th+'">الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table>'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:18px;gap:20px;">'
+          +'<div style="text-align:center;font-size:11px;color:#556;">'+(qr?'<img src="'+qr+'" style="width:120px;height:120px;"><div style="margin-top:3px;">QR — مستند المصلحة</div>':'')+'</div>'
+          +'<table style="min-width:290px;border-collapse:collapse;font-size:13px;">'+tr('الإجمالي بدون خصم',money(t.gross))+tr('الخصم',money(t.disc))+tr('الصافي قبل الضريبة',money(t.net))+tr('ضريبة القيمة المضافة',money(t.tax))+(t.wht?tr('خصم من المنبع',money(t.wht)):'')+tr('الإجمالي النهائي',money(t.total)+' ج',1)+'</table></div>'
+        +(INV.etaUuid?'<div style="margin-top:20px;padding-top:10px;border-top:1px dashed #bbb;font-size:10.5px;color:#556;" dir="ltr">UUID: '+esc(INV.etaUuid)+(INV.longId?'<br>Long ID: '+esc(INV.longId):'')+'</div>':'')
+        +'</div>';
+      document.body.appendChild(host);
+      if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+      const cv=await html2canvas(host.firstElementChild,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+      const { jsPDF }=window.jspdf, doc=new jsPDF({unit:'mm',format:'a4',compress:true});
+      const ph=Math.floor(cv.width*297/210); let y=0, pg=0;
+      while(y<cv.height){
+        const h=Math.min(ph,cv.height-y), sl=document.createElement('canvas'); sl.width=cv.width; sl.height=ph;
+        const x=sl.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,sl.width,sl.height); x.drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+        if(pg) doc.addPage(); doc.addImage(sl.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
+        y+=ph; pg++;
+      }
+      doc.save(String(INV.no||'invoice').replace(/[\\/:*?"<>|]/g,'_')+'.pdf');
+      say('✓ تم تنزيل الـ PDF');
+    }catch(e){ say('✗ تعذّر إنشاء الـ PDF: '+(e&&e.message||'')); }
+    finally{ host.remove(); }
   };
   window.evInvSubmit=async function(){
     invRead(); const m=$('evInvMsg'), c=EV.cur, env=c.etaEnv||'pre';
