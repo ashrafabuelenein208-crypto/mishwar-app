@@ -6829,6 +6829,13 @@ populateClientHelpers();
   };
 
 
+  /* مفاتيح الصفوف الموجودة في شهر معيّن (علشان المزامنة ما تكررش ولا تجيب تفاصيل فاتورة مترحّلة) */
+  window.finPosKeys=async function(clientId,m){
+    const col=savedCol(clientId), set=new Set(); if(!col) return set;
+    const old=await col.doc(String(m)).collection('rows').get();
+    old.docs.forEach(d=>{ try{ JSON.parse(d.data().rows).forEach(a=>set.add([String(a[7]).replace(/\D/g,''),String(a[9]).replace(/\D/g,''),a[6],a[0]].join('|'))); }catch(e){} });
+    return set;
+  };
   /* سحب فاتورة اتحوّلت من التطبيق (للتجربة أو للتصحيح) — بيمسح صفوف التطبيق بس */
   window.finRemoveInvoice=async function(clientId,m,key){
     const col=savedCol(clientId); if(!col) throw new Error('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');
@@ -7289,7 +7296,7 @@ populateClientHelpers();
 .od-x{border:0;background:none;cursor:pointer;font-size:15px;opacity:.7}.od-empty{text-align:center;color:#6b7280;padding:26px}.od-hint{color:#6b7280;font-size:12.5px;margin:10px 0}
 .od-warn{background:#fff3cd;color:#664d03;border-radius:4px;padding:10px;margin-bottom:8px}.od-ok{background:#d4edda;color:#155724;border-radius:4px;padding:10px;margin-bottom:8px}
 .od-kan{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}.od-card{position:relative;background:#fff;border:1px solid #d8dadd;border-inline-start:4px solid #714b67;border-radius:4px;padding:12px;cursor:pointer}.od-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}.od-card .od-x{position:absolute;top:6px;left:6px}
-.b-valid{background:#c3e6cb;color:#0b4f1e}.b-invalid{background:#f5c6cb;color:#721c24}.od-step.on.bad{background:#dc3545}
+.b-valid{background:#c3e6cb;color:#0b4f1e}.b-invalid{background:#f5c6cb;color:#721c24}.b-cancelled{background:#e2e3e5;color:#383d41;text-decoration:line-through}.od-step.on.bad{background:#dc3545}
 
 /* ===== الفاتورة الإلكترونية: تصميم متناسق مع التطبيق ===== */
 .od{background:transparent;color:var(--ink);border-radius:20px;overflow:visible;min-height:60vh}
@@ -7665,7 +7672,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   /* ================= واجهة الفاتورة الإلكترونية (أسلوب Odoo) ================= */
   let EV={list:[],cur:null,tab:'info',q:'',iq:''};
   const OD={page:'dash',sub:'info',ft:'lines',f:'all',q:'',mon:'',loaded:null};
-  const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة',valid:'مقبولة',invalid:'مرفوضة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
+  const ST_L={draft:'مسودة',signed:'موقّعة',sent:'مُرسلة',valid:'مقبولة',invalid:'مرفوضة',cancelled:'ملغاة'}, DT_L={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
   const MENU=[['dash','لوحة المعلومات'],['inv','الفواتير الصادرة'],['inc','الفواتير الواردة'],['cust','العملاء'],['prod','المنتجات'],['sync','المزامنة'],['set','الإعدادات'],['log','السجل']];
   const fld=(l,i)=>'<div class="od-f"><label>'+l+'</label>'+i+'</div>';
   const optH=(arr,sel)=>arr.map(a=>'<option value="'+esc(a[0])+'"'+(String(a[0])===String(sel)?' selected':'')+'>'+esc(a[1])+'</option>').join('');
@@ -7673,7 +7680,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   const dayOf=ts=>{ const d=new Date(ts||Date.now()); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   const invDay=i=>i.dateAuto?dayOf(i.createdAt):(i.date||'');
   const sgnDoc=i=>i.docType==='C'?-1:1;
-  function invStatus(i){ if(i.etaStatus==='Valid') return 'valid'; if(i.etaStatus==='Invalid') return 'invalid'; if(i.etaUuid||i.status==='sent') return 'sent'; return (i.signed&&i.signedFp===fpOf(i))?'signed':'draft'; }
+  function invStatus(i){ if(i.etaStatus==='Cancelled'||i.etaStatus==='Rejected') return 'cancelled'; if(i.etaStatus==='Valid') return 'valid'; if(i.etaStatus==='Invalid') return 'invalid'; if(i.etaUuid||i.status==='sent') return 'sent'; return (i.signed&&i.signedFp===fpOf(i))?'signed':'draft'; }
   async function audit(action,ref){ try{ let u=''; try{ u=(firebase.auth().currentUser||{}).email||''; }catch(e){} await col().doc(EV.cur.id).collection('auditLogs').add({ts:Date.now(),action:String(action),ref:String(ref||''),user:u}); }catch(e){} }
   async function persist(patch){ await col().doc(EV.cur.id).update(patch); Object.assign(EV.cur,patch); }
   async function evLoad(){
@@ -7774,7 +7781,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   const OUT_F=['all','draft','valid'];
   function odRows(){
     const q=nz(OD.q); if(!OUT_F.includes(OD.f)) OD.f='all';
-    let L=INVS.filter(i=>{ const s=invStatus(i); return s==='draft'||s==='valid'||!!i.posSynced; });
+    let L=INVS.filter(i=>{ const s=invStatus(i); return s==='draft'||s==='valid'||s==='cancelled'||!!i.posSynced; });
     if(OD.f!=='all') L=L.filter(i=>invStatus(i)===OD.f);
     if(OD.m) L=L.filter(i=>invDay(i).slice(0,7)===OD.m);
     if(q) L=L.filter(i=>nz(i.no).includes(q)||nz(i.buyer&&i.buyer.name).includes(q)||nz(i.buyer&&i.buyer.idn).includes(q));
@@ -7911,10 +7918,11 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     $('odMain').innerHTML='<div class="od-cp"><b>الفواتير الواردة</b><span class="od-cnt">'+L.length+' سجل</span></div><div class="od-wrap"><table class="od-table"><thead><tr><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>المورد / رقم التسجيل</th><th>الإجمالي</th></tr></thead><tbody>'
       +(L.map(x=>'<tr><td>'+esc(x.no||'')+'</td><td>'+esc(DT_L[x.docType||'I']||'فاتورة')+'</td><td>'+esc(x.date||'')+'</td><td>'+esc(x.name||'—')+(x.rin?'<br><small dir="ltr" style="color:#6b7280">'+esc(x.rin)+'</small>':'')+'</td><td dir="ltr" style="text-align:right">'+money(x.total)+'</td></tr>').join('')||'<tr><td colspan="5" class="od-empty">لا توجد فواتير واردة. اضغط «المزامنة» من القائمة لسحبها من المصلحة.</td></tr>')+'</tbody></table></div>';
   }
-  /* ---------- مزامنة الفواتير الواردة (المشتريات) من المصلحة ---------- */
-  const SY={busy:false,log:'',m:''};
+  /* ---------- مزامنة المصلحة: الواردة (مشتريات) + الصادرة (مبيعات) + الإلغاءات ---------- */
+  const SY={busy:false,log:'',m:'',span:'1'};
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const CAIRO_SY=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'});
+  const TYPE_AR={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
   async function etaGet(path,body,say){
     for(let k=0;k<5;k++){
       const r=await sgn(path,body);
@@ -7927,85 +7935,136 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const a=ym.split('-').map(Number), last=new Date(Date.UTC(a[0],a[1],0)).getUTCDate(), p=n=>String(n).padStart(2,'0'), base=a[0]+'-'+p(a[1])+'-';
     return [[base+'01T00:00:00Z',base+'15T23:59:59Z'],[base+'16T00:00:00Z',base+p(last)+'T23:59:59Z']];
   }
+  function syMonths(ym,span){
+    const a=ym.split('-').map(Number), out=[]; for(let k=0;k<span;k++){ const d=new Date(Date.UTC(a[0],a[1]-1-k,1)); out.push(d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')); } return out.reverse();
+  }
+  async function fetchDocs(dirn,ym,env,rin,say){
+    const out=[];
+    for(const ch of syChunks(ym)){
+      let tok='';
+      do{
+        say('جاري جلب '+(dirn==='Sent'?'الصادرة':'الواردة')+' ('+ym+')... '+out.length+' مستند');
+        const q='direction='+dirn+'&pageSize=100&issueDateFrom='+encodeURIComponent(ch[0])+'&issueDateTo='+encodeURIComponent(ch[1])+(tok?'&continuationToken='+encodeURIComponent(tok):'');
+        const r=await etaGet('/eta/search',{env,rin,query:q},say), j=safeJson(r.body);
+        if(r.code!==200||!j) throw new Error('المصلحة ردّت HTTP '+r.code+' '+String(r.body||'').slice(0,200));
+        (j.result||[]).forEach(d=>out.push(d)); tok=(j.metadata&&j.metadata.continuationToken)||''; if(tok==='EndofResultSet') tok='';
+        await sleep(5500);
+      }while(tok);
+    }
+    return out;
+  }
+  async function rawInfo(d,env,rin,say){
+    const r=await etaGet('/eta/raw',{env,rin,uuid:d.uuid},say), j=safeJson(r.body);
+    if(r.code!==200||!j) throw new Error('HTTP '+r.code);
+    let doc=j.document!==undefined?j.document:j; if(typeof doc==='string') doc=safeJson(doc)||{};
+    const tt=(doc.taxTotals||[]), amt=t=>r2(tt.filter(x=>x.taxType===t).reduce((s,x)=>s+(+x.amount||0),0));
+    const iso=d.dateTimeIssued||doc.dateTimeIssued||'', day=CAIRO_SY.format(iso?new Date(iso):new Date());
+    const tp=String(d.typeName||doc.documentType||'I').charAt(0).toUpperCase(), docType=TYPE_AR[tp]?tp:'I', p=day.split('-').map(Number);
+    return {day,docType,ym:p[0]*100+p[1],net:r2(d.netAmount!=null?d.netAmount:doc.netAmount),vat:amt('T1'),wht:amt('T4'),total:r2(d.total!=null?d.total:doc.totalAmount),
+      no:String(d.internalId||doc.internalID||d.uuid),date:new Date(Date.UTC(p[0],p[1]-1,p[2]))};
+  }
+  const isCx=s=>s==='Cancelled'||s==='Rejected';
   window.evSyncNow=async function(){
     if(SY.busy) return; const c=EV.cur, env=c.etaEnv||'pre', rin=String(c.rin||'').replace(/\D/g,'');
-    const ym=($('syncM')||{}).value||dayOf(Date.now()).slice(0,7); SY.m=ym;
-    const out=$('syncOut'), say=t=>{ SY.log=t; if($('syncOut')) $('syncOut').textContent=t; };
+    const ym0=($('syncM')||{}).value||dayOf(Date.now()).slice(0,7), span=+(($('syncSpan')||{}).value||1); SY.m=ym0; SY.span=String(span);
+    const say=t=>{ SY.log=t; if($('syncOut')) $('syncOut').textContent=t; };
     if(!rin){ say('✗ رقم التسجيل الضريبي للشركة ناقص'); return; }
     SY.busy=true; const btn=$('syncBtn'); if(btn) btn.disabled=true;
-    const st={found:0,added:0,known:0,skip:0,fail:0,pos:0,noCl:false,upd:0};
+    const st={found:0,added:0,known:0,skipIn:0,fail:0,pos:0,noCl:false,rmIn:0,sPos:0,sNew:0,sCx:0,sKnown:0};
     try{
-      await loadInc();
+      await loadInc(); await loadInvs(true);
       const have=new Map(INC.map(x=>[x.uuid||x.id,x]));
       const cl=(typeof loadClients==='function'?loadClients():[]).find(x=>String(x.taxRegNo||'').replace(/\D/g,'')===rin);
-      const rows=[], newDocs=[];
-      let pages=0;
-      for(const ch of syChunks(ym)){
-        let tok='';
-        do{
-          say('جاري جلب الفواتير الواردة... (صفحة '+(++pages)+')');
-          const q='direction=Received&pageSize=100&issueDateFrom='+encodeURIComponent(ch[0])+'&issueDateTo='+encodeURIComponent(ch[1])+(tok?'&continuationToken='+encodeURIComponent(tok):'');
-          const r=await etaGet('/eta/search',{env,rin,query:q},say), j=safeJson(r.body);
-          if(r.code!==200||!j) throw new Error('المصلحة ردّت HTTP '+r.code+' '+String(r.body||'').slice(0,200));
-          const list=j.result||[]; tok=(j.metadata&&j.metadata.continuationToken)||'';
-          if(tok==='EndofResultSet') tok='';
-          for(const d of list){
-            st.found++;
-            const uuid=d.uuid, old=have.get(uuid);
-            if(String(d.status)!=='Valid'){
-              if(old){ try{ await col().doc(c.id).collection('incoming').doc(uuid).delete(); if(old.posCid&&old.posYm) await window.finRemoveInvoice(old.posCid,old.posYm,{num:old.no,type:old.posType,sTax:old.rin}); have.delete(uuid); st.upd++; }catch(e){} }
-              else st.skip++;
+      if(!cl) st.noCl=true;
+      const inRows=[], salesRows=[];
+      for(const ym of syMonths(ym0,span)){
+        /* ===== الواردة ===== */
+        const rec=await fetchDocs('Received',ym,env,rin,say), newIn=[];
+        for(const d of rec){
+          st.found++; const old=have.get(d.uuid);
+          if(String(d.status)!=='Valid'){
+            if(old){ try{ await col().doc(c.id).collection('incoming').doc(d.uuid).delete(); if(old.posCid&&old.posYm) await window.finRemoveInvoice(old.posCid,old.posYm,{num:old.no,type:old.posType,sTax:old.rin}); have.delete(d.uuid); st.rmIn++; }catch(e){} }
+            else st.skipIn++;
+            continue;
+          }
+          if(old){ st.known++; continue; }
+          newIn.push(d);
+        }
+        let i=0;
+        for(const d of newIn){
+          i++; say('جاري قراءة تفاصيل واردة '+i+' من '+newIn.length+' ('+ym+')...');
+          try{
+            const x=await rawInfo(d,env,rin,say);
+            const row={type:TYPE_AR[x.docType],date:x.date,val:x.net,vat:x.vat,wh:x.wht,tot:x.total,num:x.no,sTax:String(d.issuerId||'').replace(/\D/g,''),sName:d.issuerName||'',bTax:rin,bName:c.name||'',src:'app'};
+            inRows.push({rec:{uuid:d.uuid,id:d.uuid,no:x.no,docType:x.docType,date:x.day,name:d.issuerName||'',rin:row.sTax,net:x.net,vat:x.vat,wht:x.wht,total:x.total,status:'Valid',longId:d.longId||'',syncedAt:Date.now()},row,ym:x.ym});
+          }catch(e){ st.fail++; }
+          await sleep(400);
+        }
+        /* ===== الصادرة (مبيعات) + الإلغاءات ===== */
+        const sent=await fetchDocs('Sent',ym,env,rin,say);
+        let keys=null, keysYm=0;
+        for(const d of sent){
+          const inv=INVS.find(x=>x.etaUuid===d.uuid), status=String(d.status), tp=String(d.typeName||'I').charAt(0).toUpperCase(), typeAr=TYPE_AR[tp]||'فاتورة';
+          try{
+            if(isCx(status)){
+              if(inv){
+                if(inv.etaStatus!==status){ const u={etaStatus:status}; await icol().doc(inv.id).update(u); Object.assign(inv,u); }
+                if(inv.posSynced){ await posUnsync(inv); await icol().doc(inv.id).update({posSynced:0,posYm:0,posCid:'',posType:'',posBuyCid:''}); st.sCx++; }
+              }else if(cl){
+                const iso=d.dateTimeIssued||'', p=CAIRO_SY.format(iso?new Date(iso):new Date()).split('-').map(Number), n=await window.finRemoveInvoice(cl.id,p[0]*100+p[1],{num:String(d.internalId||d.uuid),type:typeAr});
+                if(n) st.sCx++;
+              }
               continue;
             }
-            if(old){ st.known++; continue; }
-            newDocs.push(d);
-          }
-          if(tok) await sleep(5500);
-        }while(tok);
-        await sleep(5500);
+            if(status!=='Valid') continue;
+            if(inv){
+              if(inv.etaStatus!=='Valid'){ const u={etaStatus:'Valid'}; await icol().doc(inv.id).update(u); Object.assign(inv,u); }
+              if(!inv.posSynced){
+                say('جاري ترحيل مبيعات '+inv.no+'...');
+                const r=await posSync(inv);
+                if(r.ok){ const u={posSynced:Date.now(),posYm:r.ym,posCid:r.cid,posType:r.type,posBuyCid:r.bcid||''}; await icol().doc(inv.id).update(u); Object.assign(inv,u); st.sPos++; }
+              }else st.sKnown++;
+              continue;
+            }
+            if(!cl) continue;
+            /* فاتورة صادرة اتعملت من برنامج تاني: نضيفها للمبيعات لو مش موجودة */
+            const iso=d.dateTimeIssued||'', p=CAIRO_SY.format(iso?new Date(iso):new Date()).split('-').map(Number), ymv=p[0]*100+p[1];
+            if(keysYm!==ymv){ keys=await window.finPosKeys(cl.id,ymv); keysYm=ymv; }
+            const key=[rin,String(d.receiverId||'').replace(/\D/g,''),String(d.internalId||d.uuid),typeAr].join('|');
+            if(keys.has(key)){ st.sKnown++; continue; }
+            say('جاري قراءة تفاصيل مبيعات '+(d.internalId||d.uuid)+'...');
+            const x=await rawInfo(d,env,rin,say);
+            salesRows.push({type:TYPE_AR[x.docType],date:x.date,val:x.net,vat:x.vat,wh:x.wht,tot:x.total,num:x.no,sTax:rin,sName:c.name||'',bTax:String(d.receiverId||'').replace(/\D/g,''),bName:d.receiverName||'',src:'app'});
+            await sleep(400);
+          }catch(e){ st.fail++; }
+        }
       }
-      let i=0;
-      for(const d of newDocs){
-        i++; say('جاري قراءة تفاصيل الفاتورة '+i+' من '+newDocs.length+'...');
-        try{
-          const r=await etaGet('/eta/raw',{env,rin,uuid:d.uuid},say), j=safeJson(r.body);
-          if(r.code!==200||!j) throw new Error('HTTP '+r.code);
-          let doc=j.document!==undefined?j.document:j; if(typeof doc==='string') doc=safeJson(doc)||{};
-          const tt=(doc.taxTotals||[]), amt=t=>r2(tt.filter(x=>x.taxType===t).reduce((s,x)=>s+(+x.amount||0),0));
-          const iso=d.dateTimeIssued||doc.dateTimeIssued||'', dt=iso?new Date(iso):new Date(), day=CAIRO_SY.format(dt);
-          const tp=String(d.typeName||doc.documentType||'I').charAt(0).toUpperCase(), docType=({I:'I',C:'C',D:'D'})[tp]||'I';
-          const rec={uuid:d.uuid,id:d.uuid,no:String(d.internalId||doc.internalID||d.uuid),docType,date:day,name:d.issuerName||'',rin:String(d.issuerId||'').replace(/\D/g,''),
-            net:r2(d.netAmount!=null?d.netAmount:doc.netAmount),vat:amt('T1'),wht:amt('T4'),total:r2(d.total!=null?d.total:doc.totalAmount),status:'Valid',longId:d.longId||'',syncedAt:Date.now()};
-          const p=day.split('-').map(Number);
-          rec._row={type:({I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'})[docType],date:new Date(Date.UTC(p[0],p[1]-1,p[2])),val:rec.net,vat:rec.vat,wh:rec.wht,tot:rec.total,num:rec.no,sTax:rec.rin,sName:rec.name,bTax:rin,bName:c.name||'',src:'app'};
-          rec._ym=p[0]*100+p[1];
-          rows.push(rec);
-        }catch(e){ st.fail++; }
-        await sleep(400);
-      }
-      /* ترحيل المشتريات للموقف الضريبي للشركة + حفظ الواردة */
-      if(rows.length){
-        if(cl&&window.finPushInvoices){
-          try{ st.pos=await window.finPushInvoices(cl.id,rin,rows.map(x=>Object.assign({},x._row)),{asBuyer:true}); }
-          catch(e){ st.posErr=(e&&e.message)||String(e); }
-        }else st.noCl=true;
+      /* ترحيل المبيعات الجديدة (من برامج تانية) */
+      if(salesRows.length&&cl){ try{ st.sNew=await window.finPushInvoices(cl.id,rin,salesRows); }catch(e){ st.posErr=(e&&e.message)||String(e); } }
+      /* ترحيل المشتريات + حفظ الواردة */
+      if(inRows.length){
+        if(cl&&window.finPushInvoices){ try{ st.pos=await window.finPushInvoices(cl.id,rin,inRows.map(x=>Object.assign({},x.row)),{asBuyer:true}); }catch(e){ st.posErr=(e&&e.message)||String(e); } }
         const batch=db.batch();
-        rows.forEach(x=>{ const row=x._row, ymv=x._ym; delete x._row; delete x._ym; if(cl&&!st.posErr){ x.posSynced=Date.now(); x.posCid=cl.id; x.posYm=ymv; x.posType=row.type; } batch.set(col().doc(c.id).collection('incoming').doc(x.uuid),x); });
-        await batch.commit(); st.added=rows.length;
+        inRows.forEach(x=>{ if(cl&&!st.posErr){ x.rec.posSynced=Date.now(); x.rec.posCid=cl.id; x.rec.posYm=x.ym; x.rec.posType=x.row.type; } batch.set(col().doc(c.id).collection('incoming').doc(x.rec.uuid),x.rec); });
+        await batch.commit(); st.added=inRows.length;
       }
       INCFOR=null; await loadInc();
       try{ await persist({lastSync:Date.now()}); }catch(e){}
-      audit('مزامنة الواردة',ym+' — جديد '+st.added);
-      say('✓ تمت المزامنة ('+ym+'): لقيت '+st.found+' مستند، اتضاف '+st.added+' جديد'+(st.known?('، '+st.known+' موجود قبل كده'):'')+(st.skip?('، '+st.skip+' ملغاة/مرفوضة اتخطّيتها'):'')+(st.upd?('، '+st.upd+' اتشالت لأنها اتلغت'):'')+(st.pos?('، '+st.pos+' اتضافت للموقف الضريبي'):'')
-        +(st.noCl?' ⚠ مفيش عميل في الموقف الضريبي بنفس الرقم الضريبي ('+rin+') فمااتضافتش للموقف':'')+(st.posErr?' ⚠ تعذّر الترحيل للموقف: '+st.posErr:'')+(st.fail?' ⚠ '+st.fail+' تعذّر قراءتها (اضغط مزامنة تاني)':''));
+      audit('مزامنة المصلحة',ym0+' ×'+span+' — واردة جديدة '+st.added+' / مبيعات '+(st.sPos+st.sNew)+' / إلغاءات '+(st.sCx+st.rmIn));
+      say('✓ تمت المزامنة\n'
+        +'• واردة (مشتريات): لقيت '+st.found+'، اتضاف '+st.added+' جديد'+(st.known?'، '+st.known+' موجود قبل كده':'')+(st.pos?'، '+st.pos+' اتضافت للموقف':'')+'\n'
+        +'• صادرة (مبيعات): اترحّل '+(st.sPos+st.sNew)+' للموقف الضريبي'+(st.sKnown?'، '+st.sKnown+' مترحّلة قبل كده':'')+'\n'
+        +'• ملغاة: اتشال '+(st.sCx+st.rmIn)+' من الموقف الضريبي'
+        +(st.noCl?'\n⚠ مفيش عميل في الموقف الضريبي بنفس الرقم الضريبي ('+rin+') فالترحيل ماتمش':'')+(st.posErr?'\n⚠ تعذّر الترحيل: '+st.posErr:'')+(st.fail?'\n⚠ '+st.fail+' مستند تعذّر قراءته — اضغط مزامنة تاني':''));
     }catch(e){ say('✗ '+(e&&e.message?e.message:e)); }
     finally{ SY.busy=false; if($('syncBtn')) $('syncBtn').disabled=false; }
   };
   function pSync(){
     const c=EV.cur, last=c&&c.lastSync?new Date(c.lastSync).toLocaleString('ar-EG'):'لم تتم بعد', m=SY.m||dayOf(Date.now()).slice(0,7);
-    $('odMain').innerHTML='<div class="od-cp"><b>مزامنة الفواتير الواردة</b></div><div class="od-sheet">'+fld('الحالة','<span class="od-badge b-valid">مفعّلة</span>')+fld('آخر مزامنة','<span>'+esc(last)+'</span>')
+    $('odMain').innerHTML='<div class="od-cp"><b>مزامنة المصلحة</b></div><div class="od-sheet">'+fld('الحالة','<span class="od-badge b-valid">مفعّلة</span>')+fld('آخر مزامنة','<span>'+esc(last)+'</span>')
       +fld('الشهر','<input class="od-in" type="month" id="syncM" value="'+esc(m)+'">')
-      +'<p>بتسحب الفواتير <b>المستلمة</b> (المشتريات) من المصلحة لشهر محدد، وتحفظها في «الفواتير الواردة»، وتضيفها كمشتريات في الموقف الضريبي للشركة. محتاج تشغيل <b>run-signer.bat</b> وبيانات دخول الشركة محفوظة.</p>'
+      +fld('المدة','<select class="od-in" id="syncSpan"><option value="1"'+(SY.span==='1'?' selected':'')+'>الشهر ده بس</option><option value="3"'+(SY.span==='3'?' selected':'')+'>آخر 3 شهور (لاكتشاف الإلغاءات المتأخرة)</option></select>')
+      +'<p>بتسحب من المصلحة: <b>الواردة</b> (مشتريات) و<b>الصادرة</b> (مبيعات)، وترحّلهم للموقف الضريبي. وأي فاتورة اتلغت أو اترفضت عند المصلحة بتتشال من الموقف الضريبي تلقائي (ومن مشتريات المشتري لو عميل عندك). محتاج <b>run-signer.bat</b> شغّال.</p>'
       +'<div class="od-btns"><button class="od-btn p" id="syncBtn" onclick="evSyncNow()">🔄 مزامنة الآن</button></div><p id="syncOut" style="white-space:pre-wrap;line-height:1.8">'+esc(SY.log||'')+'</p></div>';
   }
   window.evSaveInfo=async function(){
@@ -8422,6 +8481,13 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     try{ const r=await posSync(INV); if(!r.ok){ m.textContent='✗ '+r.msg; return; } INV.posSynced=Date.now(); INV.posYm=r.ym; INV.posCid=r.cid; INV.posType=r.type; INV.posBuyCid=r.bcid||''; await evInvSave(); odForm(); $('evInvMsg').textContent=(r.n?('✓ اتحوّلت للموقف الضريبي — '+r.client):'✓ موجودة بالفعل في الموقف الضريبي')+(r.bcid?(r.bn?(' — واتضافت كمشتريات عند «'+r.bname+'»'):(' — ومسجّلة قبل كده كمشتريات عند «'+r.bname+'»')):'')+(r.berr?(' ⚠ تعذّر ترحيل المشتريات لـ «'+r.bname+'»: '+r.berr):''); }
     catch(e){ m.textContent='✗ تعذّر الترحيل: '+(e&&e.message||e); }
   };
+  async function posUnsync(inv){
+    if(!inv.posSynced||!inv.posYm||!inv.posCid) return 0;
+    const type=inv.posType||'فاتورة', n=await window.finRemoveInvoice(inv.posCid,inv.posYm,{num:inv.no,type});
+    if(inv.posBuyCid){ try{ await window.finRemoveInvoice(inv.posBuyCid,inv.posYm,{num:inv.no,type,sTax:String((EV.cur&&EV.cur.rin)||'').replace(/\D/g,'')}); }catch(e){} }
+    inv.posSynced=0; inv.posYm=0; inv.posCid=''; inv.posType=''; inv.posBuyCid='';
+    return n;
+  }
   window.evInvUnPos=async function(){
     const m=$('evInvMsg'); if(!INV.posSynced||!INV.posYm||!INV.posCid){ m.textContent='الفاتورة دي مش مرحّلة'; return; }
     if(!confirm('سحب '+INV.no+' من الموقف الضريبي؟')) return;
@@ -8433,7 +8499,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     try{ m.textContent='جاري الاستعلام...'; const r=await sgn('/eta/document',{env:c.etaEnv||'pre',rin:c.rin,uuid:INV.etaUuid}), j=safeJson(r.body);
       if(r.code!==200||!j){ m.textContent='✗ تعذّر الاستعلام (HTTP '+r.code+')'; return; }
       INV.etaStatus=j.status||INV.etaStatus; INV.etaErr=(INV.etaStatus==='Invalid')?(errList(j.validationResults||j).join('\n')):''; INV.etaResp=String(r.body).slice(0,4000);
-      await evInvSave(); audit('استعلام حالة',INV.no+' '+INV.etaStatus); odForm(); $('evInvMsg').textContent='حالة المصلحة: '+INV.etaStatus+(INV.etaStatus==='Invalid'?' — التفاصيل في تبويب ETA':'');
+      let rmMsg=''; if((INV.etaStatus==='Cancelled'||INV.etaStatus==='Rejected')&&INV.posSynced){ try{ await posUnsync(INV); rmMsg=' — واتشالت من الموقف الضريبي (ومن مشتريات المشتري لو كان عميل عندك)'; }catch(e){ rmMsg=' ⚠ تعذّر سحبها من الموقف: '+((e&&e.message)||e); } }
+      await evInvSave(); audit('استعلام حالة',INV.no+' '+INV.etaStatus); odForm(); $('evInvMsg').textContent='حالة المصلحة: '+INV.etaStatus+(INV.etaStatus==='Invalid'?' — التفاصيل في تبويب ETA':'')+rmMsg;
     }catch(e){ m.textContent='✗ '+sgnErr(e); }
   };
 
