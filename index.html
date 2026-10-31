@@ -7778,10 +7778,10 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     odList();
   }
   /* الصادرة: مسودة + مقبولة بس. النوع (فاتورة / إشعار دائن / إشعار مدين) قبل التاريخ، ورقم تسجيل العميل تحت اسمه */
-  const OUT_F=['all','draft','valid'];
+  const OUT_F=['all','draft','signed','sent','valid','invalid','cancelled'];
   function odRows(){
     const q=nz(OD.q); if(!OUT_F.includes(OD.f)) OD.f='all';
-    let L=INVS.filter(i=>{ const s=invStatus(i); return s==='draft'||s==='valid'||s==='cancelled'||!!i.posSynced; });
+    let L=INVS.slice();
     if(OD.f!=='all') L=L.filter(i=>invStatus(i)===OD.f);
     if(OD.m) L=L.filter(i=>invDay(i).slice(0,7)===OD.m);
     if(q) L=L.filter(i=>nz(i.no).includes(q)||nz(i.buyer&&i.buyer.name).includes(q)||nz(i.buyer&&i.buyer.idn).includes(q));
@@ -7791,7 +7791,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   function odList(){
     const r=odRows();
     $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="odNew(\'I\')">＋ إنشاء فاتورة</button><button class="od-btn" onclick="evVoice()">🎤 بالصوت</button><b>الفواتير الصادرة</b></div><input class="od-search" placeholder="🔍 بحث بالرقم أو العميل أو رقم التسجيل" value="'+esc(OD.q)+'" oninput="odQ(this.value)"></div>'
-      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['valid','مقبولة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span>'+(function(){ const AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], ms=[...new Set(INVS.map(i=>invDay(i).slice(0,7)).filter(Boolean))].sort().reverse(); return '<select class="od-search" style="max-width:170px" onchange="odSet(\'m\',this.value)"><option value="">كل الشهور</option>'+ms.map(m=>{ const a=m.split('-'); return '<option value="'+m+'"'+(OD.m===m?' selected':'')+'>'+(AR[+a[1]-1]||m)+' '+a[0]+'</option>'; }).join('')+'</select>'; })()+'</div>'
+      +'<div class="od-chips">'+[['all','الكل'],['draft','مسودة'],['signed','موقّعة'],['sent','مُرسلة'],['valid','مقبولة'],['invalid','مرفوضة'],['cancelled','ملغاة']].map(f=>'<button class="od-chip'+(OD.f===f[0]?' on':'')+'" onclick="odSet(\'f\',\''+f[0]+'\')">'+f[1]+'</button>').join('')+'<span class="od-cnt" id="odCnt">'+r.n+' سجل</span>'+(function(){ const AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], ms=[...new Set(INVS.map(i=>invDay(i).slice(0,7)).filter(Boolean))].sort().reverse(); return '<select class="od-search" style="max-width:170px" onchange="odSet(\'m\',this.value)"><option value="">كل الشهور</option>'+ms.map(m=>{ const a=m.split('-'); return '<option value="'+m+'"'+(OD.m===m?' selected':'')+'>'+(AR[+a[1]-1]||m)+' '+a[0]+'</option>'; }).join('')+'</select>'; })()+'</div>'
       +'<div class="od-chips"><button class="od-btn p" onclick="evPosBulk()">📊 ترحيل المحدد للموقف الضريبي</button><span class="od-cnt" id="odSelCnt">'+Object.values(OD.sel||{}).filter(Boolean).length+' محدد</span><span id="odSelMsg" style="font-size:12.5px;opacity:.85"></span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th><input type="checkbox" title="تحديد الكل" onchange="evSelAll(this.checked)"></th><th>الرقم</th><th>النوع</th><th>التاريخ</th><th>العميل / رقم التسجيل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody id="odTb">'+r.h+'</tbody></table></div>';
   }
@@ -7827,7 +7827,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
       return (p.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+p.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')
         +fld('التوقيع','<span>'+(signedOk()?'موقّعة ✓':'غير موقّعة')+'</span>')+(INV.portalNo?fld('رقم البوابة','<span>'+esc(INV.portalNo)+'</span>'):'')
         +'<div class="od-btns" style="margin-top:8px"><button class="od-btn" onclick="evSignTest()">🔌 اختبار التوقيع</button></div>'+etaInfo(); }
-    return '<div class="od-wrap"><table class="od-table od-lines"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'
+    return '<div class="od-wrap"><table class="od-table od-lines"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>خصم %</th><th>الضريبة</th><th>خصم وتحصيل % / النوع</th><th>الإجمالي</th><th></th></tr></thead><tbody>'
       +INV.lines.map((l,i)=>'<tr style="cursor:default"><td><b>'+esc(l.name)+'</b><br><small dir="ltr">'+esc(l.egs)+'</small></td>'+['qty','price','disc'].map(k=>'<td><input inputmode="decimal" value="'+esc(l[k])+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>').join('')+'<td>'+esc(taxText(l.tax))+'</td><td><input inputmode="decimal" value="'+esc(l.wht||0)+'" oninput="evLn('+i+',\'wht\',this.value)"></td><td id="ev_lt'+i+'" dir="ltr">'+money(calcLine(l).total)+' ج</td><td><button class="od-x" onclick="evLnDel('+i+')">🗑</button></td></tr>').join('')
       +'<tr style="cursor:default"><td colspan="8"><input id="ev_pick" list="ev_dl" placeholder="➕ أضف بند (اكتب كود أو اسم المنتج)" onchange="evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist></td></tr></tbody></table></div><div class="od-tot" id="evInvTot">'+totHtml()+'</div>';
   }
@@ -7838,7 +7838,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const first=!window._ivSeen; window._ivSeen=1;
     const lock=!!INV.etaUuid;
     const inp=(i,k,w)=>'<td><input inputmode="decimal" value="'+esc(w)+'" oninput="evLn('+i+',\''+k+'\',this.value)"></td>';
-    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><input class="iv-nmi" value="'+esc(l.name)+'" '+(lock?'disabled':'')+' oninput="evLnS('+i+',\'name\',this.value)"><small>'+esc(l.egs)+'</small></td><td><select class="iv-unit" '+(lock?'disabled':'')+' onchange="evLnS('+i+',\'unit\',this.value)">'+unitOpts(l.unit)+'</select></td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td><select class="iv-unit" '+(lock?'disabled':'')+' onchange="evLnTax('+i+',this.value)">'+TAXK.map(x=>'<option value="'+x[0]+'"'+(((l.tax&&l.tax.kind)||'v14')===x[0]?' selected':'')+'>'+((x[0]==='tbl'||x[0]==='cus')&&l.tax&&l.tax.kind===x[0]?esc(taxText(l.tax)):x[1])+'</option>').join('')+'</select></td>'+inp(i,'wht',l.wht||0)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
+    const rows=L.map((l,i)=>{ const k=calcLine(l); return '<tr><td>'+(i+1)+'</td><td class="nm"><input class="iv-nmi" value="'+esc(l.name)+'" '+(lock?'disabled':'')+' oninput="evLnS('+i+',\'name\',this.value)"><small>'+esc(l.egs)+'</small></td><td><select class="iv-unit" '+(lock?'disabled':'')+' onchange="evLnS('+i+',\'unit\',this.value)">'+unitOpts(l.unit)+'</select></td>'+inp(i,'price',l.price)+inp(i,'qty',l.qty)+inp(i,'disc',l.disc)+'<td><select class="iv-unit" '+(lock?'disabled':'')+' onchange="evLnTax('+i+',this.value)">'+TAXK.map(x=>'<option value="'+x[0]+'"'+(((l.tax&&l.tax.kind)||'v14')===x[0]?' selected':'')+'>'+((x[0]==='tbl'||x[0]==='cus')&&l.tax&&l.tax.kind===x[0]?esc(taxText(l.tax)):x[1])+'</option>').join('')+'</select></td>'+whtCell(i,l,lock)+'<td class="iv-lt" id="ev_lt'+i+'">'+money(k.total)+' ج</td><td><button class="iv-x" onclick="evLnDel('+i+')" title="حذف البند">✕</button></td></tr>'; }).join('');
     const seg=[['I','فاتورة'],['C','إشعار دائن'],['D','إشعار مدين']].map(x=>'<button type="button" class="'+((INV.docType||'I')===x[0]?'on':'')+'" '+(lock?'disabled':'')+' onclick="evInvDT(\''+x[0]+'\')">'+x[1]+'</button>').join('');
     const bb=INV.buyer, reg=bb?((bb.type==='B'&&!(bb.gov&&bb.city&&bb.street&&bb.bld))?'<span class="iv-reg no">⚠ عنوان العميل ناقص (المحافظة / المدينة / الشارع / المبنى)</span>':'<span class="iv-reg">✓ '+esc((BTYPES.find(x=>x[0]===bb.type)||['',''])[1].split(' (')[0])+(addrOf(bb)?' — '+esc(addrOf(bb)):'')+'</span>'):'';
     const f=(l,h)=>'<div class="iv-f"><label>'+l+'</label>'+h+'</div>';
@@ -7861,7 +7861,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
         +'<div class="iv-add">'+f('الصنف (كود EGS أو الاسم)','<input id="ev_pick" list="ev_dl" placeholder="ابحث عن صنف..." onkeydown="if(event.key===\'Enter\')evInvAddLine()"><datalist id="ev_dl">'+c.items.slice(0,500).map(i=>'<option value="'+esc(i.egs)+'">'+esc(i.name)+'</option>').join('')+'</datalist>')
           +f('الكمية','<input id="ev_q" inputmode="decimal" value="1" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')+f('خصم %','<input id="ev_d" inputmode="decimal" value="0">')+f('السعر','<input id="ev_p" inputmode="decimal" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')
           +f('الوصف (اختياري)','<input id="ev_ds" placeholder="من الصنف" onkeydown="if(event.key===\'Enter\')evInvAddLine()">')+f('الوحدة','<select id="ev_un"><option value="">من الصنف</option>'+UNITS.map(u=>'<option value="'+u[0]+'">'+u[1]+'</option>').join('')+'</select>')+'<button class="iv-go" onclick="evInvAddLine()">＋ إضافة</button></div>'
-        +'<div class="iv-tbl"><table><thead><tr><th>م</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>منبع %</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="iv-empty"><b>🧾</b>لسه مفيش أصناف — ابحث عن صنف فوق وأضفه</td></tr>')+'</tbody></table></div></section>'
+        +'<div class="iv-tbl"><table><thead><tr><th>م</th><th>الصنف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>الضريبة</th><th>خصم وتحصيل % / النوع</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="iv-empty"><b>🧾</b>لسه مفيش أصناف — ابحث عن صنف فوق وأضفه</td></tr>')+'</tbody></table></div></section>'
       +'<div class="iv-two"><section class="iv-card"><div class="iv-ct"><i>3</i>الحالة والتوقيع</div>'+(pr.length?'<div class="od-warn">⚠ لازم تصلّح قبل التوقيع:<br>'+pr.map(esc).join('<br>')+'</div>':'<div class="od-ok">✓ البيانات جاهزة للتوقيع</div>')+fld('التوقيع','<b>'+(sOk?'موقّعة ✓':'غير موقّعة')+'</b>')+(INV.portalNo?fld('رقم البوابة','<b>'+esc(INV.portalNo)+'</b>'):'')+etaInfo()+'</section>'
       +'<section class="iv-card"><div class="iv-ct"><i>4</i>الإجماليات</div><div class="iv-tots" id="evInvTot">'+totHtml()+'</div></section></div>'
       +'<div class="iv-bar">'+b('p','evInvSave()','💾 حفظ','F5')+b('g','evInvSign()','🔏 توقيع','F10')+b('','evInvPdf()',INV.etaUuid?'📄 PDF من المنظومة':'📄 تنزيل PDF')
@@ -7902,7 +7902,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const n=$('odCntP'); if(n) n.textContent=L.length+' منتج'+(L.length>200?' (أول 200)':'');
   }
   function pProd(){
-    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evItemForm()">جديد</button><button class="od-btn" onclick="document.getElementById(\'evImp\').click()">⬆ استيراد</button><button class="od-btn" onclick="evTemplate()">⬇ قالب Excel</button><button class="od-btn" onclick="evEgsCheck()">🔎 فحص الأكواد</button><button class="od-btn" onclick="evEgsExport()">⬇ ملف تسجيل الأكواد</button></div><input class="od-search" id="evIq" placeholder="🔍 بحث بالاسم أو الكود" value="'+esc(EV.iq)+'" oninput="evIqChg()"></div>'
+    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evItemForm()">جديد</button><button class="od-btn" onclick="document.getElementById(\'evImp\').click()">⬆ استيراد</button><button class="od-btn" onclick="evTemplate()">⬇ قالب Excel</button><button class="od-btn" onclick="evEgsFetch()">☁ سحب الأكواد من المصلحة</button><button class="od-btn" onclick="evEgsCheck()">🔎 فحص الأكواد</button><button class="od-btn" onclick="evEgsExport()">⬇ ملف تسجيل الأكواد</button></div><input class="od-search" id="evIq" placeholder="🔍 بحث بالاسم أو الكود" value="'+esc(EV.iq)+'" oninput="evIqChg()"></div>'
       +'<input type="file" id="evImp" accept=".xlsx,.csv" style="display:none" onchange="evImport(this)"><div id="evMsg" class="od-toast"></div><div class="od-chips"><span class="od-cnt" id="odCntP"></span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th>كود EGS</th><th>الاسم</th><th>الوحدة</th><th>السعر</th><th>الضريبة</th><th>حالة الكود</th><th></th></tr></thead><tbody id="odTbP"></tbody></table></div>';
     odProdRows();
@@ -8281,6 +8281,41 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     msg.textContent=(probs.length?'⚠ أكواد غلط: '+probs.slice(0,4).join('، ')+(probs.length>4?' ...':''):'✓ كل الأكواد صيغتها سليمة')+' · بدون GPC: '+noGpc+' · بدون اسم English: '+noEn;
     if(nf&&confirm('تصحيح '+nf+' كود تلقائيًا (توحيد الرقم الضريبي والصيغة)؟')){ await mutate('items',a=>a.map(i=>map[i.id]?Object.assign({},i,{egs:map[i.id]}):i)); renderTab(); $('evMsg').textContent='✓ اتصحح '+nf+' كود'; }
   };
+  /* سحب أكواد EGS المسجّلة على بوابة المصلحة للشركة (بدل إدخالها صنف صنف) */
+  window.evEgsFetch=async function(){
+    const msg=$('evMsg'), say=t=>{ if(msg) msg.textContent=t; }, c=EV.cur, env=c.etaEnv||'pre', rin=String(c.rin||'').replace(/\D/g,'');
+    if(!rin){ say('أدخل الرقم الضريبي للعميل (تبويب بيانات) الأول'); return; }
+    try{
+      const all=[]; let pn=1, pages=1;
+      do{
+        say('جاري سحب الأكواد من المصلحة... (صفحة '+pn+') '+all.length+' كود');
+        const r=await etaGet('/eta/codes',{env,rin,query:'ps=100&pn='+pn},say), j=safeJson(r.body);
+        if(r.code!==200||j==null) throw new Error('المصلحة ردّت HTTP '+r.code+' '+String(r.body||'').slice(0,200));
+        const arr=Array.isArray(j)?j:(j.result||j.items||j.data||[]); arr.forEach(x=>all.push(x));
+        pages=(j.metadata&&(j.metadata.totalPages||j.metadata.totalPage))||(arr.length>=100?pn+1:pn);
+        pn++; if(pn<=pages) await sleep(1500);
+      }while(pn<=pages&&pn<=60);
+      if(!all.length){ say('المصلحة ما رجّعتش أي أكواد مسجّلة للشركة دي'); return; }
+      const g=(x,...k)=>{ for(const a of k){ const v=a.split('.').reduce((o,p)=>o&&o[p],x); if(v!=null&&v!=='') return v; } return ''; };
+      const recs=[], seen=new Set();
+      all.forEach(x=>{
+        const egs=String(g(x,'itemCode','codeLookupValue','codeLookup','code')).trim(); if(!egs||seen.has(egs)) return; seen.add(egs);
+        const stx=String(g(x,'status','statusName','codeStatus','requestStatus','codeUsageRequestStatus')), act=g(x,'active');
+        let status=/reject|مرفوض|declin/i.test(stx)?'rejected':/approv|publish|معتمد|active/i.test(stx)?'approved':/submit|pend|review|request|waiting|انتظار/i.test(stx)?'requested':(act===true?'approved':'requested');
+        const gpc=String(g(x,'parentItemCode','parentCodeLookupValue','parentCode')).trim();
+        recs.push({egs,status,gpc:/^\d{8}$/.test(gpc)?gpc:'',nameEn:String(g(x,'codeNamePrimaryLang','codeName','codeDescriptionPrimaryLang','descriptionPrimaryLang')).trim(),nameAr:String(g(x,'codeNameSecondaryLang','codeNameAr','codeDescriptionSecondaryLang','descriptionSecondaryLang')).trim()});
+      });
+      const list=recs.filter(x=>x.status!=='rejected'), nApp=list.filter(x=>x.status==='approved').length;
+      if(!confirm('لقيت '+list.length+' كود على المصلحة ('+nApp+' معتمد'+(recs.length-list.length?'، '+(recs.length-list.length)+' مرفوض اتتجاهل':'')+').\nاستيرادهم للأصناف؟ (الموجود بنفس الكود بيتحدّث بس من غير ما سعره أو ضريبته تتغيّر)')) { say('اتلغى الاستيراد'); return; }
+      let add=0, upd=0;
+      await mutate('items',cur=>{ list.forEach(x=>{
+        const i=cur.findIndex(v=>v.egs===x.egs);
+        if(i>=0){ const o=cur[i]; cur[i]=Object.assign({},o,{status:x.status},x.gpc&&!o.gpc?{gpc:x.gpc}:{},x.nameEn&&!o.nameEn?{nameEn:x.nameEn}:{}); upd++; }
+        else{ cur.push(Object.assign({id:uid(),egs:x.egs,name:x.nameAr||x.nameEn||x.egs,unit:parseUnit(''),price:0,tax:parseTax(''),status:x.status},x.gpc?{gpc:x.gpc}:{},x.nameEn?{nameEn:x.nameEn}:{})); add++; }
+      }); return cur; });
+      renderTab(); const m2=$('evMsg'); if(m2) m2.textContent='✓ اتضاف '+add+' صنف جديد وتحدّث '+upd+' — راجع السعر والوحدة والضريبة للأصناف الجديدة (اتحطت قيم افتراضية)';
+    }catch(e){ say('✗ '+sgnErr(e)); }
+  };
   window.evEgsExport=async function(){
     const msg=$('evMsg'), L=EV.cur.items.filter(i=>i.status!=='approved'&&i.status!=='requested');
     if(!L.length){ msg.textContent='كل الأكواد مُقدّمة أو معتمدة'; return; }
@@ -8299,6 +8334,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   /* ---------- التوقيع (برنامج ETA-Signer المحلي) + بناء مستند ETA v1.0 ---------- */
   const SIGNER='http://localhost:5211';
   const bAddr=b=>b?([b.bld,b.street,b.city,b.gov].filter(Boolean).join('، ')||b.addr||''):'';
+  const WHT_T=[['W004','خدمات'],['W002','توريدات']];
+  const whtCell=(i,l,lk)=>'<td><input inputmode="decimal" value="'+esc(l.wht||0)+'" '+(lk?'disabled ':'')+'oninput="evLn('+i+',\'wht\',this.value)"><select class="iv-unit" title="نوع الخصم والتحصيل" '+(lk?'disabled ':'')+'onchange="evLnWt('+i+',this.value)">'+WHT_T.map(w=>'<option value="'+w[0]+'"'+((l.whtType||'W004')===w[0]?' selected':'')+'>'+w[1]+'</option>').join('')+'</select></td>';
   const VAT_SUB={v14:['T1','V009'],v5:['T1','V010'],v0:['T1','V010'],ex:['T1','V003'],cus:['T1','V010'],tbl:['T2','Tbl01']};
   const stable=v=>v&&typeof v==='object'?(Array.isArray(v)?'['+v.map(stable).join(',')+']':'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}'):JSON.stringify(v===undefined?null:v);
   const fpOf=i=>stable([i.no,i.branchId,i.buyer,i.lines,i.docType||'I',i.refUuid||'',i.poRef||'',i.soRef||'']);
@@ -8315,7 +8352,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const c=EV.cur, b=c.branches.find(x=>x.id===INV.branchId), by=INV.buyer, act=(String(c.activity||'').match(/\d{4}/)||[''])[0];
     const addr=(o,code)=>Object.assign(code!==undefined?{branchID:String(code)}:{},{country:'EG',governate:o.gov||'',regionCity:o.city||'',street:o.street||'',buildingNumber:o.bld||''});
     const lines=INV.lines.map(l=>{ const k=calcLine(l), t=l.tax||{kind:'v14',rate:14}, m=VAT_SUB[t.kind]||['T1','V009'], tx=[{taxType:m[0],amount:k.tax,subType:m[1],rate:+t.rate||0}];
-      if(+l.wht>0) tx.push({taxType:'T4',amount:k.wht,subType:'W004',rate:+l.wht});
+      if(+l.wht>0) tx.push({taxType:'T4',amount:k.wht,subType:(l.whtType==='W002'?'W002':'W004'),rate:+l.wht});
       return {description:String(l.name||'').trim(),itemType:'EGS',itemCode:l.egs,unitType:l.unit,quantity:+l.qty,internalCode:String(l.egs).split('-').slice(2).join('-'),salesTotal:k.gross,total:k.total,valueDifference:0,totalTaxableFees:0,netTotal:k.net,itemsDiscount:0,unitValue:{currencySold:'EGP',amountEGP:+l.price},discount:{rate:+l.disc||0,amount:k.disc},taxableItems:tx}; });
     const tt={}; lines.forEach(l=>l.taxableItems.forEach(x=>{ tt[x.taxType]=r2((tt[x.taxType]||0)+x.amount); }));
     const T=calcInv(INV), rcv={type:by.type,id:by.idn,name:by.name};
@@ -8714,6 +8751,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   window.evLnTax=function(i,k){ if(INV.etaUuid||!INV.lines[i]) return; invRead(); const l=INV.lines[i]; let r={v14:14,v5:5,v0:0,ex:0}[k];
     if(r===undefined){ const cur=(l.tax&&l.tax.kind===k)?l.tax.rate:''; const x=parseFloat(ad(String(prompt(k==='tbl'?'نسبة ضريبة الجدول %':'نسبة الضريبة %',cur)||''))); if(isNaN(x)){ invRender(); return; } r=x; }
     l.tax={kind:k,rate:r}; invRender(); };
+  window.evLnWt=function(i,v){ if(INV.etaUuid||!INV.lines[i]) return; INV.lines[i].whtType=v; };
   window.evLnS=function(i,k,v){ if(INV.etaUuid||!INV.lines[i]) return; INV.lines[i][k]=v; };
   window.evLnDel=function(i){ INV.lines.splice(i,1); invRender(); };
   function addrOf(b){ return b?[b.street&&((b.bld?b.bld+' ':'')+b.street),b.city,b.gov].filter(Boolean).join('، '):''; }
