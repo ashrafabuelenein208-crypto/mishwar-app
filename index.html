@@ -7889,7 +7889,7 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const n=$('odCntC'); if(n) n.textContent=L.length+' عميل'+(L.length>200?' (بيظهر أول 200 — استخدم البحث)':'');
   }
   function pCust(){
-    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evBuyerForm()">جديد</button><button class="od-btn" onclick="document.getElementById(\'evBImp\').click()">⬆ استيراد عملاء</button><button class="od-btn" onclick="evBuyerTemplate()">⬇ قالب Excel</button><b>العملاء</b></div><input class="od-search" id="evCq" placeholder="🔍 بحث بالاسم أو رقم التسجيل" value="'+esc(EV.cq||'')+'" oninput="evCqChg()"></div>'
+    $('odMain').innerHTML='<div class="od-cp"><div class="od-btns"><button class="od-btn p" onclick="evBuyerForm()">جديد</button><button class="od-btn" onclick="document.getElementById(\'evBImp\').click()">⬆ استيراد عملاء</button><button class="od-btn" onclick="evBuyersFetch()">☁ سحب العملاء من المصلحة</button><button class="od-btn" onclick="evBuyerTemplate()">⬇ قالب Excel</button><b>العملاء</b></div><input class="od-search" id="evCq" placeholder="🔍 بحث بالاسم أو رقم التسجيل" value="'+esc(EV.cq||'')+'" oninput="evCqChg()"></div>'
       +'<input type="file" id="evBImp" accept=".xlsx,.csv" style="display:none" onchange="evBuyerImport(this)"><div id="evMsg" class="od-toast"></div><div class="od-chips"><span class="od-cnt" id="odCntC"></span></div>'
       +'<div class="od-wrap"><table class="od-table"><thead><tr><th>الاسم</th><th>النوع</th><th>رقم التسجيل</th><th>العنوان</th><th></th></tr></thead><tbody id="odTbC"></tbody></table></div>';
     odCustRows();
@@ -8314,6 +8314,44 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
         else{ cur.push(Object.assign({id:uid(),egs:x.egs,name:x.nameAr||x.nameEn||x.egs,unit:parseUnit(''),price:0,tax:parseTax(''),status:x.status},x.gpc?{gpc:x.gpc}:{},x.nameEn?{nameEn:x.nameEn}:{})); add++; }
       }); return cur; });
       renderTab(); const m2=$('evMsg'); if(m2) m2.textContent='✓ اتضاف '+add+' صنف جديد وتحدّث '+upd+' — راجع السعر والوحدة والضريبة للأصناف الجديدة (اتحطت قيم افتراضية)';
+    }catch(e){ say('✗ '+sgnErr(e)); }
+  };
+  /* سحب العملاء (المشترين) من فواتير الشركة الصادرة على المصلحة — مرة واحدة بدل إدخالهم واحد واحد */
+  window.evBuyersFetch=async function(){
+    const msg=$('evMsg'), say=t=>{ if(msg) msg.textContent=t; }, c=EV.cur, env=c.etaEnv||'pre', rin=String(c.rin||'').replace(/\D/g,'');
+    if(!rin){ say('أدخل الرقم الضريبي للعميل (تبويب بيانات) الأول'); return; }
+    const nm=parseInt(prompt('نسحب العملاء من فواتير كام شهر فاتوا؟ (من 1 إلى 24)\nكل شهر بياخد حوالي 15 ثانية بسبب حد المصلحة.','12'),10);
+    if(!(nm>=1&&nm<=24)) return;
+    try{
+      const by=new Map(), ym0=dayOf(Date.now()).slice(0,7);
+      for(const ym of syMonths(ym0,nm)){
+        const docs=await fetchDocs('Sent',ym,env,rin,say);
+        docs.forEach(d=>{ if(isCx(String(d.status))) return; const idn=String(d.receiverId||'').trim(); if(!idn&&!d.receiverName) return; const key=idn||('n:'+nz(d.receiverName)); const p=by.get(key); if(!p||String(d.dateTimeIssued||'')>String(p.dateTimeIssued||'')) by.set(key,d); });
+      }
+      if(!by.size){ say('ما لقيتش فواتير صادرة في المدة دي'); return; }
+      const have=b=>(EV.cur.buyers||[]).find(x=>b.idn?String(x.idn).replace(/\s/g,'')===b.idn:(!x.idn&&nz(x.name)===nz(b.name)));
+      const recs=[...by.values()].map(d=>{ const idn=String(d.receiverId||'').trim(), tp=String(d.receiverType||'').toUpperCase(); return {d,b:{name:String(d.receiverName||'').trim()||idn,idn,type:/^[BPF]$/.test(tp)?tp:(!idn||/^\d{9}$/.test(idn)?'B':(/^\d{14}$/.test(idn)?'P':'F')),gov:'',city:'',street:'',bld:''}}; });
+      let i=0;
+      for(const x of recs){
+        i++; const old=have(x.b);
+        if(old&&old.gov&&old.city&&old.street&&old.bld) continue;
+        if(x.b.type!=='B') continue;
+        say('جاري قراءة عنوان العميل '+i+' من '+recs.length+'...');
+        try{
+          const r=await etaGet('/eta/raw',{env,rin,uuid:x.d.uuid},say), j=safeJson(r.body); if(r.code!==200||!j) continue;
+          let doc=j.document!==undefined?j.document:j; if(typeof doc==='string') doc=safeJson(doc)||{};
+          const a=(doc.receiver&&doc.receiver.address)||{};
+          x.b.gov=String(a.governate||'').trim(); x.b.city=String(a.regionCity||'').trim(); x.b.street=String(a.street||'').trim(); x.b.bld=String(a.buildingNumber||'').trim();
+        }catch(e){}
+        await sleep(400);
+      }
+      if(!confirm('لقيت '+recs.length+' عميل مختلف في فواتيرك الصادرة.\nاستيرادهم؟ (الموجود بيتكمّل الناقص فيه بس من غير ما بياناته تتغيّر)')){ say('اتلغى الاستيراد'); return; }
+      let add=0, upd=0, noAddr=0;
+      await mutate('buyers',cur=>{ recs.forEach(x=>{ const b=x.b; if(b.type==='B'&&!(b.gov&&b.city&&b.street&&b.bld)) noAddr++;
+        const i=cur.findIndex(v=>b.idn?String(v.idn).replace(/\s/g,'')===b.idn:(!v.idn&&nz(v.name)===nz(b.name)));
+        if(i>=0){ const keep={}; for(const k in b) if(String(b[k]||'').trim()!==''&&!String(cur[i][k]||'').trim()) keep[k]=b[k]; if(Object.keys(keep).length){ cur[i]=Object.assign({},cur[i],keep); upd++; } }
+        else{ cur.push(Object.assign({id:uid(),phone:''},b)); add++; } }); return cur; });
+      renderTab(); const m2=$('evMsg'); if(m2) m2.textContent='✓ اتضاف '+add+' عميل جديد وتكمّل '+upd+(noAddr?' · ⚠ '+noAddr+' شركة عنوانها ناقص (المصلحة بتطلب المحافظة والمدينة والشارع ورقم المبنى) — كمّلها بإيدك':'');
     }catch(e){ say('✗ '+sgnErr(e)); }
   };
   window.evEgsExport=async function(){
