@@ -7987,7 +7987,8 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   const TYPE_AR={I:'فاتورة',C:'إشعار دائن',D:'إشعار مدين'};
   async function etaGet(path,body,say){
     for(let k=0;k<5;k++){
-      const r=await sgn(path,body);
+      const r=await sgn(path,body), waf=/Request Rejected/i.test(String(r.body||''));
+      if(waf){ if(k>=2) throw new Error('جدار حماية المصلحة رفض الطلبات (غالباً لكثرتها). استنى 5-10 دقايق وجرّب تاني بمدة أقصر'); say('جدار حماية المصلحة رفض الطلب مؤقتاً، بستنى 40 ثانية وأعيد... ('+(k+1)+')'); await sleep(40000); continue; }
       if(r.code===429){ say('المصلحة طلبت الانتظار قليلاً... ('+(k+1)+')'); await sleep(8000); continue; }
       return r;
     }
@@ -8002,7 +8003,9 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
   }
   async function fetchDocs(dirn,ym,env,rin,say){
     const out=[];
-    for(const ch of syChunks(ym)){
+    const nowEnd=new Date().toISOString().slice(0,10)+'T23:59:59Z';
+    for(const ch0 of syChunks(ym)){
+      if(ch0[0]>nowEnd) continue; const ch=[ch0[0],ch0[1]>nowEnd?nowEnd:ch0[1]];
       let tok='';
       do{
         say('جاري جلب '+(dirn==='Sent'?'الصادرة':'الواردة')+' ('+ym+')... '+out.length+' مستند');
@@ -8323,11 +8326,23 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
     const nm=parseInt(prompt('نسحب العملاء من فواتير كام شهر فاتوا؟ (من 1 إلى 24)\nكل شهر بياخد حوالي 15 ثانية بسبب حد المصلحة.','12'),10);
     if(!(nm>=1&&nm<=24)) return;
     try{
-      const by=new Map(), ym0=dayOf(Date.now()).slice(0,7);
-      for(const ym of syMonths(ym0,nm)){
-        const docs=await fetchDocs('Sent',ym,env,rin,say);
-        docs.forEach(d=>{ if(isCx(String(d.status))) return; const idn=String(d.receiverId||'').trim(); if(!idn&&!d.receiverName) return; const key=idn||('n:'+nz(d.receiverName)); const p=by.get(key); if(!p||String(d.dateTimeIssued||'')>String(p.dateTimeIssued||'')) by.set(key,d); });
-      }
+      const by=new Map(); let fetchErr='';
+      const day0=new Date(); day0.setUTCHours(0,0,0,0); const ds=d=>d.toISOString().slice(0,10);
+      try{
+        for(let k=0;k<nm;k++){
+          const to=new Date(day0.getTime()-k*30*864e5), from=new Date(to.getTime()-29*864e5); let tok='', n=0;
+          do{
+            say('جاري جلب الصادرة ('+ds(from)+' → '+ds(to)+')... '+by.size+' عميل لحد دلوقتي');
+            const q='direction=Sent&pageSize=100&issueDateFrom='+encodeURIComponent(ds(from)+'T00:00:00Z')+'&issueDateTo='+encodeURIComponent(ds(to)+'T23:59:59Z')+(tok?'&continuationToken='+encodeURIComponent(tok):'');
+            const r=await etaGet('/eta/search',{env,rin,query:q},say), j=safeJson(r.body);
+            if(r.code!==200||!j) throw new Error('المصلحة ردّت HTTP '+r.code+' '+String(r.body||'').slice(0,160));
+            (j.result||[]).forEach(d=>{ if(isCx(String(d.status))) return; const idn=String(d.receiverId||'').trim(); if(!idn&&!d.receiverName) return; const key=idn||('n:'+nz(d.receiverName)); const p=by.get(key); if(!p||String(d.dateTimeIssued||'')>String(p.dateTimeIssued||'')) by.set(key,d); });
+            tok=(j.metadata&&j.metadata.continuationToken)||''; if(tok==='EndofResultSet') tok='';
+            await sleep(6500);
+          }while(tok&&++n<80);
+        }
+      }catch(e){ fetchErr=sgnErr(e); }
+      if(fetchErr){ if(!by.size){ say('✗ '+fetchErr); return; } if(!confirm('السحب وقف في النص بسبب:\n'+fetchErr+'\n\nلقيت '+by.size+' عميل لحد دلوقتي. أستورد اللي لقيته؟')){ say('✗ '+fetchErr); return; } }
       if(!by.size){ say('ما لقيتش فواتير صادرة في المدة دي'); return; }
       const have=b=>(EV.cur.buyers||[]).find(x=>b.idn?String(x.idn).replace(/\s/g,'')===b.idn:(!x.idn&&nz(x.name)===nz(b.name)));
       const recs=[...by.values()].map(d=>{ const idn=String(d.receiverId||'').trim(), tp=String(d.receiverType||'').toUpperCase(); return {d,b:{name:String(d.receiverName||'').trim()||idn,idn,type:/^[BPF]$/.test(tp)?tp:(!idn||/^\d{9}$/.test(idn)?'B':(/^\d{14}$/.test(idn)?'P':'F')),gov:'',city:'',street:'',bld:''}}; });
