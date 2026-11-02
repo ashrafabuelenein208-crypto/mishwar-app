@@ -6535,10 +6535,17 @@ populateClientHelpers();
     const sales=rows.filter(r=>r.kind==='sale'), buys=rows.filter(r=>r.kind==='buy');
     const sum=a=>a.reduce((t,r)=>t+r.sv,0);
     const buysTax=buys.filter(r=>r.flag!=='exempt');
-    const S=sum(sales), P=sum(buysTax), SE=sum(sales.filter(r=>r.flag==='exempt')), PE=sum(buys.filter(r=>r.flag==='exempt'));
+    const S=sum(sales.filter(r=>r.flag!=='exempt')), P=sum(buysTax), SE=sum(sales.filter(r=>r.flag==='exempt')), PE=sum(buys.filter(r=>r.flag==='exempt'));
     const diff=S-P, due=diff*rate, net=due-credit;
     return {rows,sales,buys,buysTax,S,P,SE,PE,diff,due,net,nEx:rows.filter(r=>r.flag==='exempt').length,nWr:rows.filter(r=>r.flag==='wrong').length};
   }
+
+  /* شهور اتحفظت بالحساب القديم (المبيعات شاملة المعفاة): بنشيل المعفاة من المبيعات ونعيد حساب الفرق والضريبة */
+  window.__finFixOld=function(d){
+    if(!d||d.ver===2) return false;
+    const se=num(d.SE); if(se){ d.S=num(d.S)-se; d.diff=num(d.S)-num(d.P); d.due=d.diff*(d.rate!=null?num(d.rate):0.14); }
+    d.ver=2; return true;
+  };
 
   /* ---------- أدوات العرض ---------- */
   function animate(){
@@ -6582,6 +6589,8 @@ populateClientHelpers();
       console.error(e); $('finFilterBar').style.display='none';
       box.innerHTML='<p style="color:var(--red);font-size:13px;">تعذّر التحميل: '+esc(e&&e.message?e.message:'')+'</p>'; return;
     }
+    const fx=SAVED.filter(window.__finFixOld);
+    if(fx.length){ try{ const b=db.batch(); fx.forEach(d=>b.update(col.doc(String(d.ym)),{S:d.S,diff:d.diff,due:d.due,ver:2})); await b.commit(); }catch(e){ console.warn('fix old months',e); } }
     await persist(chain(SAVED));
     ENTER=true; renderFilters(); renderDash();
   }
@@ -6643,7 +6652,7 @@ populateClientHelpers();
     const rateTxt=one?(' (الفرق × '+(+(num(one.rate)*100).toFixed(2))+'%)'):'';
 
     const head='<div style="font-size:15px;font-weight:900;margin:0 0 12px;">'+lbl+(L.length>1?' <span style="font-size:12px;opacity:.65;font-weight:600;">('+L.length+' شهر)</span>':'')+'</div>';
-    let cardsHtml='<div class="ev-grid">'+card('S',ic('coins'),'إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+nS)+card('P',ic('receipt'),'إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+nB+' (شامل المعفاة)')+card('D',ic('scale'),'الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
+    let cardsHtml='<div class="ev-grid">'+card('S',ic('coins'),'إجمالي المبيعات',S,'t-sale','عدد الفواتير: '+nS+' (المعفاة مبلغها منفصل تحت)')+card('P',ic('receipt'),'إجمالي المشتريات',P,'t-buy','عدد الفواتير: '+nB+' (شامل المعفاة)')+card('D',ic('scale'),'الفرق (مبيعات − مشتريات)',diff,'t-diff','قبل الضريبة، والإشعارات الدائنة بتُخصم')+'</div>'+
       '<div class="ev-grid">'+card('SE',ic('tag'),'إجمالي المبيعات المعفاة',SE,'t-ex')+card('PE',ic('tag'),'إجمالي المشتريات المعفاة',PE,'t-ex','بتتجمع لوحدها')+'</div>'+
       '<div class="ev-grid">'+card('T',ic('calc'),'الضريبة المستحقة'+rateTxt,due,'t-tax')+card('C',ic('card'),FM?'الرصيد الدائن (أول الشهر)':'الرصيد الدائن (أول الفترة)',credit,'t-cr')+card('N',ic(pay?'alert':'check'),'المستحق سداده',net,'net '+st,carryEnd>0?'رصيد مرحّل: '+money(carryEnd):(pay?'مستحق السداد':''),' ')+'</div>';
     const banner='<div class="ev-banner '+st+(ENTER?' ev-enter':'')+'" style="--i:'+(n++)+'">'+(net>0?'مستحق السداد لمصلحة الضرائب: '+money(net)+' جنيه'+(carryEnd>0?' — ورصيد مرحّل لآخر الفترة: '+money(carryEnd):''):(carryEnd>0?'رصيد دائن مُرحَّل: '+money(carryEnd)+' جنيه':'لا يوجد مستحق ولا رصيد'))+'</div>';
@@ -6817,7 +6826,7 @@ populateClientHelpers();
       const c=calc(oldRows.concat(fresh),t,rate,0), batch=db.batch(); old.docs.forEach(d=>batch.delete(d.ref));
       const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400), SRC='الفواتير الإلكترونية';
       for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-      batch.set(mref,{ym:m,taxId:t,rate,credit:0,openCredit:prev&&prev.openCredit!=null?num(prev.openCredit):0,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:(prev&&prev.sourceFile)?(prev.sourceFile.indexOf(SRC)>=0?prev.sourceFile:prev.sourceFile+' + '+SRC):SRC,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      batch.set(mref,{ym:m,taxId:t,rate,credit:0,openCredit:prev&&prev.openCredit!=null?num(prev.openCredit):0,ver:2,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:(prev&&prev.sourceFile)?(prev.sourceFile.indexOf(SRC)>=0?prev.sourceFile:prev.sourceFile+' + '+SRC):SRC,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
       await batch.commit(); if(CID===clientId) delete DET[m];
     }
     if(added){
@@ -6848,7 +6857,7 @@ populateClientHelpers();
     else{
       const c=calc(keep,String(prev.taxId),prev.rate!=null?prev.rate:0.14,0), flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400);
       for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-      batch.update(mref,{S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      batch.update(mref,{ver:2,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
     }
     await batch.commit();
     const all=(await col.get()).docs.map(d=>d.data()).filter(d=>d&&d.ym).sort((a,b)=>a.ym-b.ym), ch=chain(all);
@@ -6883,7 +6892,7 @@ populateClientHelpers();
         old.docs.forEach(d=>batch.delete(d.ref));
         const flat=c.rows.map(r=>[r.type,r.date.getTime(),r.val,r.vat,r.wh,r.tot,r.num,r.sTax,r.sName,r.bTax,r.bName,r.src||'']), parts=Math.ceil(flat.length/400);
         for(let k=0;k<parts;k++) batch.set(mref.collection('rows').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:0,openCredit:(firstNow&&x.m===minNew&&openIn!=null)?openIn:(prev&&prev.openCredit!=null?num(prev.openCredit):0),S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        batch.set(mref,{ym:x.m,taxId:tax,rate,credit:0,openCredit:(firstNow&&x.m===minNew&&openIn!=null)?openIn:(prev&&prev.openCredit!=null?num(prev.openCredit):0),ver:2,S:c.S,P:c.P,SE:c.SE,PE:c.PE,diff:c.diff,due:c.due,net:c.net,nSales:c.sales.length,nBuys:c.buys.length,nInvoices:c.rows.length,nExempt:c.nEx,nWrong:c.nWr,parts,sourceFile:srcFile,updatedBy:who(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         await batch.commit(); delete DET[x.m];
       }
       const n=L.length; PRE=null; $('finUpMsg').textContent='ملف Excel (xlsx)'; renderPre();
@@ -7124,7 +7133,7 @@ populateClientHelpers();
 
   /* ---------- نظرة عامة لكل العملاء ---------- */
   const OV={list:[],month:0,tok:0};
-  function chainLocal(list){
+  function chainLocal(list){ list.forEach(window.__finFixOld);
     let carry=0;
     return list.map((d,i)=>{
       const o=Object.assign({},d);
