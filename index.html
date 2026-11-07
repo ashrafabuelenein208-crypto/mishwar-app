@@ -1073,6 +1073,23 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 #clientsItemCardView.ic-full .ic-tbl{max-height:calc(100vh - 330px);min-height:320px}
 #clientsItemCardView.ic-full .ic-tbl table{font-size:14px}#clientsItemCardView.ic-full .ic-it b{font-size:14px}
 #clientsItemCardView .ic-yb i{display:block;height:10px;border-radius:8px;background:linear-gradient(90deg,#00699c,#2a9fd6)}
+
+#clientsItemCardView.ic-full{font-size:16px}
+#clientsItemCardView #icCard{max-width:none!important;width:100%!important;margin:0!important;min-width:0}
+#clientsItemCardView .ic-tiles{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+#clientsItemCardView .ic-k{padding:20px 22px;border-radius:22px}
+#clientsItemCardView .ic-k span{font-size:15.5px}
+#clientsItemCardView .ic-k b{font-size:32px;margin-top:6px}
+#clientsItemCardView .ic-k em{font-style:normal;font-size:38px;float:left;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
+#clientsItemCardView .ic-hero b{font-size:24px}#clientsItemCardView .ic-hero{padding:22px 26px;border-radius:22px}
+#clientsItemCardView .btn-small,#clientsItemCardView .fin-bar select{font-size:15px;padding:10px 18px}
+#clientsItemCardView .ic-tbl td{padding:10px 12px}#clientsItemCardView .ic-tbl th{padding:12px;font-size:14.5px}
+#clientsItemCardView .ic-tbl input[type=checkbox]{width:18px;height:18px}
+#clientsItemCardView .ic-it{padding:12px 14px}
+#clientsItemCardView .ic-yb{font-size:14.5px}#clientsItemCardView .ic-yb i{height:14px;margin:2px 0}
+#clientsItemCardView .ic-cov{border-collapse:separate;border-spacing:5px;font-size:13px;text-align:center;margin-top:8px}
+#clientsItemCardView .ic-cov td{padding:6px 10px;border-radius:8px;background:rgba(120,140,170,.12);min-width:52px}
+#clientsItemCardView .ic-cov td.on{background:rgba(18,183,106,.22);font-weight:800}
 </style>
 </head>
 <body>
@@ -8914,7 +8931,7 @@ const f2=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFracti
 const dstr=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const ymOf=t=>{const d=new Date(t);return d.getUTCFullYear()*100+d.getUTCMonth()+1};
 function cv(v){if(v==null)return null;if(v instanceof Date)return v;if(typeof v==='object'){if('result' in v)return cv(v.result);if(v.richText)return v.richText.map(t=>t.text).join('');if(v.text!=null)return v.text}return v}
-let CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
+let LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
 const col=()=>{try{const c=officeClientsCol();return c&&CID?c.doc(CID).collection('itemcards'):null}catch(e){return null}};
 const say=t=>{const e=$('icMsg');if(e)e.textContent=t||''};
 const fromT=a=>({d:a[0],c:a[1],t:a[2],no:a[3],n:a[4],g:a[5],q:a[6],pr:a[7],v:a[8],vat:a[9],p:a[10],e:a[11]});
@@ -8941,12 +8958,12 @@ function build(){
 }
 
 async function load(){
-  const c=col(),cid=CID;DATA=[];build();SEL=null;render();
+  const c=col(),cid=CID;LOG=[];DATA=[];build();SEL=null;render();
   if(!c){say('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');return}
   say('جاري تحميل كروت الأصناف...');
   try{
-    const ms=await c.get();
-    await Promise.all(ms.docs.map(async m=>{const p=await m.ref.collection('lines').get();p.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(x=>JSON.parse(x.rows).forEach(a=>DATA.push(fromT(a))))}));
+    const ms=await c.get();LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
+    await Promise.all(ms.docs.filter(m=>m.id[0]!=='_').map(async m=>{const p=await m.ref.collection('lines').get();p.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(x=>JSON.parse(x.rows).forEach(a=>DATA.push(fromT(a))))}));
   }catch(e){console.error(e);say('تعذّر التحميل: '+(e.message||''));return}
   if(cid!==CID)return;build();say('');render();
 }
@@ -8988,56 +9005,74 @@ function diff(mode){
   if(mode==='add')rem=[];else if(mode==='range')rem=rem.filter(r=>r.t>=PRE.min&&r.t<=PRE.max);
   return{add,rem,same:inc.length-add.length};
 }
-const tile=(c,l,v,s)=>'<div class="ic-k '+c+'"><span>'+l+'</span><b>'+v+'</b>'+(s?'<span style="font-weight:400;font-size:11px">'+s+'</span>':'')+'</div>';
+const tile=(c,l,v,s,ic)=>'<div class="ic-k '+c+'">'+(ic?'<em>'+ic+'</em>':'')+'<span>'+l+'</span><b>'+v+'</b>'+(s?'<span style="font-weight:400;font-size:11px">'+s+'</span>':'')+'</div>';
 function renderPre(){
   const box=$('icPre');if(!PRE){box.innerHTML='';return}
   const mode=($('icMode')&&$('icMode').value)||'range',{add,rem,same}=diff(mode),ni=new Set(add.map(r=>ik(r.n))).size,ri=new Set(rem.map(r=>ik(r.n))).size;
   box.innerHTML='<div style="border:1px solid rgba(120,140,170,.35);border-radius:16px;padding:14px 16px;margin-top:12px"><div style="font-weight:900">معاينة المزامنة: '+esc(PRE.file)+'</div>'+
   '<div style="font-size:12px;opacity:.75;margin:4px 0">الفترة في الشيت: '+dstr(PRE.min)+' → '+dstr(PRE.max)+' · الرقم الضريبي: '+esc(PRE.tax)+'</div>'+
   '<div class="ic-tiles">'+tile('ic-add','➕ حركات جديدة',f0(add.length),ni+' صنف')+tile('ic-del','➖ حركات هتتشال',f0(rem.length),ri+' صنف')+tile('ic-same','✔ زي ما هي',f0(same))+tile('ic-gold','⚠ مستبعد',f0(PRE.st.bad+PRE.st.zero+PRE.st.other),'ملغي/صفر/طرف تاني')+'</div>'+
-  '<div class="field"><label>وضع المزامنة</label><select id="icMode" onchange="icPreview()"><option value="range"'+(mode==='range'?' selected':'')+'>مزامنة داخل فترة الشيت (موصى به)</option><option value="all"'+(mode==='all'?' selected':'')+'>مزامنة كاملة (يشيل أي حاجة مش في الشيت)</option><option value="add"'+(mode==='add'?' selected':'')+'>إضافة فقط</option></select></div>'+
+  (!add.length&&!rem.length?'<div style="margin:8px 0;font-weight:800;color:#12b76a">✔ الشيت ده متضاف بالكامل قبل كده — مفيش أي حاجة جديدة</div>':'')+'<div class="field"><label>وضع المزامنة</label><select id="icMode" onchange="icPreview()"><option value="range"'+(mode==='range'?' selected':'')+'>مزامنة داخل فترة الشيت (موصى به)</option><option value="all"'+(mode==='all'?' selected':'')+'>مزامنة كاملة (يشيل أي حاجة مش في الشيت)</option><option value="add"'+(mode==='add'?' selected':'')+'>إضافة فقط</option></select></div>'+
   '<div class="row-actions" style="margin-top:10px"><button class="act btn-primary" onclick="icApply()">✅ تطبيق المزامنة</button><button class="act btn-ghost" onclick="icCancel()">إلغاء</button></div></div>';
 }
 window.icPreview=renderPre;window.icCancel=()=>{PRE=null;$('icUpMsg').textContent='ملف Excel (xlsx) فيه الوصف والكمية والسعر';renderPre()};
-window.icApply=async function(){
+async function persist(add,rem,tag){
+  BUSY=true;const cid=CID,c=col();
+  try{
+    if(!c)throw new Error('بيانات المكتب لسه بتتحمّل');
+    const rs=new Set(rem),keep=DATA.filter(r=>!rs.has(r)),byM={},add2={},file=PRE?PRE.file:tag,user=(auth.currentUser&&auth.currentUser.email)||'';
+    add.concat(rem).forEach(r=>{byM[ymOf(r.t)]=1});add.forEach(r=>{(add2[ymOf(r.t)]=add2[ymOf(r.t)]||[]).push(r)});
+    const ms=Object.keys(byM).map(Number).sort();let i=0;
+    for(const m of ms){
+      say('بحفظ '+(++i)+' من '+ms.length+' شهر...');
+      const rows=keep.filter(r=>ymOf(r.t)===m).concat(add2[m]||[]).sort((x,y)=>x.t-y.t),mref=c.doc(String(m)),old=await mref.collection('lines').get(),bt=db.batch();
+      old.docs.forEach(d=>bt.delete(d.ref));
+      if(!rows.length)bt.delete(mref);
+      else{const flat=rows.map(toT),parts=Math.ceil(flat.length/400);
+        for(let k=0;k<parts;k++)bt.set(mref.collection('lines').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
+        bt.set(mref,{ym:m,n:rows.length,parts,sourceFile:file,updatedBy:user,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})}
+      await bt.commit();
+    }
+    const lg={t:Date.now(),file:file,tag:tag||'',add:add.length,rem:rem.length,user};
+    await c.doc('_log_'+lg.t).set(lg);
+    if(cid!==CID){BUSY=false;return}
+    LOG.unshift(lg);DATA=keep.concat(add);PRE=null;renderPre();build();SEL=SEL&&IDX.get(SEL.k)||null;render();say('✅ تمت العملية: أُضيف '+f0(add.length)+' · اتشال '+f0(rem.length));
+  }catch(e){console.error(e);say('تعذّر الحفظ: '+(e.message||''))}
+  BUSY=false;
+}
+window.icApply=function(){
   if(BUSY||!PRE)return;const mode=$('icMode').value,{add,rem}=diff(mode);
   if(!add.length&&!rem.length){say('مفيش أي تغيير — الشيت مطابق للمحفوظ');return}
-  const run=async()=>{
-    BUSY=true;const cid=CID,c=col();
-    try{
-      if(!c)throw new Error('بيانات المكتب لسه بتتحمّل');
-      const rs=new Set(rem),keep=DATA.filter(r=>!rs.has(r)),byM={};
-      add.concat(rem).forEach(r=>{byM[ymOf(r.t)]=1});
-      const add2={};add.forEach(r=>{(add2[ymOf(r.t)]=add2[ymOf(r.t)]||[]).push(r)});
-      const ms=Object.keys(byM).map(Number).sort();let i=0;
-      for(const m of ms){
-        say('بحفظ '+(++i)+' من '+ms.length+' شهر...');
-        const rows=keep.filter(r=>ymOf(r.t)===m).concat(add2[m]||[]).sort((a,b)=>a.t-b.t),mref=c.doc(String(m)),old=await mref.collection('lines').get(),bt=db.batch();
-        old.docs.forEach(d=>bt.delete(d.ref));
-        if(!rows.length)bt.delete(mref);
-        else{const flat=rows.map(toT),parts=Math.ceil(flat.length/400);
-          for(let k=0;k<parts;k++)bt.set(mref.collection('lines').doc('p'+k),{i:k,rows:JSON.stringify(flat.slice(k*400,k*400+400))});
-          bt.set(mref,{ym:m,n:rows.length,parts,sourceFile:PRE.file,updatedBy:(auth.currentUser&&auth.currentUser.email)||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()})}
-        await bt.commit();
-      }
-      if(cid!==CID){BUSY=false;return}
-      DATA=keep.concat(add);PRE=null;renderPre();build();render();say('✅ تمت المزامنة: أُضيف '+f0(add.length)+' حركة وتشال '+f0(rem.length));
-    }catch(e){console.error(e);say('تعذّر الحفظ: '+(e.message||''))}
-    BUSY=false;
-  };
+  const run=()=>persist(add,rem);
   if(rem.length){try{requirePin(run)}catch(e){run()}}else run();
 };
+function delGo(rem,msg,tag){if(BUSY||!rem.length)return;if(!confirm(msg))return;const run=()=>persist([],rem,tag);try{requirePin(run)}catch(e){run()}}
+window.icAll=v=>document.querySelectorAll('.ic-ck').forEach(c=>{c.checked=v});
+window.icDelSel=()=>{const ids=[...document.querySelectorAll('.ic-ck:checked')].map(c=>+c.value);if(!ids.length){say('علّم على الحركات اللي عايز تحذفها الأول (مربع ✓ جنب كل حركة)');return}delGo(ids.map(i=>SEL.rows[i]),'حذف '+ids.length+' حركة؟','حذف حركات محددة')};
+window.icDelItem=()=>SEL&&delGo(SEL.rows.slice(),'حذف كل حركات الصنف "'+SEL.n+'" ('+SEL.rows.length+' حركة)؟','حذف صنف');
+window.icDelAll=()=>delGo(DATA.slice(),'⚠️ حذف كل بيانات كارت الصنف للعميل ده ('+f0(DATA.length)+' حركة)؟ مفيش رجعة.','حذف الكل');
+function cov(){
+  const cnt={};DATA.forEach(r=>{const m=ymOf(r.t);cnt[m]=(cnt[m]||0)+1});
+  const ks=Object.keys(cnt).map(m=>Math.floor(m/100)),mn=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  let h='<div class="ic-k" style="margin-top:14px"><span>📅 الشهور اللي اتضافت (الرقم = عدد الحركات، — = لسه ما اتضافش)</span>';
+  if(ks.length){h+='<div style="overflow:auto"><table class="ic-cov"><tr><td></td>'+mn.map(x=>'<td>'+x+'</td>').join('')+'</tr>';
+    for(let y=Math.min(...ks);y<=Math.max(...ks);y++)h+='<tr><td><b>'+y+'</b></td>'+mn.map((x,i)=>{const c=cnt[y*100+i+1];return '<td class="'+(c?'on':'')+'">'+(c?f0(c):'—')+'</td>'}).join('')+'</tr>';
+    h+='</table></div>'}
+  h+='<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800">🕘 سجل الرفع والحذف ('+LOG.length+')</summary>'+(LOG.slice(0,20).map(l=>'<div style="font-size:13.5px;padding:6px 0;border-bottom:1px solid rgba(120,140,170,.2)">'+new Date(l.t).toLocaleString('ar-EG')+' · '+esc(l.file||l.tag||'')+' · ➕ '+f0(l.add)+' ➖ '+f0(l.rem)+' · '+esc(l.user||'')+'</div>').join('')||'<div style="opacity:.7;padding:6px 0">لسه مفيش عمليات</div>')+'</details>';
+  if(ks.length)h+='<div style="margin-top:10px"><button class="act btn-ghost btn-small" onclick="icDelAll()">🗑 حذف كل بيانات كارت الصنف للعميل</button></div>';
+  return h+'</div>';
+}
 
 /* ---------- العرض ---------- */
 function render(){
   $('icTitle').textContent='كارت الصنف — '+CNAME;
   $('icSub').textContent=ITEMS.length?f0(ITEMS.length)+' صنف · '+f0(DATA.length)+' حركة · من '+dstr(DATA[0].t)+' إلى '+dstr(DATA[DATA.length-1].t):'لسه مفيش بيانات — ارفع الشيت للبداية';
-  const b=$('icBrowse');if(!ITEMS.length){b.innerHTML='';return}
+  const b=$('icBrowse');if(!ITEMS.length){b.innerHTML=LOG.length?cov():'';return}
   const gs=[...new Set(ITEMS.map(i=>i.g).filter(Boolean))].sort();
-  b.innerHTML='<div class="ic-grid" style="margin-top:14px"><aside class="ic-side"><input id="icQ" type="search" placeholder="🔍 ابحث عن صنف (كوع، نبل، 1/2...)" oninput="icQ(this.value)" value="'+esc(Q)+'">'+
+  b.innerHTML=cov()+'<div class="ic-grid" style="margin-top:14px"><aside class="ic-side"><input id="icQ" type="search" placeholder="🔍 ابحث عن صنف (كوع، نبل، 1/2...)" oninput="icQ(this.value)" value="'+esc(Q)+'">'+
    '<select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
    '<select id="icS" onchange="icS(this.value)">'+[['v','الأعلى قيمة'],['q','الأعلى كمية'],['d','الأكثر حركة'],['l','الأحدث حركة'],['a','أبجدي']].map(o=>'<option value="'+o[0]+'"'+(o[0]===SORT?' selected':'')+'>ترتيب: '+o[1]+'</option>').join('')+'</select>'+
-   '<div class="ic-list" id="icList"></div></aside><main id="icCard"></main></div>';
+   '<div class="ic-list" id="icList"></div></aside><div id="icCard"></div></div>';
   list();card();
 }
 function list(){
@@ -9058,12 +9093,12 @@ function card(){
   const rows=it.rows.filter(r=>!YF||new Date(r.t).getUTCFullYear()===YF),bl=it.hasP?'الرصيد (وارد − صادر)':'تراكمي المنصرف';
   let pin=0,pout=0,pv=0;rows.forEach(r=>{const q=(r.c?-1:1)*r.q;if(r.d==='S')pout+=q;else pin+=q;pv+=(r.c?-1:1)*r.v});
   el.innerHTML='<div class="ic-hero" style="margin:0 0 12px"><div><b>'+esc(it.n)+'</b><small>'+(it.g?'<span class="ic-chip" style="color:#fff;background:rgba(255,255,255,.2)">'+esc(it.g)+'</span> ':'')+'أول حركة '+dstr(it.first)+' · آخر حركة '+dstr(it.last)+'</small></div></div>'+
-  '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج')+tile('ic-gold','الرصيد الحالي',f0(it.pq-it.sq),'وارد − منصرف')+tile('ic-same','متوسط سعر المنصرف',f2(it.sq?it.sv/it.sq:0))+tile('','آخر سعر منصرف',f2(it.lastPr))+tile('','عدد المستندات',f0(it.docs))+'</div>'+
+  '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج','📥')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج','📤')+tile('ic-gold','الرصيد الحالي',f0(it.pq-it.sq),'وارد − منصرف','⚖️')+tile('ic-same','متوسط سعر المنصرف',f2(it.sq?it.sv/it.sq:0),'','💲')+tile('','آخر سعر منصرف',f2(it.lastPr),'','🏷️')+tile('','عدد المستندات',f0(it.docs),'','🧾')+'</div>'+
   '<div class="ic-k" style="margin-bottom:12px"><span style="margin-bottom:6px">📊 الوارد والمنصرف سنة بسنة</span>'+ys.map(y=>'<div class="ic-yb"><b>'+y+'</b><div style="flex:1"><i style="width:'+Math.max(2,Math.abs(it.yr[y].pq)/mx*100)+'%;background:linear-gradient(90deg,#12b76a,#2ecc71)"></i><i style="width:'+Math.max(2,Math.abs(it.yr[y].q)/mx*100)+'%;margin-top:4px"></i></div><span>وارد '+f0(it.yr[y].pq)+' · منصرف '+f0(it.yr[y].q)+'</span></div>').join('')+'</div>'+
-  '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button></div>'+
-  '<div class="ic-tbl"><table><thead><tr><th>التاريخ</th><th>المستند</th><th>الطرف</th><th>وارد</th><th>صادر</th><th>السعر</th><th>القيمة</th><th>'+bl+'</th></tr></thead><tbody>'+
-  rows.map(r=>{const s=r.c?-1:1;return '<tr'+(r.c?' class="cn"':'')+'><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td><td class="n">'+(r.d==='P'?f0(s*r.q):'')+'</td><td class="n">'+(r.d==='S'?f0(s*r.q):'')+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n"><b>'+f0(it.hasP?r.bal:r.cs)+'</b></td></tr>'}).join('')+
-  '</tbody><tfoot><tr><td colspan="3">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(pv)+'</td><td></td></tr></tfoot></table></div>';
+  '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button><button class="act btn-ghost btn-small" onclick="icDelSel()">🗑 حذف المحدد</button><button class="act btn-ghost btn-small" onclick="icDelItem()">🗑 حذف الصنف</button></div>'+
+  '<div class="ic-tbl"><table><thead><tr><th><input type="checkbox" onclick="icAll(this.checked)"></th><th>التاريخ</th><th>المستند</th><th>الطرف</th><th>وارد</th><th>صادر</th><th>السعر</th><th>القيمة</th><th>'+bl+'</th></tr></thead><tbody>'+
+  rows.map(r=>{const s=r.c?-1:1;return '<tr'+(r.c?' class="cn"':'')+'><td><input type="checkbox" class="ic-ck" value="'+it.rows.indexOf(r)+'"></td><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td><td class="n">'+(r.d==='P'?f0(s*r.q):'')+'</td><td class="n">'+(r.d==='S'?f0(s*r.q):'')+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n"><b>'+f0(it.hasP?r.bal:r.cs)+'</b></td></tr>'}).join('')+
+  '</tbody><tfoot><tr><td colspan="4">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(pv)+'</td><td></td></tr></tfoot></table></div>';
 }
 
 /* ---------- التصدير ---------- */
