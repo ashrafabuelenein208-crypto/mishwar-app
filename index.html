@@ -1065,6 +1065,14 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 #clientsItemCardView .ic-tbl th{position:sticky;top:0;background:linear-gradient(135deg,#1f3864,#2f5597);color:#fff;white-space:nowrap;padding:8px}
 #clientsItemCardView .ic-tbl td{padding:7px 8px;border-bottom:1px solid rgba(120,140,170,.18);white-space:nowrap;font-variant-numeric:tabular-nums}
 #clientsItemCardView .ic-tbl td.n{direction:ltr;text-align:right}#clientsItemCardView .ic-tbl tr.cn td{color:#c0261c}#clientsItemCardView .ic-tbl tfoot td{font-weight:900;position:sticky;bottom:0;background:var(--panel,#fff)}
+
+#clientsItemCardView.ic-full{position:fixed;inset:0;z-index:60;overflow:auto;padding:14px clamp(12px,2.5vw,40px) 30px;background:var(--paper,#f4f6fb)}
+#clientsItemCardView.ic-full .ic-grid{grid-template-columns:minmax(300px,25vw) 1fr}
+@media(max-width:860px){#clientsItemCardView.ic-full .ic-grid{grid-template-columns:1fr}}
+#clientsItemCardView.ic-full .ic-list{max-height:calc(100vh - 260px)}
+#clientsItemCardView.ic-full .ic-tbl{max-height:calc(100vh - 330px);min-height:320px}
+#clientsItemCardView.ic-full .ic-tbl table{font-size:14px}#clientsItemCardView.ic-full .ic-it b{font-size:14px}
+#clientsItemCardView .ic-yb i{display:block;height:10px;border-radius:8px;background:linear-gradient(90deg,#00699c,#2a9fd6)}
 </style>
 </head>
 <body>
@@ -8899,7 +8907,9 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
 (function(){
 const $=id=>document.getElementById(id),esc=s=>escapeHtml(s==null?'':s),num=x=>{const n=Number(x);return isFinite(n)?n:0},dg=x=>String(x==null?'':x).replace(/\D/g,'');
 const nz=s=>String(s==null?'':s).trim().toLowerCase().replace(/[\u064B-\u0652]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/[ةه]/g,'ه').replace(/\s+/g,' ');
-const ik=s=>nz(s).replace(/\s*\*\s*/g,' * ').replace(/(\d)\s*(بوصه|مم|رطل)/g,'$1 $2').replace(/\s+/g,' ');
+const ik=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/([^\d\s])\.(?=[^\d\s])/g,'$1').replace(/(\d)\.0+(?!\d)/g,'$1').replace(/ه(?=$|[^ء-ي])/g,'ة').replace(/بو+صة|بوصات|inch|["″]/g,'بوصة').replace(/([^\dم\s])\1+/g,'$1').replace(/[^\w\u0600-\u06FF\/.*×+-]+/g,' ').replace(/\s*[*×]\s*/g,'*').replace(/\s+/g,'');
+const GS={'مواسير':'ماسورة','ماسورة':'ماسورة','t':'تي','تيه':'تي','تى':'تي'};
+const gOf=n=>{let w=String(n||'').replace(/[\u064B-\u0652\u0640]/g,'').trim().split(/[\s\d*\/.(\-]/)[0].toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ه$/,'ة').replace(/^ال(?=.{3})/,'');return GS[w]||w||'أخرى'};
 const f2=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),f0=n=>num(n).toLocaleString('en-US',{maximumFractionDigits:2});
 const dstr=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const ymOf=t=>{const d=new Date(t);return d.getUTCFullYear()*100+d.getUTCMonth()+1};
@@ -8917,12 +8927,12 @@ function build(){
   DATA.forEach(r=>{const k=ik(r.n);let it=IDX.get(k);if(!it){it={k,n:r.n,g:r.g,rows:[],nm:{}};IDX.set(k,it)}it.rows.push(r);it.nm[r.n]=(it.nm[r.n]||0)+1});
   ITEMS=[...IDX.values()];
   ITEMS.forEach((it,i)=>{
-    it.id=i;it.n=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a])[0];
+    it.id=i;it.n=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a])[0];it.g=gOf(it.n);
     let bal=0,cs=0,sq=0,sv=0,pq=0,pv=0,hasP=false;const docs=new Set(),yr={};
     it.rows.forEach(r=>{
       const s=r.c?-1:1,q=s*r.q,v=s*r.v;docs.add(r.no);
-      const y=new Date(r.t).getUTCFullYear(),o=yr[y]||(yr[y]={q:0,v:0});
-      if(r.d==='S'){sq+=q;sv+=v;bal-=q;cs+=q;o.q+=q;o.v+=v}else{hasP=true;pq+=q;pv+=v;bal+=q}
+      const y=new Date(r.t).getUTCFullYear(),o=yr[y]||(yr[y]={q:0,v:0,pq:0});
+      if(r.d==='S'){sq+=q;sv+=v;bal-=q;cs+=q;o.q+=q;o.v+=v}else{hasP=true;pq+=q;pv+=v;bal+=q;o.pq+=q}
       r.bal=bal;r.cs=cs;
     });
     const ls=[...it.rows].reverse().find(r=>r.d==='S'&&!r.c);
@@ -9025,7 +9035,7 @@ function render(){
   const b=$('icBrowse');if(!ITEMS.length){b.innerHTML='';return}
   const gs=[...new Set(ITEMS.map(i=>i.g).filter(Boolean))].sort();
   b.innerHTML='<div class="ic-grid" style="margin-top:14px"><aside class="ic-side"><input id="icQ" type="search" placeholder="🔍 ابحث عن صنف (كوع، نبل، 1/2...)" oninput="icQ(this.value)" value="'+esc(Q)+'">'+
-   '<select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option'+(g===GF?' selected':'')+'>'+esc(g)+'</option>').join('')+'</select>'+
+   '<select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
    '<select id="icS" onchange="icS(this.value)">'+[['v','الأعلى قيمة'],['q','الأعلى كمية'],['d','الأكثر حركة'],['l','الأحدث حركة'],['a','أبجدي']].map(o=>'<option value="'+o[0]+'"'+(o[0]===SORT?' selected':'')+'>ترتيب: '+o[1]+'</option>').join('')+'</select>'+
    '<div class="ic-list" id="icList"></div></aside><main id="icCard"></main></div>';
   list();card();
@@ -9035,7 +9045,7 @@ function list(){
   let a=ITEMS.filter(i=>(!GF||i.g===GF)&&ts.every(t=>nz(i.n).includes(t)));
   const S={v:(x,y)=>Math.abs(y.sv+y.pv)-Math.abs(x.sv+x.pv),q:(x,y)=>Math.abs(y.sq+y.pq)-Math.abs(x.sq+x.pq),d:(x,y)=>y.rows.length-x.rows.length,l:(x,y)=>y.last-x.last,a:(x,y)=>x.n.localeCompare(y.n,'ar')};
   a.sort(S[SORT]);const el=$('icList');if(!el)return;
-  el.innerHTML=a.slice(0,SHOWN).map(i=>'<button class="ic-it'+(SEL===i?' on':'')+'" onclick="icPick('+i.id+')"><b>'+esc(i.n)+'</b><small>'+f2(i.sv||i.pv)+' ج · '+f0(i.sq||i.pq)+' وحدة · '+i.rows.length+' حركة</small></button>').join('')+
+  el.innerHTML=a.slice(0,SHOWN).map(i=>'<button class="ic-it'+(SEL===i?' on':'')+'" onclick="icPick('+i.id+')"><b>'+esc(i.n)+'</b><small>'+'وارد '+f0(i.pq)+' · منصرف '+f0(i.sq)+' · '+i.rows.length+' حركة</small></button>').join('')+
    (a.length>SHOWN?'<button class="act btn-ghost btn-small" onclick="icMore()">عرض المزيد ('+f0(a.length-SHOWN)+')</button>':'')+(a.length?'':'<p style="opacity:.7;font-size:13px">مفيش أصناف مطابقة</p>');
 }
 let tm=0;window.icQ=v=>{Q=v;SHOWN=60;clearTimeout(tm);tm=setTimeout(list,150)};window.icG=v=>{GF=v;SHOWN=60;list()};window.icS=v=>{SORT=v;list()};window.icMore=()=>{SHOWN+=60;list()};
@@ -9044,12 +9054,12 @@ window.icYear=v=>{YF=Number(v);card()};
 function card(){
   const el=$('icCard');if(!el)return;
   if(!SEL){el.innerHTML='<div class="ic-k" style="padding:40px;text-align:center"><div style="font-size:40px">📇</div><b style="text-align:center">اختار صنف من القائمة عشان يظهر كارته</b></div>';return}
-  const it=SEL,ys=Object.keys(it.yr).map(Number).sort(),mx=Math.max(1,...ys.map(y=>Math.abs(it.yr[y].v)));
-  const rows=it.rows.filter(r=>!YF||new Date(r.t).getUTCFullYear()===YF),bl=it.hasP?'الرصيد (وارد − صادر)':'تراكمي المبيعات';
+  const it=SEL,ys=Object.keys(it.yr).map(Number).sort(),mx=Math.max(1,...ys.map(y=>Math.max(Math.abs(it.yr[y].q),Math.abs(it.yr[y].pq))));
+  const rows=it.rows.filter(r=>!YF||new Date(r.t).getUTCFullYear()===YF),bl=it.hasP?'الرصيد (وارد − صادر)':'تراكمي المنصرف';
   let pin=0,pout=0,pv=0;rows.forEach(r=>{const q=(r.c?-1:1)*r.q;if(r.d==='S')pout+=q;else pin+=q;pv+=(r.c?-1:1)*r.v});
   el.innerHTML='<div class="ic-hero" style="margin:0 0 12px"><div><b>'+esc(it.n)+'</b><small>'+(it.g?'<span class="ic-chip" style="color:#fff;background:rgba(255,255,255,.2)">'+esc(it.g)+'</span> ':'')+'أول حركة '+dstr(it.first)+' · آخر حركة '+dstr(it.last)+'</small></div></div>'+
-  '<div class="ic-tiles">'+tile('ic-add','صافي المبيعات',f2(it.sv)+' ج')+tile('','الكمية المباعة',f0(it.sq))+tile('ic-gold','متوسط سعر البيع',f2(it.sq?it.sv/it.sq:0))+tile('ic-same','آخر سعر بيع',f2(it.lastPr))+tile('','عدد المستندات',f0(it.docs))+(it.hasP?tile('ic-del','الرصيد الحالي',f0(it.pq-it.sq),'مشتريات '+f0(it.pq)):'')+'</div>'+
-  '<div class="ic-k" style="margin-bottom:12px"><span style="margin-bottom:6px">📊 المبيعات سنة بسنة</span>'+ys.map(y=>'<div class="ic-yb"><b>'+y+'</b><i style="width:'+Math.max(2,Math.abs(it.yr[y].v)/mx*55)+'%"></i><span>'+f2(it.yr[y].v)+' ج · '+f0(it.yr[y].q)+'</span></div>').join('')+'</div>'+
+  '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج')+tile('ic-gold','الرصيد الحالي',f0(it.pq-it.sq),'وارد − منصرف')+tile('ic-same','متوسط سعر المنصرف',f2(it.sq?it.sv/it.sq:0))+tile('','آخر سعر منصرف',f2(it.lastPr))+tile('','عدد المستندات',f0(it.docs))+'</div>'+
+  '<div class="ic-k" style="margin-bottom:12px"><span style="margin-bottom:6px">📊 الوارد والمنصرف سنة بسنة</span>'+ys.map(y=>'<div class="ic-yb"><b>'+y+'</b><div style="flex:1"><i style="width:'+Math.max(2,Math.abs(it.yr[y].pq)/mx*100)+'%;background:linear-gradient(90deg,#12b76a,#2ecc71)"></i><i style="width:'+Math.max(2,Math.abs(it.yr[y].q)/mx*100)+'%;margin-top:4px"></i></div><span>وارد '+f0(it.yr[y].pq)+' · منصرف '+f0(it.yr[y].q)+'</span></div>').join('')+'</div>'+
   '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button></div>'+
   '<div class="ic-tbl"><table><thead><tr><th>التاريخ</th><th>المستند</th><th>الطرف</th><th>وارد</th><th>صادر</th><th>السعر</th><th>القيمة</th><th>'+bl+'</th></tr></thead><tbody>'+
   rows.map(r=>{const s=r.c?-1:1;return '<tr'+(r.c?' class="cn"':'')+'><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td><td class="n">'+(r.d==='P'?f0(s*r.q):'')+'</td><td class="n">'+(r.d==='S'?f0(s*r.q):'')+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n"><b>'+f0(it.hasP?r.bal:r.cs)+'</b></td></tr>'}).join('')+
@@ -9067,8 +9077,8 @@ window.icExportItem=async function(){
 };
 window.icExportAll=async function(){
   const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('ملخص الأصناف'),ys=[...new Set(ITEMS.flatMap(i=>Object.keys(i.yr).map(Number)))].sort();
-  ws.columns=[{header:'الصنف',width:48},{header:'المجموعة',width:24}].concat(ys.map(y=>({header:'كمية '+y,width:11}))).concat(ys.map(y=>({header:'قيمة '+y,width:14}))).concat([{header:'إجمالي الكمية',width:13},{header:'إجمالي القيمة',width:15},{header:'عدد الحركات',width:11}]);
-  ITEMS.forEach(i=>ws.addRow([i.n,i.g].concat(ys.map(y=>i.yr[y]?i.yr[y].q:0)).concat(ys.map(y=>i.yr[y]?i.yr[y].v:0)).concat([i.sq,i.sv,i.rows.length])));
+  ws.columns=[{header:'الصنف',width:48},{header:'المجموعة',width:24}].concat(ys.map(y=>({header:'منصرف '+y,width:11}))).concat(ys.map(y=>({header:'قيمة '+y,width:14}))).concat([{header:'إجمالي الوارد',width:13},{header:'إجمالي المنصرف',width:13},{header:'إجمالي القيمة',width:15},{header:'عدد الحركات',width:11}]);
+  ITEMS.forEach(i=>ws.addRow([i.n,i.g].concat(ys.map(y=>i.yr[y]?i.yr[y].q:0)).concat(ys.map(y=>i.yr[y]?i.yr[y].v:0)).concat([i.pq,i.sq,i.sv,i.rows.length])));
   hd(ws);ws.autoFilter={from:'A1',to:{row:1,column:ws.columns.length}};
   await xlDownload(wb,'ملخص_الأصناف_'+CNAME+'.xlsx');
 };
@@ -9079,12 +9089,13 @@ window.icOpen=function(){
   CID=currentClientHubId;let c=null;try{c=loadClients().find(x=>x.id===CID)}catch(e){}
   if(!c)return;CNAME=c.name||'';PRE=null;Q='';GF='';SORT='v';SHOWN=60;YF=0;
   VIEWS.forEach(id=>{const e=$(id);if(e)e.style.display='none'});
-  $('clientsItemCardView').style.display='block';window.scrollTo({top:0});renderPre();load();
+  $('clientsItemCardView').style.display='block';$('clientsItemCardView').classList.add('ic-full');window.scrollTo({top:0});renderPre();load();
 };
 ['showClientsLanding','showClientsList','showClientsForm','showClientsCategoryHub','showClientsListForCategory','openCategorySection','openFinCenter','finOverviewOpen'].forEach(n=>{
   const o=window[n];if(typeof o!=='function')return;
   window[n]=function(){const v=$('clientsItemCardView');if(v)v.style.display='none';return o.apply(this,arguments)};
 });
+document.addEventListener('keydown',e=>{const v=$('clientsItemCardView');if(e.key==='Escape'&&v&&v.style.display==='block'&&!PRE)showClientsCategoryHub()});
 })();
 </script>
 </body>
