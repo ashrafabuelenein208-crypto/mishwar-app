@@ -1090,6 +1090,8 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 #clientsItemCardView .ic-cov{border-collapse:separate;border-spacing:5px;font-size:13px;text-align:center;margin-top:8px}
 #clientsItemCardView .ic-cov td{padding:6px 10px;border-radius:8px;background:rgba(120,140,170,.12);min-width:52px}
 #clientsItemCardView .ic-cov td.on{background:rgba(18,183,106,.22);font-weight:800}
+
+#icToast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;width:min(580px,92vw);background:var(--panel,#fff);color:var(--ink,#1c2b39);border:1px solid rgba(120,140,170,.45);border-radius:20px;padding:18px 22px;box-shadow:0 14px 44px rgba(0,0,0,.3);direction:rtl;display:none;font-size:15.5px}
 </style>
 </head>
 <body>
@@ -8931,7 +8933,7 @@ const f2=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFracti
 const dstr=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const ymOf=t=>{const d=new Date(t);return d.getUTCFullYear()*100+d.getUTCMonth()+1};
 function cv(v){if(v==null)return null;if(v instanceof Date)return v;if(typeof v==='object'){if('result' in v)return cv(v.result);if(v.richText)return v.richText.map(t=>t.text).join('');if(v.text!=null)return v.text}return v}
-let LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
+let OK=false,LOADED='',LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
 const col=()=>{try{const c=officeClientsCol();return c&&CID?c.doc(CID).collection('itemcards'):null}catch(e){return null}};
 const say=t=>{const e=$('icMsg');if(e)e.textContent=t||''};
 const fromT=a=>({d:a[0],c:a[1],t:a[2],no:a[3],n:a[4],g:a[5],q:a[6],pr:a[7],v:a[8],vat:a[9],p:a[10],e:a[11]});
@@ -8965,7 +8967,7 @@ async function load(){
     const ms=await c.get();LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
     await Promise.all(ms.docs.filter(m=>m.id[0]!=='_').map(async m=>{const p=await m.ref.collection('lines').get();p.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(x=>JSON.parse(x.rows).forEach(a=>DATA.push(fromT(a))))}));
   }catch(e){console.error(e);say('تعذّر التحميل: '+(e.message||''));return}
-  if(cid!==CID)return;build();say('');render();
+  if(cid!==CID)return;build();say('');render();renderPre();LOADED=cid;
 }
 
 /* ---------- قراءة الشيت ---------- */
@@ -9017,7 +9019,7 @@ function renderPre(){
 }
 window.icPreview=renderPre;window.icCancel=()=>{PRE=null;$('icUpMsg').textContent='ملف Excel (xlsx) فيه الوصف والكمية والسعر';renderPre()};
 async function persist(add,rem,tag){
-  BUSY=true;const cid=CID,c=col();
+  BUSY=true;OK=false;const cid=CID,c=col();
   try{
     if(!c)throw new Error('بيانات المكتب لسه بتتحمّل');
     const rs=new Set(rem),keep=DATA.filter(r=>!rs.has(r)),byM={},add2={},file=PRE?PRE.file:tag,user=(auth.currentUser&&auth.currentUser.email)||'';
@@ -9036,7 +9038,7 @@ async function persist(add,rem,tag){
     const lg={t:Date.now(),file:file,tag:tag||'',add:add.length,rem:rem.length,user};
     await c.doc('_log_'+lg.t).set(lg);
     if(cid!==CID){BUSY=false;return}
-    LOG.unshift(lg);DATA=keep.concat(add);PRE=null;renderPre();build();SEL=SEL&&IDX.get(SEL.k)||null;render();say('✅ تمت العملية: أُضيف '+f0(add.length)+' · اتشال '+f0(rem.length));
+    LOG.unshift(lg);DATA=keep.concat(add);PRE=null;renderPre();build();SEL=SEL&&IDX.get(SEL.k)||null;render();say('✅ تمت العملية: أُضيف '+f0(add.length)+' · اتشال '+f0(rem.length));OK=true;
   }catch(e){console.error(e);say('تعذّر الحفظ: '+(e.message||''))}
   BUSY=false;
 }
@@ -9118,11 +9120,37 @@ window.icExportAll=async function(){
   await xlDownload(wb,'ملخص_الأصناف_'+CNAME+'.xlsx');
 };
 
+
+/* ---------- تحويل شيت الموقف الضريبي لكارت الصنف تلقائي ---------- */
+function toast(h,btns){let e=$('icToast');if(!e){e=document.createElement('div');e.id='icToast';document.body.appendChild(e)}e.style.display='block';e.innerHTML='<div style="font-weight:700;line-height:1.8">'+h+'</div><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+(btns||[]).map(b=>'<button class="act '+(b[2]||'btn-ghost')+' btn-small" onclick="'+b[1]+'">'+b[0]+'</button>').join('')+'</div>'}
+window.icToastX=()=>{const e=$('icToast');if(e)e.style.display='none'};
+window.icToastSave=function(){
+  if(BUSY||!PRE)return;const {add,rem}=diff('range');
+  const run=async()=>{toast('⏳ بحفظ في كارت الصنف...');await persist(add,rem,'من الموقف الضريبي');
+    toast(OK?'✅ اتحفظ في كارت الصنف — أُضيف '+f0(add.length)+' حركة، واتشال '+f0(rem.length):'❌ '+(($('icMsg')||{}).textContent||'تعذّر الحفظ'),[['📇 فتح كارت الصنف','icToastX();icKeep=0;icOpen()','btn-primary'],['إغلاق','icToastX()']])};
+  if(rem.length){try{requirePin(run)}catch(e){run()}}else run();
+};
+async function fromFin(f){
+  CID=currentClientHubId;let c=null;try{c=loadClients().find(x=>x.id===CID)}catch(e){}
+  if(!c||!f||!/\.xlsx$/i.test(f.name))return;CNAME=c.name||'';PRE=null;
+  toast('📇 بدوّر في الملف على بيانات الأصناف...');
+  try{
+    if(LOADED!==CID)await load();
+    await window.icLoadFile({files:[f],value:''});
+    if(!PRE){toast('الملف ده ماتحوّلش لكارت الصنف: '+esc((($('icUpMsg')||{}).textContent||'').replace('تعذّر قراءة الشيت: ','')),[['تمام','icToastX()']]);return}
+    const {add,rem}=diff('range'),ni=new Set(add.map(r=>ik(r.n))).size;
+    if(!add.length&&!rem.length)toast('✔ كارت الصنف محدّث بالكامل — كل حركات الملف ده متضافة قبل كده',[['📇 فتح كارت الصنف','icToastX();icKeep=0;icOpen()','btn-primary'],['إغلاق','icToastX()']]);
+    else toast('📇 الملف فيه أصناف: ➕ '+f0(add.length)+' حركة جديدة ('+f0(ni)+' صنف)'+(rem.length?' · ➖ '+f0(rem.length)+' هتتشال':''),[['✅ حفظ في كارت الصنف','icToastSave()','btn-primary'],['👁 معاينة','icToastX();icKeep=1;icOpen()'],['تجاهل','icToastX()']]);
+  }catch(e){console.error(e);toast('تعذّر التحويل لكارت الصنف: '+esc(e.message||''),[['تمام','icToastX()']])}
+}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='finFile'&&t.files&&t.files[0])fromFin(t.files[0])},true);
+document.addEventListener('drop',e=>{const t=e.target;if(t&&t.closest&&t.closest('#clientsFinView .ev-drop')&&e.dataTransfer&&e.dataTransfer.files[0])fromFin(e.dataTransfer.files[0])},true);
+
 /* ---------- فتح الشاشة ---------- */
 const VIEWS=['clientsLandingView','clientsFormView','clientsListView','clientsCategoryHubView','clientsCategorySectionView','clientsTaxYearsView','clientsTaxYearDetailView','clientsFinView'];
 window.icOpen=function(){
   CID=currentClientHubId;let c=null;try{c=loadClients().find(x=>x.id===CID)}catch(e){}
-  if(!c)return;CNAME=c.name||'';PRE=null;Q='';GF='';SORT='v';SHOWN=60;YF=0;
+  if(!c)return;CNAME=c.name||'';PRE=window.icKeep?PRE:null;window.icKeep=0;Q='';GF='';SORT='v';SHOWN=60;YF=0;
   VIEWS.forEach(id=>{const e=$(id);if(e)e.style.display='none'});
   $('clientsItemCardView').style.display='block';$('clientsItemCardView').classList.add('ic-full');window.scrollTo({top:0});renderPre();load();
 };
