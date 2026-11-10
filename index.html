@@ -1092,6 +1092,11 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 #clientsItemCardView .ic-cov td.on{background:rgba(18,183,106,.22);font-weight:800}
 
 #icToast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;width:min(580px,92vw);background:var(--panel,#fff);color:var(--ink,#1c2b39);border:1px solid rgba(120,140,170,.45);border-radius:20px;padding:18px 22px;box-shadow:0 14px 44px rgba(0,0,0,.3);direction:rtl;display:none;font-size:15.5px}
+
+#clientsItemCardView .ic-tbl thead tr:nth-child(2) th{top:44px}#clientsItemCardView .ic-tbl th{border-left:1px solid rgba(255,255,255,.18)}
+#icDlg{position:fixed;inset:0;z-index:10000;background:rgba(10,20,40,.55);display:none;align-items:center;justify-content:center}
+#icDlg .ic-dlg{background:var(--panel,#fff);color:var(--ink,#1c2b39);width:min(560px,94vw);max-height:90vh;overflow:auto;border-radius:20px;padding:22px;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+#icDlg select,#icDlg input{width:100%;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -8927,13 +8932,17 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
 const $=id=>document.getElementById(id),esc=s=>escapeHtml(s==null?'':s),num=x=>{const n=Number(x);return isFinite(n)?n:0},dg=x=>String(x==null?'':x).replace(/\D/g,'');
 const nz=s=>String(s==null?'':s).trim().toLowerCase().replace(/[\u064B-\u0652]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/[ةه]/g,'ه').replace(/\s+/g,' ');
 const ik=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/([^\d\s])\.(?=[^\d\s])/g,'$1').replace(/(\d)\.0+(?!\d)/g,'$1').replace(/ه(?=$|[^ء-ي])/g,'ة').replace(/بو+صة|بوصات|inch|["″]/g,'بوصة').replace(/([^\dم\s])\1+/g,'$1').replace(/[^\w\u0600-\u06FF\/.*×+-]+/g,' ').replace(/\s*[*×]\s*/g,'*').replace(/\s+/g,'');
+const GEN=new Set(['لوازم','لازم','طقم','مجموعة','عدد','قطعة','وحدة','صنف']);
+const gk=w=>{let x=w.replace(/[\u064B-\u0652\u0640]/g,'').toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/^ال(?=.{3})/,'');if(x==='مواسير')return 'ماسور';if(x==='t')return 'تي';const y=x.replace(/(ات|ه|ة)$/,'');return y.length>=2?y:x};
+const tokOf=n=>{const ts=String(n||'').trim().split(/[\s\d*\/.(\-]+/).filter(Boolean);return ts.find(t=>!GEN.has(t.replace(/ه$/,'ة')))||ts[0]||'أخرى'};
+const resolve=g=>{let x=g,n=0;while(GM[x]&&n++<10)x=GM[x];return x};
 const GS={'مواسير':'ماسورة','ماسورة':'ماسورة','t':'تي','تيه':'تي','تى':'تي'};
 const gOf=n=>{let w=String(n||'').replace(/[\u064B-\u0652\u0640]/g,'').trim().split(/[\s\d*\/.(\-]/)[0].toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ه$/,'ة').replace(/^ال(?=.{3})/,'');return GS[w]||w||'أخرى'};
 const f2=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),f0=n=>num(n).toLocaleString('en-US',{maximumFractionDigits:2});
 const dstr=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const ymOf=t=>{const d=new Date(t);return d.getUTCFullYear()*100+d.getUTCMonth()+1};
 function cv(v){if(v==null)return null;if(v instanceof Date)return v;if(typeof v==='object'){if('result' in v)return cv(v.result);if(v.richText)return v.richText.map(t=>t.text).join('');if(v.text!=null)return v.text}return v}
-let OK=false,LOADED='',LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
+let GM={},IM={},OK=false,LOADED='',LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
 const col=()=>{try{const c=officeClientsCol();return c&&CID?c.doc(CID).collection('itemcards'):null}catch(e){return null}};
 const say=t=>{const e=$('icMsg');if(e)e.textContent=t||''};
 const fromT=a=>({d:a[0],c:a[1],t:a[2],no:a[3],n:a[4],g:a[5],q:a[6],pr:a[7],v:a[8],vat:a[9],p:a[10],e:a[11]});
@@ -8942,29 +8951,34 @@ const rkey=r=>[r.e||r.no,ik(r.n),r.q,r.pr,r.v,r.d].join('|');
 function keyed(rows){const cnt={};return rows.map(r=>{const k=rkey(r);cnt[k]=(cnt[k]||0)+1;return [k+'#'+cnt[k],r]})}
 
 function build(){
-  IDX=new Map();DATA.sort((a,b)=>a.t-b.t||String(a.no).localeCompare(String(b.no)));
+  IDX=new Map();DATA.sort((a,b)=>Math.floor(a.t/864e5)-Math.floor(b.t/864e5)||a.d.localeCompare(b.d)||a.t-b.t||String(a.no).localeCompare(String(b.no)));
   DATA.forEach(r=>{const k=ik(r.n);let it=IDX.get(k);if(!it){it={k,n:r.n,g:r.g,rows:[],nm:{}};IDX.set(k,it)}it.rows.push(r);it.nm[r.n]=(it.nm[r.n]||0)+1});
   ITEMS=[...IDX.values()];
   ITEMS.forEach((it,i)=>{
-    it.id=i;it.n=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a])[0];it.g=gOf(it.n);
-    let bal=0,cs=0,sq=0,sv=0,pq=0,pv=0,hasP=false;const docs=new Set(),yr={};
+    it.id=i;it.n=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a])[0];it.tk=tokOf(it.n);it.gk=gk(it.tk);
+    let wq=0,wa=0,cogs=0,bal=0,cs=0,sq=0,sv=0,pq=0,pv=0,hasP=false;const docs=new Set(),yr={};
     it.rows.forEach(r=>{
       const s=r.c?-1:1,q=s*r.q,v=s*r.v;docs.add(r.no);
       const y=new Date(r.t).getUTCFullYear(),o=yr[y]||(yr[y]={q:0,v:0,pq:0});
       if(r.d==='S'){sq+=q;sv+=v;bal-=q;cs+=q;o.q+=q;o.v+=v}else{hasP=true;pq+=q;pv+=v;bal+=q;o.pq+=q}
       r.bal=bal;r.cs=cs;
+      if(r.d==='P'){if(!r.c){const u=r.q?r.v/r.q:r.pr;if(wq<=0)wa=u;else wa=(wq*wa+r.v)/(wq+r.q);wq+=r.q}else wq-=r.q;r.cu=null;r.cc=null}
+      else{const cc=(r.c?-1:1)*r.q*wa;wq+=r.c?r.q:-r.q;r.cu=wa;r.cc=cc;cogs+=cc}
+      r.wq=wq;r.wa=wa;
     });
     const ls=[...it.rows].reverse().find(r=>r.d==='S'&&!r.c);
-    Object.assign(it,{sq,sv,pq,pv,hasP,docs:docs.size,yr,first:it.rows[0].t,last:it.rows[it.rows.length-1].t,lastPr:ls?ls.pr:0});
+    Object.assign(it,{avg:wa,bq:wq,cogs,sq,sv,pq,pv,hasP,docs:docs.size,yr,first:it.rows[0].t,last:it.rows[it.rows.length-1].t,lastPr:ls?ls.pr:0});
   });
+  const dn={};ITEMS.forEach(it=>{const o=dn[it.gk]||(dn[it.gk]={});o[it.tk]=(o[it.tk]||0)+1});
+  ITEMS.forEach(it=>{const o=dn[it.gk];it.ga=Object.keys(o).sort((a,b)=>o[b]-o[a])[0];it.g=resolve(IM[it.k]||it.ga)});
 }
 
 async function load(){
-  const c=col(),cid=CID;LOG=[];DATA=[];build();SEL=null;render();
+  const c=col(),cid=CID;LOG=[];GM={};IM={};DATA=[];build();SEL=null;render();
   if(!c){say('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');return}
   say('جاري تحميل كروت الأصناف...');
   try{
-    const ms=await c.get();LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
+    const ms=await c.get();const cf=ms.docs.find(m=>m.id==='_cfg');if(cf){GM=cf.data().gm||{};IM=cf.data().im||{}}LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
     await Promise.all(ms.docs.filter(m=>m.id[0]!=='_').map(async m=>{const p=await m.ref.collection('lines').get();p.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(x=>JSON.parse(x.rows).forEach(a=>DATA.push(fromT(a))))}));
   }catch(e){console.error(e);say('تعذّر التحميل: '+(e.message||''));return}
   if(cid!==CID)return;build();say('');render();renderPre();LOADED=cid;
@@ -9072,7 +9086,7 @@ function render(){
   const b=$('icBrowse');if(!ITEMS.length){b.innerHTML=LOG.length?cov():'';return}
   const gs=[...new Set(ITEMS.map(i=>i.g).filter(Boolean))].sort();
   b.innerHTML=cov()+'<div class="ic-grid" style="margin-top:14px"><aside class="ic-side"><input id="icQ" type="search" placeholder="🔍 ابحث عن صنف (كوع، نبل، 1/2...)" oninput="icQ(this.value)" value="'+esc(Q)+'">'+
-   '<select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
+   '<button class="act btn-ghost btn-small" style="width:100%;margin-bottom:8px" onclick="icGroups()">⚙️ إدارة المجموعات (دمج / نقل / تسمية)</button><select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
    '<select id="icS" onchange="icS(this.value)">'+[['v','الأعلى قيمة'],['q','الأعلى كمية'],['d','الأكثر حركة'],['l','الأحدث حركة'],['a','أبجدي']].map(o=>'<option value="'+o[0]+'"'+(o[0]===SORT?' selected':'')+'>ترتيب: '+o[1]+'</option>').join('')+'</select>'+
    '<div class="ic-list" id="icList"></div></aside><div id="icCard"></div></div>';
   list();card();
@@ -9093,23 +9107,38 @@ function card(){
   if(!SEL){el.innerHTML='<div class="ic-k" style="padding:40px;text-align:center"><div style="font-size:40px">📇</div><b style="text-align:center">اختار صنف من القائمة عشان يظهر كارته</b></div>';return}
   const it=SEL,ys=Object.keys(it.yr).map(Number).sort(),mx=Math.max(1,...ys.map(y=>Math.max(Math.abs(it.yr[y].q),Math.abs(it.yr[y].pq))));
   const rows=it.rows.filter(r=>!YF||new Date(r.t).getUTCFullYear()===YF),bl=it.hasP?'الرصيد (وارد − صادر)':'تراكمي المنصرف';
-  let pin=0,pout=0,pv=0;rows.forEach(r=>{const q=(r.c?-1:1)*r.q;if(r.d==='S')pout+=q;else pin+=q;pv+=(r.c?-1:1)*r.v});
+  let pin=0,pout=0,pinv=0,poutv=0,pcost=0;rows.forEach(r=>{const s=r.c?-1:1,q=s*r.q,v=s*r.v;if(r.d==='S'){pout+=q;poutv+=v;pcost+=r.cc||0}else{pin+=q;pinv+=v}});
   el.innerHTML='<div class="ic-hero" style="margin:0 0 12px"><div><b>'+esc(it.n)+'</b><small>'+(it.g?'<span class="ic-chip" style="color:#fff;background:rgba(255,255,255,.2)">'+esc(it.g)+'</span> ':'')+'أول حركة '+dstr(it.first)+' · آخر حركة '+dstr(it.last)+'</small></div></div>'+
-  '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج','📥')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج','📤')+tile('ic-gold','الرصيد الحالي',f0(it.pq-it.sq),'وارد − منصرف','⚖️')+tile('ic-same','متوسط سعر المنصرف',f2(it.sq?it.sv/it.sq:0),'','💲')+tile('','آخر سعر منصرف',f2(it.lastPr),'','🏷️')+tile('','عدد المستندات',f0(it.docs),'','🧾')+'</div>'+
+  '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج','📥')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج','📤')+tile('ic-gold','الرصيد الحالي',f0(it.bq),'وارد − منصرف','⚖️')+tile('ic-same','متوسط التكلفة الحالي',f2(it.avg),'قيمة الرصيد '+f2(it.bq*it.avg),'💲')+tile('','تكلفة المنصرف',f2(it.cogs),'مجمل الربح '+f2(it.sv-it.cogs),'🏷️')+tile('','آخر سعر منصرف',f2(it.lastPr),'','🧾')+tile('','عدد المستندات',f0(it.docs),'','📄')+'</div>'+
   '<div class="ic-k" style="margin-bottom:12px"><span style="margin-bottom:6px">📊 الوارد والمنصرف سنة بسنة</span>'+ys.map(y=>'<div class="ic-yb"><b>'+y+'</b><div style="flex:1"><i style="width:'+Math.max(2,Math.abs(it.yr[y].pq)/mx*100)+'%;background:linear-gradient(90deg,#12b76a,#2ecc71)"></i><i style="width:'+Math.max(2,Math.abs(it.yr[y].q)/mx*100)+'%;margin-top:4px"></i></div><span>وارد '+f0(it.yr[y].pq)+' · منصرف '+f0(it.yr[y].q)+'</span></div>').join('')+'</div>'+
-  '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button><button class="act btn-ghost btn-small" onclick="icDelSel()">🗑 حذف المحدد</button><button class="act btn-ghost btn-small" onclick="icDelItem()">🗑 حذف الصنف</button></div>'+
-  '<div class="ic-tbl"><table><thead><tr><th><input type="checkbox" onclick="icAll(this.checked)"></th><th>التاريخ</th><th>المستند</th><th>الطرف</th><th>وارد</th><th>صادر</th><th>السعر</th><th>القيمة</th><th>'+bl+'</th></tr></thead><tbody>'+
-  rows.map(r=>{const s=r.c?-1:1;return '<tr'+(r.c?' class="cn"':'')+'><td><input type="checkbox" class="ic-ck" value="'+it.rows.indexOf(r)+'"></td><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td><td class="n">'+(r.d==='P'?f0(s*r.q):'')+'</td><td class="n">'+(r.d==='S'?f0(s*r.q):'')+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n"><b>'+f0(it.hasP?r.bal:r.cs)+'</b></td></tr>'}).join('')+
-  '</tbody><tfoot><tr><td colspan="4">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(pv)+'</td><td></td></tr></tfoot></table></div>';
+  '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button><button class="act btn-ghost btn-small" onclick="icDelSel()">🗑 حذف المحدد</button><button class="act btn-ghost btn-small" onclick="icDelItem()">🗑 حذف الصنف</button><button class="act btn-ghost btn-small" onclick="icMoveItem()">📁 نقل الصنف لمجموعة</button></div>'+
+  '<div class="ic-tbl"><table><thead><tr><th rowspan="2"><input type="checkbox" onclick="icAll(this.checked)"></th><th rowspan="2">التاريخ</th><th rowspan="2">المستند</th><th rowspan="2">الطرف</th><th colspan="3">وارد</th><th colspan="4">منصرف</th><th colspan="3">الرصيد (متوسط مرجح)</th></tr><tr><th>كمية</th><th>سعر</th><th>قيمة</th><th>كمية</th><th>سعر البيع</th><th>قيمة البيع</th><th>تكلفة المنصرف</th><th>كمية</th><th>متوسط التكلفة</th><th>قيمة</th></tr></thead><tbody>'+
+  rows.map(r=>{const s=r.c?-1:1,P=r.d==='P';return '<tr'+(r.c?' class="cn"':'')+'><td><input type="checkbox" class="ic-ck" value="'+it.rows.indexOf(r)+'"></td><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td>'+
+  (P?'<td class="n">'+f0(s*r.q)+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td></td><td></td><td></td><td></td>':'<td></td><td></td><td></td><td class="n">'+f0(s*r.q)+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n">'+f2(r.cc)+'</td>')+
+  '<td class="n"><b>'+f0(r.wq)+'</b></td><td class="n">'+f2(r.wa)+'</td><td class="n"><b>'+f2(r.wq*r.wa)+'</b></td></tr>'}).join('')+
+  '</tbody><tfoot><tr><td colspan="4">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td></td><td class="n">'+f2(pinv)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(poutv)+'</td><td class="n">'+f2(pcost)+'</td><td></td><td></td><td></td></tr></tfoot></table></div>';
 }
+
+
+/* ---------- إدارة المجموعات ---------- */
+function dlg(h){let e=$('icDlg');if(!e){e=document.createElement('div');e.id='icDlg';document.body.appendChild(e)}e.style.display='flex';e.innerHTML='<div class="ic-dlg">'+h+'</div>'}
+window.icDlgX=()=>{const e=$('icDlg');if(e)e.style.display='none'};
+const gopt=sel=>{const m={};ITEMS.forEach(i=>{m[i.g]=(m[i.g]||0)+1});return Object.keys(m).sort((a,b)=>m[b]-m[a]||a.localeCompare(b,'ar')).map(g=>'<option value="'+esc(g)+'"'+(g===sel?' selected':'')+'>'+esc(g)+' ('+m[g]+')</option>').join('')};
+async function saveCfg(){build();SEL=SEL&&IDX.get(SEL.k)||null;render();const c=col();if(!c)return;try{await c.doc('_cfg').set({gm:GM,im:IM,t:Date.now()});say('✅ اتحفظ تعديل المجموعات')}catch(e){say('تعذّر حفظ المجموعات: '+(e.message||''))}}
+window.icMoveItem=()=>{if(!SEL)return;dlg('<h3>📁 نقل الصنف لمجموعة</h3><p style="font-weight:700">'+esc(SEL.n)+'</p><div class="field"><label>اختار مجموعة موجودة</label><select id="icDg">'+gopt(SEL.g)+'</select></div><div class="field"><label>أو اكتب اسم مجموعة جديدة</label><input id="icDn" placeholder="مثال: كوع"></div><div class="row-actions"><button class="act btn-primary" onclick="icMoveItemGo()">حفظ</button><button class="act btn-ghost" onclick="icMoveItemGo(1)">↩ رجوع للتلقائي</button><button class="act btn-ghost" onclick="icDlgX()">إلغاء</button></div>')};
+window.icMoveItemGo=async r=>{const k=SEL.k;if(r)delete IM[k];else IM[k]=$('icDn').value.trim()||$('icDg').value;icDlgX();await saveCfg()};
+window.icGroups=()=>{const ru=Object.entries(GM).map(([a,b])=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(120,140,170,.2)"><span>'+esc(a)+' ← '+esc(b)+'</span><button class="act btn-ghost btn-small" onclick="icUnmerge(\''+encodeURIComponent(a)+'\')">إلغاء</button></div>').join('');
+  dlg('<h3>⚙️ إدارة المجموعات</h3><div class="field"><label>انقل / ادمج المجموعة دي</label><select id="icGs">'+gopt('')+'</select></div><div class="field"><label>على مجموعة موجودة</label><select id="icGt"><option value="">—</option>'+gopt('')+'</select></div><div class="field"><label>أو اسم جديد (إعادة تسمية)</label><input id="icGn"></div><div class="row-actions"><button class="act btn-primary" onclick="icMergeGo()">تنفيذ</button><button class="act btn-ghost" onclick="icDlgX()">إغلاق</button></div><h4 style="margin-top:16px">القواعد الحالية ('+Object.keys(GM).length+')</h4>'+(ru||'<div style="opacity:.7">مفيش قواعد</div>'))};
+window.icMergeGo=async()=>{const s=$('icGs').value,t=$('icGn').value.trim()||$('icGt').value;if(!s||!t||s===t)return;GM[s]=t;icDlgX();await saveCfg()};
+window.icUnmerge=async a=>{delete GM[decodeURIComponent(a)];icDlgX();await saveCfg()};
 
 /* ---------- التصدير ---------- */
 const hd=ws=>{const r=ws.getRow(1);r.font={bold:true,color:{argb:'FFFFFFFF'},name:'Arial'};r.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}};r.alignment={horizontal:'center',vertical:'middle',wrapText:true};ws.views=[{rightToLeft:true,state:'frozen',ySplit:1}]};
 window.icExportItem=async function(){
   if(!SEL)return;const it=SEL,wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('كارت الصنف');
-  ws.columns=[{header:'التاريخ',width:12},{header:'نوع المستند',width:12},{header:'رقم المستند',width:14},{header:'الطرف',width:34},{header:'وارد',width:11},{header:'صادر',width:11},{header:'السعر',width:12},{header:'القيمة',width:14},{header:'الرصيد التراكمي',width:15}];
-  it.rows.forEach((r,i)=>{const s=r.c?-1:1,n=i+2;ws.addRow([new Date(r.t),r.c?'إشعار دائن':'فاتورة',r.no,r.p,r.d==='P'?s*r.q:null,r.d==='S'?s*r.q:null,r.pr,s*r.v,null]);ws.getCell('I'+n).value={formula:(it.hasP?'N(I'+(n-1)+')+N(E'+n+')-N(F'+n+')':'N(I'+(n-1)+')+N(F'+n+')')};ws.getCell('A'+n).numFmt='dd/mm/yyyy';['E','F','G','H','I'].forEach(c=>ws.getCell(c+n).numFmt='#,##0.00;(#,##0.00);-');if(r.c)ws.getRow(n).font={color:{argb:'FFC00000'}}});
-  hd(ws);ws.getCell('K1').value=it.n;ws.getCell('K1').font={bold:true};
+  ws.columns=[{header:'التاريخ',width:12},{header:'نوع المستند',width:12},{header:'رقم المستند',width:14},{header:'الطرف',width:34},{header:'وارد',width:11},{header:'صادر',width:11},{header:'السعر',width:12},{header:'القيمة',width:14},{header:'الرصيد التراكمي',width:15},{header:'متوسط التكلفة',width:14},{header:'قيمة الرصيد',width:15},{header:'تكلفة المنصرف',width:15}];
+  it.rows.forEach((r,i)=>{const s=r.c?-1:1,n=i+2;ws.addRow([new Date(r.t),r.c?'إشعار دائن':'فاتورة',r.no,r.p,r.d==='P'?s*r.q:null,r.d==='S'?s*r.q:null,r.pr,s*r.v,null,r.wa,r.wq*r.wa,r.cc==null?null:r.cc]);ws.getCell('I'+n).value={formula:(it.hasP?'N(I'+(n-1)+')+N(E'+n+')-N(F'+n+')':'N(I'+(n-1)+')+N(F'+n+')')};ws.getCell('A'+n).numFmt='dd/mm/yyyy';['E','F','G','H','I'].forEach(c=>ws.getCell(c+n).numFmt='#,##0.00;(#,##0.00);-');if(r.c)ws.getRow(n).font={color:{argb:'FFC00000'}}});
+  hd(ws);ws.getCell('N1').value=it.n;ws.getCell('N1').font={bold:true};
   await xlDownload(wb,'كارت_صنف_'+it.n.replace(/[\\/:*?"<>|]/g,'-').slice(0,60)+'.xlsx');
 };
 window.icExportAll=async function(){
