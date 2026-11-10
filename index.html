@@ -1097,6 +1097,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 #icDlg{position:fixed;inset:0;z-index:10000;background:rgba(10,20,40,.55);display:none;align-items:center;justify-content:center}
 #icDlg .ic-dlg{background:var(--panel,#fff);color:var(--ink,#1c2b39);width:min(560px,94vw);max-height:90vh;overflow:auto;border-radius:20px;padding:22px;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 #icDlg select,#icDlg input{width:100%;margin-bottom:10px}
+#icDlg .ic-dlg.wide{width:min(920px,96vw)}
 </style>
 </head>
 <body>
@@ -8929,6 +8930,316 @@ const isHeaderRow=r=>/[\u0600-\u06FF]/.test(String(r[0]||''))||/egs/i.test(Strin
 <script>
 /* ===== كارت الصنف ===== */
 (function(){
+/* ===== Smart Item Normalization engine (rule-based, offline) ===== */
+const NE=(function(){
+const DIG='٠١٢٣٤٥٦٧٨٩',PDIG='۰۱۲۳۴۵۶۷۸۹',AR='\\u0621-\\u064A';
+function NZ(s){
+  return String(s==null?'':s).toLowerCase()
+   .replace(/[٠-٩]/g,d=>DIG.indexOf(d)).replace(/[۰-۹]/g,d=>PDIG.indexOf(d))
+   .replace(/[\u064B-\u065F\u0670\u0640]/g,'')
+   .replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي')
+   .replace(/[\u200c\u200d\u200e\u200f\u00a0]/g,' ')
+   .replace(/([\u0621-\u064A])\1{2,}/g,'$1');
+}
+/* Damerau-Levenshtein (OSA) مع قطع مبكر */
+function dl(a,b,mx){
+  const la=a.length,lb=b.length;if(Math.abs(la-lb)>mx)return mx+1;
+  let p2=null,p1=[],cur;for(let j=0;j<=lb;j++)p1[j]=j;
+  for(let i=1;i<=la;i++){
+    cur=[i];let rm=i;
+    for(let j=1;j<=lb;j++){
+      const c=a[i-1]===b[j-1]?0:1;let v=Math.min(p1[j]+1,cur[j-1]+1,p1[j-1]+c);
+      if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])v=Math.min(v,p2[j-2]+1);
+      cur[j]=v;if(v<rm)rm=v;
+    }
+    if(rm>mx)return mx+1;p2=p1;p1=cur;
+  }
+  return p1[lb];
+}
+function isTrans(a,b){if(a.length!==b.length)return false;let d=[];for(let i=0;i<a.length;i++)if(a[i]!==b[i])d.push(i);return d.length===2&&d[1]===d[0]+1&&a[d[0]]===b[d[1]]&&a[d[1]]===b[d[0]]}
+
+/* ---------- القاموس ---------- */
+const E=(cls,c,v,o)=>({cls,c,v:v.split(/\s+/).filter(Boolean),o:o||{}});
+const T=(c,v,o)=>E('type',c,v,o),K=(c,v,o)=>E('kind',c,v,o),M=(c,v,o)=>E('mat',c,v,o);
+const DICT=[
+ T('ماسورة','ماسورة ماسوره مواسير مواسر ماسورات مسورة ماسور pipe pipes tube tubes بايب انبوب انابيب تيوب',{du:1,sd:1}),
+ T('كوع','كوع كيعان اكواع كوعات elbow elbows elbo ايلبو',{du:1,sd:1,ang:1}),
+ T('تي','تي تيه تيات تيهات tee tees t',{du:1,sd:1}),
+ T('نبل','نبل نبلات نيبل نبله nipple nipples',{du:1,sd:1}),
+ T('فلانشة','فلانشة فلانشات فلنشة فلنشات فلاشنة فلاشنات فلانجة فلنجة فلنج فلانج flange flanges فلانشا',{du:1,sd:1}),
+ T('جلبة','جلبة جلب جلبات كبلنج كوبلنج coupling couplings socket سوكيت',{du:1,sd:1}),
+ T('يونيون','يونيون يونين union unions',{du:1,sd:1}),
+ T('وصلة','وصلة وصلات',{du:1,sd:1,gen:1}),
+ T('محبس','محبس محابس valve valves فالف بلف',{du:1,sd:1}),
+ T('صمام','صمام صمامات',{du:1,sd:1}),
+ T('مخفض','مخفض مخفضات مسلوب مسلوبه مسلوبات reducer reducers تخفيض',{du:1,sd:1,low:1}),
+ T('غطاء','غطاء اغطيه كاب cap caps',{du:1,sd:1}),
+ T('سدادة','سدادة سدادات طبة بلج plug plugs',{du:1,sd:1}),
+ T('خرطوم','خرطوم خراطيم hose hoses'),
+ T('كابل','كابل كابلات cable cables'),
+ T('سلك','سلك اسلاك wire wires'),
+ T('مسمار','مسمار مسامير'),
+ T('برغي','برغي براغي بولت bolt bolts'),
+ T('صامولة','صامولة صواميل nut nuts عزقة'),
+ T('وردة','وردة وردات washer washers'),
+ T('جوان','جوان جوانات gasket gaskets'),
+ T('صاج','صاج'),T('لوح','لوح الواح plate plates'),
+ K('ذكر','ذكر مذكر ذكري male'),K('أنثى','انثي انثى انثا مؤنث مونث female'),
+ K('لحام','لحام ملحوم لحامي weld welded bw'),
+ K('قلاووظ','قلاووظ قلاوظ قلاووظي قلاوظي سن مسنن threaded thread npt bsp bspt'),
+ K('قصير','قصير قصيره short sr'),K('طويل','طويل طويله long lr'),
+ K('بوابة','بوابه gate'),K('كروي','كروي كرويه ball'),K('فراشة','فراشه butterfly'),
+ K('عدم رجوع','عدم_رجوع nrv'),K('فلتر','فلتر filter strainer مصفاه'),
+ K('أعمى','اعمي blind'),K('slip-on','slipon'),K('عنق لحام','عنق_لحام wn weldneck'),
+ K('ثقيل','ثقيل heavy'),K('خفيف','خفيف light'),K('ستاندرد','ستاندرد ستاندر standard std'),
+ K('طقم','طقم set'),
+ M('حديد','حديد حديدي',{lo:1}),
+ M('مجلفن','جلفانيزد جلفانيز جلفنه مجلفن مجلفنه جلفانايزد جالفانيزد galvanized galvanised galv gi'),
+ M('ستانلس','ستانلس ستانليس استانلس ستانلز stainless ss'),
+ M('نحاس','نحاس نحاسي copper cu'),M('نحاس أصفر','براس brass'),M('برونز','برونز bronze'),
+ M('PVC','pvc'),M('UPVC','upvc'),M('PPR','ppr'),M('HDPE','hdpe'),
+ M('زهر','زهر'),M('زهر مرن','زهر_مرن دكتايل ductile'),M('صلب','صلب كربون'),
+ M('ألومنيوم','المونيوم المنيوم الومنيوم aluminium aluminum'),M('مطاط','مطاط rubber'),M('بلاستيك','بلاستيك plastic')
+];
+const PHR=[['حديد زهر','زهر'],['حديد اسود','حديد'],['حديد اسوده','حديد'],['ستانلس ستيل','ستانلس'],['stainless steel','ستانلس'],['نحاس اصفر','براس'],['نحاس احمر','نحاس'],['يو بي في سي','upvc'],['بي في سي','pvc'],['بي بي ار','ppr'],['اس اس','ss'],['بولي ايثيلين','hdpe'],['بولي ايثلين','hdpe'],['عدم رجوع','عدم_رجوع'],['non return','عدم_رجوع'],['non-return','عدم_رجوع'],['check valve','محبس عدم_رجوع'],['carbon steel','صلب'],['كربون ستيل','صلب'],['weld neck','عنق_لحام'],['welding neck','عنق_لحام'],['slip on','slipon'],['slip-on','slipon'],['cast iron','زهر'],['ductile iron','زهر_مرن'],['زهر مرن','زهر_مرن'],['حديد مجلفن','مجلفن'],['حديد جلفانيزد','مجلفن']].map(p=>[NZ(p[0]),NZ(p[1])]);
+const STOP=new Set(['ال','من','في','و','ب','ل','مقاس','مقاسات','قطر','نوع','صنف','لوازم','عدد','قطعه','قطع','وحده','بوصه','مم','ملم','سم','x','ذو','ذات']);
+const SOFT=[['محبس','صمام'],['حديد','صلب']];
+const DN2IN={15:.5,20:.75,25:1,32:1.25,40:1.5,50:2,65:2.5,80:3,100:4,125:5,150:6,200:8,250:10,300:12,110:4};
+const MMS=new Set([15,16,20,22,25,28,32,40,50,63,65,75,80,90,100,110,125,150,160,200,225,250,300,315]);
+const ANG=new Set([11.25,22.5,30,45,60,90,180]);
+const NUMW=new Map(Object.entries({واحد:1,واحده:1,اتنين:2,اثنين:2,اثنان:2,اثنتين:2,تلاته:3,ثلاثه:3,تلات:3,ثلاث:3,اربعه:4,اربع:4,خمسه:5,خمس:5,سته:6,ست:6,سبعه:7,سبع:7,تمانيه:8,ثمانيه:8,ثماني:8,تسعه:9,تسع:9,عشره:10,عشر:10}).map(([k,v])=>[NZ(k),v]));
+const INCHW=/^(?:بو+ص[ه]?(?:ات)?|بوص|انش(?:ات)?|inch(?:es)?|in)$/;
+
+let VM=new Map(),FZ=[],USER=[],CACHE=new Map();
+function rebuild(){
+  VM=new Map();FZ=[];
+  DICT.forEach(e=>e.v.forEach(w=>{const n=NZ(w);if(!VM.has(n))VM.set(n,e)}));
+  DICT.forEach(e=>VM.set(NZ(e.c).replace(/\s+/g,'_'),VM.get(NZ(e.c).replace(/\s+/g,'_'))||e));
+  USER.forEach(u=>{const w=NZ(u[0]).trim(),m=NZ(u[1]).trim();if(!w||!m)return;const base=VM.get(m);
+    if(w===m){VM.set(w,{cls:'alias',c:m,o:{},keep:1});return}
+    VM.set(w,base&&base.cls!=='alias'?base:{cls:'alias',c:m,o:{}})});
+  FZ=[...VM.entries()].filter(([w,e])=>!e.keep&&w.length>=4&&!/\d/.test(w));
+  CACHE=new Map();
+}
+function setUser(arr){USER=Array.isArray(arr)?arr.filter(x=>Array.isArray(x)&&x[0]&&x[1]):[];rebuild()}
+rebuild();
+
+function lookup(t,P,noFz){
+  let e=VM.get(t);if(e)return e;
+  const cs=[],pl=x=>{if(x.length>4&&x.endsWith('ات'))cs.push(x.slice(0,-2));if(x.endsWith('ه'))cs.push(x.slice(0,-1));else cs.push(x+'ه')};
+  cs.push(t);pl(t);
+  if(t.startsWith('ال')&&t.length>4){cs.push(t.slice(2));pl(t.slice(2))}
+  for(const c of cs){e=VM.get(c);if(e)return e}
+  const m=t.match(/^(?:وبال|وال|بال|كال|فال|لل|و|ب|ل|ف)(.{3,})$/);
+  if(m){for(const c of [m[1],m[1].startsWith('ال')?m[1].slice(2):m[1]]){e=VM.get(c);if(e)return e}}
+  if(noFz||/\d/.test(t))return null;
+  const ar=/[\u0621-\u064A]/.test(t),L=t.length;
+  if(ar?L<4:L<6)return null;
+  const mx=L>=8?2:1;let best=9,hit=[];
+  for(const [w,en] of FZ){
+    if(Math.abs(w.length-L)>mx)continue;
+    const d=dl(t,w,mx);if(d>mx)continue;
+    if(L===4&&!isTrans(t,w))continue;
+    if(d<best){best=d;hit=[[w,en]]}else if(d===best)hit.push([w,en]);
+  }
+  if(!hit.length)return null;
+  const c0=hit[0][1];if(hit.some(h=>h[1].c!==c0.c))return null;
+  if(P)P.fx.push([t,c0.c]);
+  return c0;
+}
+
+/* ---------- أرقام وكسور ---------- */
+const NUMS='(?:\\d+(?:\\.\\d+)?\\s*[-\\s]\\s*\\d+\\s*/\\s*\\d+|\\d+\\s*/\\s*\\d+|\\d+(?:\\.\\d+)?)';
+function numVal(x){
+  x=String(x).trim();let m=x.match(/^(\d+(?:\.\d+)?)\s*[-\s]\s*(\d+)\s*\/\s*(\d+)$/);
+  if(m)return +m[2]&&+m[3]?Math.round((+m[1]+m[2]/m[3])*1000)/1000:+m[1];
+  m=x.match(/^(\d+)\s*\/\s*(\d+)$/);if(m)return +m[2]?Math.round(m[1]/m[2]*1000)/1000:0;
+  return Math.round(parseFloat(x)*1000)/1000;
+}
+const UN={'بوصه':'in','مم':'mm','ملم':'mm','mm':'mm','سم':'cm','cm':'cm'};
+const RE={
+ sch:/(?:^|\s)(?:sch(?:edule)?|سكيدول)\s*-?\s*(\d{2,3}|std|xxs|xs)(?![a-z0-9])/g,
+ pn:/(?:^|\s)pn\s*-?\s*(\d{1,3})(?![a-z0-9])/g,
+ bar:new RegExp('(\\d+(?:\\.\\d+)?)\\s*(?:bar(?![a-z])|بار(?![\\u0621-\\u064A]))','g'),
+ cls1:/(\d{2,4})\s*(?:#|lbs?(?![a-z]))/g,
+ cls2:/(?:class|كلاس|ansi|رتبه)\s*-?\s*(\d{2,4})(?![\d])/g,
+ dn:/(?:^|\s)dn\s*-?\s*(\d{1,4})(?![a-z0-9])/g,
+ th1:new RegExp('(?:سمك|ثخانه|ثخن|thk|thickness)\\s*[:=]?\\s*('+NUMS+')\\s*(مم|ملم|mm|سم|cm)?(?![a-z\\u0621-\\u064A])','g'),
+ th2:new RegExp('('+NUMS+')\\s*(مم|ملم|mm)\\s*(?:سمك|ثخانه|thk)(?![\\u0621-\\u064A])','g'),
+ ang1:new RegExp('(\\d+(?:\\.\\d+)?)\\s*(?:درجه|°|deg(?:rees?)?(?![a-z]))','g'),
+ ang2:/زاويه\s*(\d+(?:\.\d+)?)/g,
+ std1:/astm\s*-?\s*([a-z])\s*-?\s*(\d{2,4}[a-z]?)/g,
+ std2:/(?:^|\s)(a)(53|105|106|182|234|312|403)(?![a-z0-9])/g,
+ gr:/(?:^|\s)(?:(ss|aisi)\s*-?\s*)?(304l?|316l?|201|430)(?![a-z0-9])/g,
+ len:new RegExp('('+NUMS+')\\s*(?:متر(?![\\u0621-\\u064A])|m(?![a-z])|م(?![\\u0621-\\u064A]))','g'),
+ pack:new RegExp('(\\d+)\\s*(?:قطعه|قطع|حبه|حبات|عدد|pcs?(?![a-z])|pieces?(?![a-z]))(?![\\u0621-\\u064A])','g')
+};
+const ITEM=NUMS+'(?:\\s*(بوصه|مم|ملم|mm|سم|cm))?';
+const RUN=new RegExp('(^|[^a-z\\d_.])('+ITEM+'(?:\\s*[*x×]\\s*'+ITEM+')*)','g');
+const ITEMRE=new RegExp('('+NUMS+')(?:\\s*(بوصه|مم|ملم|mm|سم|cm))?','g');
+
+function pre(raw){
+  let s=NZ(raw);
+  s=s.replace(/(\d)\s*½/g,'$1 1/2').replace(/(\d)\s*¼/g,'$1 1/4').replace(/(\d)\s*¾/g,'$1 3/4').replace(/½/g,'1/2').replace(/¼/g,'1/4').replace(/¾/g,'3/4');
+  s=s.replace(/[“”″‟]/g,'"').replace(/[‘’′`´]/g,"'").replace(/''/g,'"');
+  s=s.replace(/(\d)\s*,\s*(\d{1,2})(?!\d)/g,'$1.$2').replace(/[،؛,;:|\\\/\n\r\t]+/g,m=>m==='/'?'/':' ');
+  /* الشرطة المائلة داخل الكسور لازم تفضل */
+  s=s.replace(/(\d)\s*([\u0621-\u064A])/g,'$1 $2').replace(/([\u0621-\u064A])(\d)/g,'$1 $2');
+  s=s.replace(/[()\[\]{}]/g,' ');
+  s=' '+s.replace(/\s+/g,' ')+' ';
+  PHR.forEach(p=>{for(let i=0;i<2;i++)s=s.split(' '+p[0]+' ').join(' '+p[1]+' ')});
+  return s;
+}
+function numWords(s){
+  const t=s.split(/\s+/).filter(Boolean),o=[],lastNum=()=>/^\d+(?:\.\d+)?$/.test(o[o.length-1]||'');
+  for(let i=0;i<t.length;i++){
+    const a=t[i],b=t[i+1]||'',c=t[i+2]||'',ni=INCHW.test(b)||b==='"';
+    if((a==='نص'||a==='نصف')&&ni){o.push('1/2');continue}
+    if(a==='ربع'&&ni){o.push('1/4');continue}
+    if((a==='تلات'||a==='ثلاث'||a==='ثلاثه'||a==='تلاته')&&(b==='ارباع'||b==='ربع')){o.push('3/4');i++;continue}
+    if(NUMW.has(a)&&(ni||/^(?:ونص|ونصف|وربع)$/.test(b)||(b==='و'&&/^(?:نص|نصف|ربع)$/.test(c)))){o.push(String(NUMW.get(a)));continue}
+    if(lastNum()){
+      if(a==='ونص'||a==='ونصف'){o.push('1/2');continue}
+      if(a==='وربع'){o.push('1/4');continue}
+      if(a==='و'&&(b==='نص'||b==='نصف')){o.push('1/2');i++;continue}
+      if(a==='و'&&b==='ربع'){o.push('1/4');i++;continue}
+    }
+    o.push(a);
+  }
+  /* "1 1/2" لازم تتقرا رقم واحد: نلصق الرقم الصحيح بالكسر */
+  return ' '+o.join(' ')+' ';
+}
+function parse(raw){
+  const key0=String(raw==null?'':raw);
+  if(CACHE.has(key0))return CACHE.get(key0);
+  const P={raw:key0,type:'',kinds:[],mat:'',grade:'',dims:[],th:'',ang:'',pn:'',cls:'',sch:'',std:'',len:'',pack:'',res:[],fx:[],tp:null};
+  try{run(P,key0)}catch(e){P.type='';P.kinds=[];P.dims=[];P.res=[NZ(key0).replace(/\s+/g,'')]}
+  CACHE.set(key0,P);return P;
+}
+function run(P,raw){
+  let s=numWords(pre(raw));
+  s=s.replace(/(\d)\s*(?:"|بو+ص[ه]?(?:ات)?(?![\u0621-\u064A])|انش(?:ات)?(?![\u0621-\u064A])|inch(?:es)?(?![a-z])|in(?![a-z]))/g,'$1 بوصه ');
+  const take=(re,fn)=>{s=s.replace(re,(...m)=>{const r=fn(m);return r==null?' ':r})};
+  take(RE.sch,m=>{P.sch='SCH '+m[1].toUpperCase()});
+  take(RE.pn,m=>{P.pn='PN'+m[1]});
+  take(RE.bar,m=>{P.pn='PN'+numVal(m[1])});
+  take(RE.cls1,m=>{P.cls=m[1]+'#'});
+  take(RE.cls2,m=>{P.cls=m[1]+'#'});
+  take(RE.dn,m=>{P.dims.push({v:+m[1],u:'dn'})});
+  const th=(v,u)=>{let x=numVal(v);if(u==='سم'||u==='cm')x=Math.round(x*100)/10;P.th=String(x)};
+  take(RE.th1,m=>{th(m[1],m[2])});take(RE.th2,m=>{th(m[1],m[2])});
+  take(RE.ang1,m=>{P.ang=String(numVal(m[1]))});take(RE.ang2,m=>{P.ang=String(numVal(m[1]))});
+  take(RE.std1,m=>{P.std=(m[1]+m[2]).toUpperCase()});take(RE.std2,m=>{P.std=(m[1]+m[2]).toUpperCase()});
+  if(/ستانلس|stainless|(?:^|\s)ss(?:\s|\d|$)|aisi/.test(s))take(RE.gr,m=>{P.grade=m[2].toUpperCase();return m[1]?' ss ':' '});
+  take(RE.len,m=>{P.len=String(numVal(m[1]))});
+  take(RE.pack,m=>{P.pack=m[1]});
+  /* مجموعات المقاسات */
+  s=s.replace(RUN,(all,pre1,run1)=>{
+    const items=[];run1.replace(ITEMRE,(x,n,u)=>{items.push({v:numVal(n),u:u?UN[u]:''});return x});
+    const us=[...new Set(items.map(i=>i.u).filter(Boolean))];
+    if(us.length===1)items.forEach(i=>{if(!i.u)i.u=us[0]});
+    items.forEach(i=>{if(i.u==='cm'){i.v=Math.round(i.v*100)/10;i.u='mm'}});
+    items.forEach(i=>P.dims.push(i));return pre1+' ';
+  });
+  /* كلمات */
+  const toks=s.split(/[^a-z0-9_\u0621-\u064A]+/).filter(Boolean),tps=[],kd=new Set(),mats=[],res=[];
+  for(let i=0;i<toks.length;i++){
+    let t=toks[i];
+    if(STOP.has(t))continue;
+    let e=null,used=1;
+    for(let sp=3;sp>=2&&!e;sp--){
+      if(i+sp>toks.length)continue;const parts=toks.slice(i,i+sp);
+      if(parts.some(x=>/\d/.test(x)||x.length>5||STOP.has(x)))continue;
+      const j=parts.join('');if(VM.has(j)||lookup(j,null,true)){e=lookup(j,P,true);used=sp}
+    }
+    if(!e)e=lookup(t,P);
+    if(e){
+      i+=used-1;
+      if(e.cls==='type')tps.push(e);
+      else if(e.cls==='kind')kd.add(e.c);
+      else if(e.cls==='mat')mats.push(e);
+      else res.push(e.c);
+    }else if(/^\d+$/.test(t)&&t.length<5){/* رقم تايه */res.push(t)}
+    else res.push(t);
+  }
+  /* النوع */
+  if(tps.length){
+    const rank=e=>e.o.gen?2:(e.o.low?1:0);
+    const sorted=tps.map((e,i)=>[e,i]).sort((a,b)=>rank(a[0])-rank(b[0])||a[1]-b[1]);
+    P.tp=sorted[0][0];P.type=P.tp.c;
+    sorted.slice(1).forEach(x=>{if(x[0].c!==P.type)kd.add(x[0].c)});
+  }
+  /* الخامة: الأكثر تحديدًا */
+  if(mats.length){
+    const sp=mats.filter(m=>!m.o.lo);const m0=(sp.length?sp:mats)[0];P.mat=m0.c;
+    sp.slice(1).forEach(m=>{if(m.c!==P.mat)kd.add(m.c)});
+  }
+  P.kinds=[...kd].sort();
+  /* الأبعاد: الوحدة الافتراضية + الزاوية */
+  let ds=P.dims;
+  if(P.tp&&P.tp.o.ang&&!P.ang){
+    const bare=ds.filter(d=>!d.u&&ANG.has(d.v));
+    if(bare.length&&(ds.length>1||P.type==='كوع')){P.ang=String(bare[0].v);ds.splice(ds.indexOf(bare[0]),1)}
+  }
+  if(P.tp&&P.tp.o.du)ds.forEach(d=>{if(!d.u){const v=d.v;d.u=(v<=12||v%1!==0)?'in':(MMS.has(v)?'mm':'')}});
+  if(ds.length===2&&P.tp&&P.tp.o.sd&&ds[0].u===ds[1].u&&ds[0].v<ds[1].v)ds.reverse();
+  P.dims=ds;
+  /* الباقي */
+  P.res=[...new Set(res.map(w=>{let x=w;if(/^ال.{3,}/.test(x))x=x.slice(2);if(x.length>3&&x.endsWith('ه'))x=x.slice(0,-1);return x}).filter(w=>w&&(w.length>1||/\d/.test(w))))].sort();
+}
+
+/* ---------- مفتاح الصنف والاسم الموحد ---------- */
+const dimsKey=d=>d.map(x=>(x.u||'?')+':'+x.v).join('*');
+function key(P,corr,mod){
+  const m=mod||{},g=k=>(k in m)?m[k]:P[k];
+  const res=[...new Set(g('res').map(w=>corr&&corr[w]||w))].sort();
+  return [g('type'),g('kinds').join('+'),g('mat'),g('grade'),dimsKey(g('dims')),g('th'),g('ang'),g('pn'),g('cls'),g('sch'),g('std'),g('len'),g('pack'),res.join(' ')].join('|');
+}
+const EMPTY=/^\|*$/;
+function fmtIn(v){
+  const w=Math.floor(v+1e-9),f=Math.round((v-w)*1000)/1000,F={.125:'1/8',.25:'1/4',.375:'3/8',.5:'1/2',.625:'5/8',.75:'3/4',.875:'7/8'};
+  if(!f)return String(w);if(F[f])return (w?w+' ':'')+F[f];return String(v);
+}
+function dimsDisp(d){
+  if(!d.length)return '';
+  const us=[...new Set(d.map(x=>x.u))];
+  const f=x=>x.u==='in'?fmtIn(x.v):String(x.v);
+  if(us.length===1){const u=us[0];if(u==='dn')return 'DN'+d.map(f).join('×');return d.map(f).join('×')+(u==='in'?' بوصة':u==='mm'?' مم':'')}
+  return d.map(x=>f(x)+(x.u==='in'?' بوصة':x.u==='mm'?' مم':x.u==='dn'?' DN':'')).join(' × ');
+}
+function disp(P,corr){
+  const p=[];if(P.type)p.push(P.type);else [...new Set(P.res.map(w=>corr&&corr[w]||w))].sort().forEach(w=>p.push(w));P.kinds.forEach(k=>p.push(k));if(P.mat)p.push(P.mat);if(P.grade)p.push(P.grade);
+  const dd=dimsDisp(P.dims);if(dd)p.push(dd);
+  if(P.ang)p.push(P.ang+' درجة');if(P.th)p.push('سمك '+P.th+' مم');if(P.pn)p.push(P.pn);if(P.cls)p.push(P.cls);if(P.sch)p.push(P.sch);if(P.std)p.push(P.std);
+  if(P.len)p.push(P.len+' متر');if(P.pack)p.push(P.pack+' قطعة');
+  if(P.type)[...new Set(P.res.map(w=>corr&&corr[w]||w))].sort().forEach(w=>p.push(w));
+  return p.join(' ');
+}
+/* بدائل للشك: [سبب، مفتاح بديل] */
+const LBL={mat:'الخامة',grade:'الدرجة',pn:'الضغط',cls:'الكلاس',sch:'السمك SCH',std:'المواصفة',len:'الطول',th:'السمك',pack:'العدد'};
+function alts(P,corr){
+  const out=[],add=(why,sc,mod,miss)=>out.push({why,sc,k:key(P,corr,mod),miss:!!miss});
+  if(P.type){
+    for(const d of ['mat','grade','pn','cls','sch','std','len','th','pack'])if(P[d])add('الصنف التاني مش مكتوب فيه '+LBL[d]+' ('+(d==='len'?P[d]+' م':d==='th'?P[d]+' مم':P[d])+')',3,{[d]:''},1);
+    if(P.dims.length)add('الصنف التاني مش مكتوب فيه مقاس',3,{dims:[]},1);
+    if(P.ang)add('الصنف التاني مش مكتوب فيه الزاوية ('+P.ang+'°)',3,{ang:''},1);
+    P.kinds.forEach(k=>add('الصنف التاني مش مكتوب فيه «'+k+'»',3,{kinds:P.kinds.filter(x=>x!==k)},1));
+  }
+  P.res.forEach(w=>add('كلمة زيادة «'+(corr&&corr[w]||w)+'» في واحد منهم',3,{res:P.res.filter(x=>x!==w)},1));
+  if(P.dims.some(d=>d.u==='mm'||d.u==='dn')){
+    const cv=P.dims.map(d=>(d.u==='mm'||d.u==='dn')&&DN2IN[d.v]!=null?{v:DN2IN[d.v],u:'in'}:d);
+    if(cv.some((d,i)=>d!==P.dims[i])){if(cv.length===2&&P.tp&&P.tp.o.sd&&cv[0].v<cv[1].v)cv.reverse();add('نفس المقاس تقريبًا (مم/DN مقابل بوصة)',2,{dims:cv})}
+    const sw=P.dims.map(d=>d.u==='dn'?{v:d.v,u:'mm'}:d.u==='mm'?{v:d.v,u:'dn'}:d);add('DN مقابل مم بنفس الرقم',2,{dims:sw});
+  }
+  if(P.dims.length>=2&&!(P.tp&&P.tp.o.sd))add('ترتيب المقاسات معكوس',2,{dims:[...P.dims].reverse()});
+  for(const g of SOFT){
+    for(const f of ['type','mat']){const i=g.indexOf(P[f]);if(i<0)continue;g.forEach((x,j)=>{if(j!==i)add('مسمّى مرادف محتمل: «'+P[f]+'» / «'+x+'»',2,{[f]:x})})}
+  }
+  return out;
+}
+return {NZ,dl,parse,key,disp,alts,setUser,EMPTY,DICT,fmtIn,dimsKey};
+})();
+
 const $=id=>document.getElementById(id),esc=s=>escapeHtml(s==null?'':s),num=x=>{const n=Number(x);return isFinite(n)?n:0},dg=x=>String(x==null?'':x).replace(/\D/g,'');
 const nz=s=>String(s==null?'':s).trim().toLowerCase().replace(/[\u064B-\u0652]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/[ةه]/g,'ه').replace(/\s+/g,' ');
 const ik=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/([^\d\s])\.(?=[^\d\s])/g,'$1').replace(/(\d)\.0+(?!\d)/g,'$1').replace(/ه(?=$|[^ء-ي])/g,'ة').replace(/بو+صة|بوصات|inch|["″]/g,'بوصة').replace(/([^\dم\s])\1+/g,'$1').replace(/[^\w\u0600-\u06FF\/.*×+-]+/g,' ').replace(/\s*[*×]\s*/g,'*').replace(/\s+/g,'');
@@ -8942,7 +9253,7 @@ const f2=n=>num(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFracti
 const dstr=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const ymOf=t=>{const d=new Date(t);return d.getUTCFullYear()*100+d.getUTCMonth()+1};
 function cv(v){if(v==null)return null;if(v instanceof Date)return v;if(typeof v==='object'){if('result' in v)return cv(v.result);if(v.richText)return v.richText.map(t=>t.text).join('');if(v.text!=null)return v.text}return v}
-let GM={},IM={},OK=false,LOADED='',LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
+let GM={},IM={},MG=[],SPL=[],NOP=[],UD=[],CORR={},MGM={},SPS=new Set(),NOS=new Set(),PAIRS=[],FIXES=[],OK=false,LOADED='',LOG=[],CID='',CNAME='',DATA=[],IDX=new Map(),ITEMS=[],SEL=null,PRE=null,SHOWN=60,BUSY=false,YF=0,Q='',GF='',SORT='v';
 const col=()=>{try{const c=officeClientsCol();return c&&CID?c.doc(CID).collection('itemcards'):null}catch(e){return null}};
 const say=t=>{const e=$('icMsg');if(e)e.textContent=t||''};
 const fromT=a=>({d:a[0],c:a[1],t:a[2],no:a[3],n:a[4],g:a[5],q:a[6],pr:a[7],v:a[8],vat:a[9],p:a[10],e:a[11]});
@@ -8952,10 +9263,22 @@ function keyed(rows){const cnt={};return rows.map(r=>{const k=rkey(r);cnt[k]=(cn
 
 function build(){
   IDX=new Map();DATA.sort((a,b)=>Math.floor(a.t/864e5)-Math.floor(b.t/864e5)||a.d.localeCompare(b.d)||a.t-b.t||String(a.no).localeCompare(String(b.no)));
-  DATA.forEach(r=>{const k=ik(r.n);let it=IDX.get(k);if(!it){it={k,n:r.n,g:r.g,rows:[],nm:{}};IDX.set(k,it)}it.rows.push(r);it.nm[r.n]=(it.nm[r.n]||0)+1});
+  /* --- التوحيد الذكي: المفتاح مبني على المواصفات الفنية مش على الكلام --- */
+  const cnt=new Map();DATA.forEach(r=>cnt.set(r.n,(cnt.get(r.n)||0)+1));
+  const vc=vocabCorr(cnt);CORR=vc.c;SPS=new Set(SPL.map(ik));
+  MGM={};MG.forEach(p=>{const a=nameKey(p[0]),b=nameKey(p[1]);if(a!==b)MGM[a]=b});
+  NOS=new Set(NOP.map(p=>[nameKey(p[0]),nameKey(p[1])].sort().join('\u0001')));
+  const fxm={};cnt.forEach((c,n)=>{NE.parse(n).fx.forEach(f=>{const k=f[0]+'\u0001'+f[1];(fxm[k]=fxm[k]||{from:f[0],to:f[1],n:0,s:'dict'}).n+=c})});
+  Object.keys(CORR).forEach(w=>{fxm[w+'\u0001'+CORR[w]]={from:w,to:CORR[w],n:vc.f[w]||0,s:'data'}});
+  FIXES=Object.values(fxm).sort((a,b)=>b.n-a.n);
+  DATA.forEach(r=>{const k0=nameKey(r.n),k=mgResolve(k0);let it=IDX.get(k);if(!it){it={k,n:r.n,g:r.g,rows:[],nm:{},k0:{}};IDX.set(k,it)}it.rows.push(r);it.nm[r.n]=(it.nm[r.n]||0)+1;it.k0[r.n]=k0});
   ITEMS=[...IDX.values()];
   ITEMS.forEach((it,i)=>{
-    it.id=i;it.n=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a])[0];it.tk=tokOf(it.n);it.gk=gk(it.tk);
+    it.id=i;const nms0=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a]);
+    it.rn=nms0.find(n=>it.k0[n]===it.k)||nms0[0];it.P=NE.parse(it.rn);it.nv=nms0.length;
+    it.n=(it.P.type&&it.k.indexOf('sp:')!==0)?NE.disp(it.P,CORR):it.rn;
+    it.sn=nz(it.n+' '+nms0.join(' '));
+    it.tk=tokOf(it.n);it.gk=gk(it.tk);
     let wq=0,wa=0,cogs=0,bal=0,cs=0,sq=0,sv=0,pq=0,pv=0,hasP=false;const docs=new Set(),yr={};
     it.rows.forEach(r=>{
       const s=r.c?-1:1,q=s*r.q,v=s*r.v;docs.add(r.no);
@@ -8969,16 +9292,62 @@ function build(){
     const ls=[...it.rows].reverse().find(r=>r.d==='S'&&!r.c);
     Object.assign(it,{avg:wa,bq:wq,cogs,sq,sv,pq,pv,hasP,docs:docs.size,yr,first:it.rows[0].t,last:it.rows[it.rows.length-1].t,lastPr:ls?ls.pr:0});
   });
-  const dn={};ITEMS.forEach(it=>{const o=dn[it.gk]||(dn[it.gk]={});o[it.tk]=(o[it.tk]||0)+1});
-  ITEMS.forEach(it=>{const o=dn[it.gk];it.ga=Object.keys(o).sort((a,b)=>o[b]-o[a])[0];it.g=resolve(IM[it.k]||it.ga)});
+  const dn={};ITEMS.forEach(it=>{if(it.P.type)return;const o=dn[it.gk]||(dn[it.gk]={});o[it.tk]=(o[it.tk]||0)+1});
+  ITEMS.forEach(it=>{const im=IM[it.k]||Object.keys(it.nm).map(n=>IM[ik(n)]).find(Boolean);if(it.P.type&&it.k.indexOf('sp:')!==0){it.ga=it.P.type}else{const o=dn[it.gk];it.ga=Object.keys(o).sort((a,b)=>o[b]-o[a])[0]}it.g=resolve(im||it.ga)});
+  findPairs();
+}
+/* ---------- مفاتيح التوحيد ---------- */
+function nameKey(n){const i=ik(n);if(SPS.has(i))return 'sp:'+i;let k=NE.key(NE.parse(n),CORR);if(NE.EMPTY.test(k))k='raw:'+i;return k}
+function mgResolve(k){let n=0;while(MGM[k]!==undefined&&MGM[k]!==k&&n++<20)k=MGM[k];return k}
+const uk=n=>mgResolve(nameKey(n));
+function normStat(rows){const nm=new Set();rows.forEach(r=>nm.add(r.n));const ks=new Set();nm.forEach(n=>ks.add(uk(n)));return{n:nm.size,k:ks.size}}
+/* تصحيح الأخطاء الإملائية من الداتا نفسها: الكلمة النادرة تتحول لأقرب كلمة أكتر شيوعًا (فرق حرف واحد) */
+function vocabCorr(cnt){
+  const f={};cnt.forEach((c,n)=>{NE.parse(n).res.forEach(w=>{f[w]=(f[w]||0)+c})});
+  const keep=new Set(UD.map(u=>NE.NZ(u[0]).trim())),ws=Object.keys(f).filter(w=>w.length>=5&&!/\d/.test(w)&&!keep.has(w)),c={};
+  if(ws.length>6000)return{c,f};
+  const bl={};ws.forEach(w=>(bl[w.length]=bl[w.length]||[]).push(w));
+  ws.forEach(t=>{let best=null,bf=0;for(let L=t.length-1;L<=t.length+1;L++)(bl[L]||[]).forEach(u=>{if(u===t)return;const fu=f[u];if(!(fu>f[t]||(fu===f[t]&&u<t))||fu<=bf)return;if(NE.dl(t,u,1)<=1){best=u;bf=fu}});if(best)c[t]=best});
+  for(const t in c){let u=c[t],n=0;while(c[u]&&n++<5)u=c[u];c[t]=u}
+  return{c,f};
+}
+/* الأصناف المشكوك في تطابقها (مش بتتدمج لوحدها) */
+function findPairs(){
+  const byK=new Map();ITEMS.forEach(it=>byK.set(it.k,it));
+  const seen=new Set(),raw=[],iso=it=>it.k.indexOf('sp:')===0||it.k.indexOf('raw:')===0;
+  ITEMS.forEach(it=>{
+    if(iso(it))return;
+    NE.alts(it.P,CORR).forEach(al=>{
+      const o=byK.get(al.k);if(!o||o===it||iso(o))return;
+      const id=[it.k,o.k].sort().join('\u0001');if(seen.has(id)||NOS.has(id))return;seen.add(id);
+      raw.push({a:it,b:o,miss:al.miss,why:al.miss?'«'+o.n+'» مش مكتوب فيه '+al.why.replace(/^الصنف التاني مش مكتوب فيه /,''):al.why,sc:al.sc,id});
+    });
+  });
+  const lc={};raw.forEach(p=>{if(p.miss)lc[p.b.k]=(lc[p.b.k]||0)+1});
+  const out=raw.filter(p=>!p.miss||lc[p.b.k]<=3);
+  const rj=it=>[...new Set(it.P.res.map(w=>CORR[w]||w))].sort().join(' ');
+  const bk=new Map();
+  ITEMS.forEach(it=>{if(iso(it)||!it.P.res.length)return;const b=NE.key(it.P,CORR,{res:[]});(bk.get(b)||bk.set(b,[]).get(b)).push(it)});
+  bk.forEach(a=>{
+    if(a.length<2||a.length>300)return;
+    for(let i=0;i<a.length;i++)for(let j=i+1;j<a.length;j++){
+      const x=rj(a[i]),y=rj(a[j]);if(x===y)continue;const L=Math.max(x.length,y.length);if(L<4)continue;
+      const mx=Math.max(1,Math.floor(L*.25));if(NE.dl(x,y,mx)>mx)continue;
+      const id=[a[i].k,a[j].k].sort().join('\u0001');if(seen.has(id)||NOS.has(id))continue;seen.add(id);
+      out.push({a:a[i],b:a[j],miss:false,why:'اسمين متشابهين في الكتابة والمواصفات واحدة',sc:1,id});
+    }
+  });
+  out.forEach(p=>{p.keep=p.miss?p.a:(p.a.rows.length>=p.b.rows.length?p.a:p.b)});
+  out.sort((x,y)=>x.sc-y.sc||(y.a.rows.length+y.b.rows.length)-(x.a.rows.length+x.b.rows.length));
+  PAIRS=out.slice(0,400);
 }
 
 async function load(){
-  const c=col(),cid=CID;LOG=[];GM={};IM={};DATA=[];build();SEL=null;render();
+  const c=col(),cid=CID;LOG=[];GM={};IM={};MG=[];SPL=[];NOP=[];UD=[];NE.setUser([]);DATA=[];build();SEL=null;render();
   if(!c){say('بيانات المكتب لسه بتتحمّل، جرّب بعد ثانية');return}
   say('جاري تحميل كروت الأصناف...');
   try{
-    const ms=await c.get();const cf=ms.docs.find(m=>m.id==='_cfg');if(cf){GM=cf.data().gm||{};IM=cf.data().im||{}}LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
+    const ms=await c.get();const cf=ms.docs.find(m=>m.id==='_cfg');if(cf){const d=cf.data();GM=d.gm||{};IM=d.im||{};MG=(d.mg||[]).map(s=>String(s).split('\u0001'));SPL=d.sp||[];NOP=(d.no||[]).map(s=>String(s).split('\u0001'));UD=(d.dict||[]).map(s=>String(s).split('\u0001'));NE.setUser(UD)}LOG=ms.docs.filter(m=>m.id.startsWith('_log_')).map(m=>m.data()).sort((a,b)=>b.t-a.t);
     await Promise.all(ms.docs.filter(m=>m.id[0]!=='_').map(async m=>{const p=await m.ref.collection('lines').get();p.docs.map(x=>x.data()).sort((a,b)=>a.i-b.i).forEach(x=>JSON.parse(x.rows).forEach(a=>DATA.push(fromT(a))))}));
   }catch(e){console.error(e);say('تعذّر التحميل: '+(e.message||''));return}
   if(cid!==CID)return;build();say('');render();renderPre();LOADED=cid;
@@ -9024,11 +9393,11 @@ function diff(mode){
 const tile=(c,l,v,s,ic)=>'<div class="ic-k '+c+'">'+(ic?'<em>'+ic+'</em>':'')+'<span>'+l+'</span><b>'+v+'</b>'+(s?'<span style="font-weight:400;font-size:11px">'+s+'</span>':'')+'</div>';
 function renderPre(){
   const box=$('icPre');if(!PRE){box.innerHTML='';return}
-  const mode=($('icMode')&&$('icMode').value)||'range',{add,rem,same}=diff(mode),ni=new Set(add.map(r=>ik(r.n))).size,ri=new Set(rem.map(r=>ik(r.n))).size;
+  const ns=normStat(PRE.rows),mode=($('icMode')&&$('icMode').value)||'range',{add,rem,same}=diff(mode),ni=new Set(add.map(r=>uk(r.n))).size,ri=new Set(rem.map(r=>uk(r.n))).size;
   box.innerHTML='<div style="border:1px solid rgba(120,140,170,.35);border-radius:16px;padding:14px 16px;margin-top:12px"><div style="font-weight:900">معاينة المزامنة: '+esc(PRE.file)+'</div>'+
   '<div style="font-size:12px;opacity:.75;margin:4px 0">الفترة في الشيت: '+dstr(PRE.min)+' → '+dstr(PRE.max)+' · الرقم الضريبي: '+esc(PRE.tax)+'</div>'+
   '<div class="ic-tiles">'+tile('ic-add','➕ حركات جديدة',f0(add.length),ni+' صنف')+tile('ic-del','➖ حركات هتتشال',f0(rem.length),ri+' صنف')+tile('ic-same','✔ زي ما هي',f0(same))+tile('ic-gold','⚠ مستبعد',f0(PRE.st.bad+PRE.st.zero+PRE.st.other),'ملغي/صفر/طرف تاني')+'</div>'+
-  (!add.length&&!rem.length?'<div style="margin:8px 0;font-weight:800;color:#12b76a">✔ الشيت ده متضاف بالكامل قبل كده — مفيش أي حاجة جديدة</div>':'')+'<div class="field"><label>وضع المزامنة</label><select id="icMode" onchange="icPreview()"><option value="range"'+(mode==='range'?' selected':'')+'>مزامنة داخل فترة الشيت (موصى به)</option><option value="all"'+(mode==='all'?' selected':'')+'>مزامنة كاملة (يشيل أي حاجة مش في الشيت)</option><option value="add"'+(mode==='add'?' selected':'')+'>إضافة فقط</option></select></div>'+
+  '<div style="margin:8px 0;font-weight:700">🧠 التوحيد الذكي: '+f0(ns.n)+' اسم مكتوب في الشيت ← '+f0(ns.k)+' صنف فعلي (بعد توحيد الإملاء والمرادفات والوحدات) · أي شك بيظهر للمراجعة بعد الحفظ</div>'+(!add.length&&!rem.length?'<div style="margin:8px 0;font-weight:800;color:#12b76a">✔ الشيت ده متضاف بالكامل قبل كده — مفيش أي حاجة جديدة</div>':'')+'<div class="field"><label>وضع المزامنة</label><select id="icMode" onchange="icPreview()"><option value="range"'+(mode==='range'?' selected':'')+'>مزامنة داخل فترة الشيت (موصى به)</option><option value="all"'+(mode==='all'?' selected':'')+'>مزامنة كاملة (يشيل أي حاجة مش في الشيت)</option><option value="add"'+(mode==='add'?' selected':'')+'>إضافة فقط</option></select></div>'+
   '<div class="row-actions" style="margin-top:10px"><button class="act btn-primary" onclick="icApply()">✅ تطبيق المزامنة</button><button class="act btn-ghost" onclick="icCancel()">إلغاء</button></div></div>';
 }
 window.icPreview=renderPre;window.icCancel=()=>{PRE=null;$('icUpMsg').textContent='ملف Excel (xlsx) فيه الوصف والكمية والسعر';renderPre()};
@@ -9052,7 +9421,7 @@ async function persist(add,rem,tag){
     const lg={t:Date.now(),file:file,tag:tag||'',add:add.length,rem:rem.length,user};
     await c.doc('_log_'+lg.t).set(lg);
     if(cid!==CID){BUSY=false;return}
-    LOG.unshift(lg);DATA=keep.concat(add);PRE=null;renderPre();build();SEL=SEL&&IDX.get(SEL.k)||null;render();say('✅ تمت العملية: أُضيف '+f0(add.length)+' · اتشال '+f0(rem.length));OK=true;
+    LOG.unshift(lg);DATA=keep.concat(add);PRE=null;renderPre();build();SEL=SEL&&IDX.get(SEL.k)||null;render();say('✅ تمت العملية: أُضيف '+f0(add.length)+' · اتشال '+f0(rem.length)+(PAIRS.length?' · 🔍 '+PAIRS.length+' حالة شك للمراجعة (زر 🧠 التوحيد الذكي)':''));OK=true;
   }catch(e){console.error(e);say('تعذّر الحفظ: '+(e.message||''))}
   BUSY=false;
 }
@@ -9086,17 +9455,17 @@ function render(){
   const b=$('icBrowse');if(!ITEMS.length){b.innerHTML=LOG.length?cov():'';return}
   const gs=[...new Set(ITEMS.map(i=>i.g).filter(Boolean))].sort();
   b.innerHTML=cov()+'<div class="ic-grid" style="margin-top:14px"><aside class="ic-side"><input id="icQ" type="search" placeholder="🔍 ابحث عن صنف (كوع، نبل، 1/2...)" oninput="icQ(this.value)" value="'+esc(Q)+'">'+
-   '<button class="act btn-ghost btn-small" style="width:100%;margin-bottom:8px" onclick="icGroups()">⚙️ إدارة المجموعات (دمج / نقل / تسمية)</button><select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
+   '<button class="act btn-primary btn-small" style="width:100%;margin-bottom:8px" onclick="icSmart(\'rv\')">🧠 التوحيد الذكي'+(PAIRS.length?' — '+PAIRS.length+' للمراجعة':'')+'</button><button class="act btn-ghost btn-small" style="width:100%;margin-bottom:8px" onclick="icGroups()">⚙️ إدارة المجموعات (دمج / نقل / تسمية)</button><select id="icG" onchange="icG(this.value)"><option value="">كل المجموعات</option>'+gs.map(g=>'<option value="'+esc(g)+'"'+(g===GF?' selected':'')+'>'+esc(g)+' ('+ITEMS.filter(i=>i.g===g).length+')</option>').join('')+'</select>'+
    '<select id="icS" onchange="icS(this.value)">'+[['v','الأعلى قيمة'],['q','الأعلى كمية'],['d','الأكثر حركة'],['l','الأحدث حركة'],['a','أبجدي']].map(o=>'<option value="'+o[0]+'"'+(o[0]===SORT?' selected':'')+'>ترتيب: '+o[1]+'</option>').join('')+'</select>'+
    '<div class="ic-list" id="icList"></div></aside><div id="icCard"></div></div>';
   list();card();
 }
 function list(){
   const ts=nz(Q).split(' ').filter(Boolean);
-  let a=ITEMS.filter(i=>(!GF||i.g===GF)&&ts.every(t=>nz(i.n).includes(t)));
+  let a=ITEMS.filter(i=>(!GF||i.g===GF)&&ts.every(t=>i.sn.includes(t)));
   const S={v:(x,y)=>Math.abs(y.sv+y.pv)-Math.abs(x.sv+x.pv),q:(x,y)=>Math.abs(y.sq+y.pq)-Math.abs(x.sq+x.pq),d:(x,y)=>y.rows.length-x.rows.length,l:(x,y)=>y.last-x.last,a:(x,y)=>x.n.localeCompare(y.n,'ar')};
   a.sort(S[SORT]);const el=$('icList');if(!el)return;
-  el.innerHTML=a.slice(0,SHOWN).map(i=>'<button class="ic-it'+(SEL===i?' on':'')+'" onclick="icPick('+i.id+')"><b>'+esc(i.n)+'</b><small>'+'وارد '+f0(i.pq)+' · منصرف '+f0(i.sq)+' · '+i.rows.length+' حركة</small></button>').join('')+
+  el.innerHTML=a.slice(0,SHOWN).map(i=>'<button class="ic-it'+(SEL===i?' on':'')+'" onclick="icPick('+i.id+')"><b>'+esc(i.n)+'</b><small>'+'وارد '+f0(i.pq)+' · منصرف '+f0(i.sq)+' · '+i.rows.length+' حركة'+(i.nv>1?' · '+i.nv+' اسم':'')+'</small></button>').join('')+
    (a.length>SHOWN?'<button class="act btn-ghost btn-small" onclick="icMore()">عرض المزيد ('+f0(a.length-SHOWN)+')</button>':'')+(a.length?'':'<p style="opacity:.7;font-size:13px">مفيش أصناف مطابقة</p>');
 }
 let tm=0;window.icQ=v=>{Q=v;SHOWN=60;clearTimeout(tm);tm=setTimeout(list,150)};window.icG=v=>{GF=v;SHOWN=60;list()};window.icS=v=>{SORT=v;list()};window.icMore=()=>{SHOWN+=60;list()};
@@ -9105,26 +9474,26 @@ window.icYear=v=>{YF=Number(v);card()};
 function card(){
   const el=$('icCard');if(!el)return;
   if(!SEL){el.innerHTML='<div class="ic-k" style="padding:40px;text-align:center"><div style="font-size:40px">📇</div><b style="text-align:center">اختار صنف من القائمة عشان يظهر كارته</b></div>';return}
-  const it=SEL,ys=Object.keys(it.yr).map(Number).sort(),mx=Math.max(1,...ys.map(y=>Math.max(Math.abs(it.yr[y].q),Math.abs(it.yr[y].pq))));
+  const it=SEL,nms=Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a]),mv=nms.length>1,ys=Object.keys(it.yr).map(Number).sort(),mx=Math.max(1,...ys.map(y=>Math.max(Math.abs(it.yr[y].q),Math.abs(it.yr[y].pq))));
   const rows=it.rows.filter(r=>!YF||new Date(r.t).getUTCFullYear()===YF),bl=it.hasP?'الرصيد (وارد − صادر)':'تراكمي المنصرف';
   let pin=0,pout=0,pinv=0,poutv=0,pcost=0;rows.forEach(r=>{const s=r.c?-1:1,q=s*r.q,v=s*r.v;if(r.d==='S'){pout+=q;poutv+=v;pcost+=r.cc||0}else{pin+=q;pinv+=v}});
-  el.innerHTML='<div class="ic-hero" style="margin:0 0 12px"><div><b>'+esc(it.n)+'</b><small>'+(it.g?'<span class="ic-chip" style="color:#fff;background:rgba(255,255,255,.2)">'+esc(it.g)+'</span> ':'')+'أول حركة '+dstr(it.first)+' · آخر حركة '+dstr(it.last)+'</small></div></div>'+
+  el.innerHTML='<div class="ic-hero" style="margin:0 0 12px"><div><b>'+esc(it.n)+'</b><small>'+(it.g?'<span class="ic-chip" style="color:#fff;background:rgba(255,255,255,.2)">'+esc(it.g)+'</span> ':'')+'أول حركة '+dstr(it.first)+' · آخر حركة '+dstr(it.last)+'</small></div></div>'+(mv?'<details class="ic-k" style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:800">📝 الأسماء الأصلية في الشيت ('+nms.length+') — اتوحّدت في صنف واحد</summary>'+nms.map(n=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px dashed rgba(120,140,170,.25);font-size:13px"><span>'+esc(n)+' <small style="opacity:.6">('+it.nm[n]+' حركة)</small></span><button class="act btn-ghost btn-small" onclick="icSplit(\''+encodeURIComponent(n)+'\')">فصل</button></div>').join('')+'</details>':'')+
   '<div class="ic-tiles">'+tile('ic-add','الكمية الواردة',f0(it.pq),f2(it.pv)+' ج','📥')+tile('ic-del','الكمية المنصرفة',f0(it.sq),f2(it.sv)+' ج','📤')+tile('ic-gold','الرصيد الحالي',f0(it.bq),'وارد − منصرف','⚖️')+tile('ic-same','متوسط التكلفة الحالي',f2(it.avg),'قيمة الرصيد '+f2(it.bq*it.avg),'💲')+tile('','تكلفة المنصرف',f2(it.cogs),'مجمل الربح '+f2(it.sv-it.cogs),'🏷️')+tile('','آخر سعر منصرف',f2(it.lastPr),'','🧾')+tile('','عدد المستندات',f0(it.docs),'','📄')+'</div>'+
   '<div class="ic-k" style="margin-bottom:12px"><span style="margin-bottom:6px">📊 الوارد والمنصرف سنة بسنة</span>'+ys.map(y=>'<div class="ic-yb"><b>'+y+'</b><div style="flex:1"><i style="width:'+Math.max(2,Math.abs(it.yr[y].pq)/mx*100)+'%;background:linear-gradient(90deg,#12b76a,#2ecc71)"></i><i style="width:'+Math.max(2,Math.abs(it.yr[y].q)/mx*100)+'%;margin-top:4px"></i></div><span>وارد '+f0(it.yr[y].pq)+' · منصرف '+f0(it.yr[y].q)+'</span></div>').join('')+'</div>'+
   '<div class="fin-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="icY" onchange="icYear(this.value)" style="min-width:120px"><option value="0">كل السنوات</option>'+ys.map(y=>'<option'+(y===YF?' selected':'')+'>'+y+'</option>').join('')+'</select><button class="act btn-ghost btn-small" onclick="icExportItem()">⬇️ تصدير الكارت (Excel)</button><button class="act btn-ghost btn-small" onclick="icExportAll()">📊 ملخص كل الأصناف</button><button class="act btn-ghost btn-small" onclick="icDelSel()">🗑 حذف المحدد</button><button class="act btn-ghost btn-small" onclick="icDelItem()">🗑 حذف الصنف</button><button class="act btn-ghost btn-small" onclick="icMoveItem()">📁 نقل الصنف لمجموعة</button></div>'+
-  '<div class="ic-tbl"><table><thead><tr><th rowspan="2"><input type="checkbox" onclick="icAll(this.checked)"></th><th rowspan="2">التاريخ</th><th rowspan="2">المستند</th><th rowspan="2">الطرف</th><th colspan="3">وارد</th><th colspan="4">منصرف</th><th colspan="3">الرصيد (متوسط مرجح)</th></tr><tr><th>كمية</th><th>سعر</th><th>قيمة</th><th>كمية</th><th>سعر البيع</th><th>قيمة البيع</th><th>تكلفة المنصرف</th><th>كمية</th><th>متوسط التكلفة</th><th>قيمة</th></tr></thead><tbody>'+
-  rows.map(r=>{const s=r.c?-1:1,P=r.d==='P';return '<tr'+(r.c?' class="cn"':'')+'><td><input type="checkbox" class="ic-ck" value="'+it.rows.indexOf(r)+'"></td><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td>'+
+  '<div class="ic-tbl"><table><thead><tr><th rowspan="2"><input type="checkbox" onclick="icAll(this.checked)"></th><th rowspan="2">التاريخ</th><th rowspan="2">المستند</th><th rowspan="2">الطرف</th>'+(mv?'<th rowspan="2">الاسم في الشيت</th>':'')+'<th colspan="3">وارد</th><th colspan="4">منصرف</th><th colspan="3">الرصيد (متوسط مرجح)</th></tr><tr><th>كمية</th><th>سعر</th><th>قيمة</th><th>كمية</th><th>سعر البيع</th><th>قيمة البيع</th><th>تكلفة المنصرف</th><th>كمية</th><th>متوسط التكلفة</th><th>قيمة</th></tr></thead><tbody>'+
+  rows.map(r=>{const s=r.c?-1:1,P=r.d==='P';return '<tr'+(r.c?' class="cn"':'')+'><td><input type="checkbox" class="ic-ck" value="'+it.rows.indexOf(r)+'"></td><td>'+dstr(r.t)+'</td><td>'+esc(r.no)+(r.c?' <span class="ic-chip cn">إشعار دائن</span>':'')+'</td><td style="white-space:normal;min-width:150px">'+esc(r.p)+'</td>'+(mv?'<td style="white-space:normal;min-width:140px;font-size:12.5px">'+esc(r.n)+'</td>':'')+
   (P?'<td class="n">'+f0(s*r.q)+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td></td><td></td><td></td><td></td>':'<td></td><td></td><td></td><td class="n">'+f0(s*r.q)+'</td><td class="n">'+f2(r.pr)+'</td><td class="n">'+f2(s*r.v)+'</td><td class="n">'+f2(r.cc)+'</td>')+
   '<td class="n"><b>'+f0(r.wq)+'</b></td><td class="n">'+f2(r.wa)+'</td><td class="n"><b>'+f2(r.wq*r.wa)+'</b></td></tr>'}).join('')+
-  '</tbody><tfoot><tr><td colspan="4">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td></td><td class="n">'+f2(pinv)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(poutv)+'</td><td class="n">'+f2(pcost)+'</td><td></td><td></td><td></td></tr></tfoot></table></div>';
+  '</tbody><tfoot><tr><td colspan="'+(mv?5:4)+'">الإجمالي ('+rows.length+' حركة)</td><td class="n">'+f0(pin)+'</td><td></td><td class="n">'+f2(pinv)+'</td><td class="n">'+f0(pout)+'</td><td></td><td class="n">'+f2(poutv)+'</td><td class="n">'+f2(pcost)+'</td><td></td><td></td><td></td></tr></tfoot></table></div>';
 }
 
 
 /* ---------- إدارة المجموعات ---------- */
-function dlg(h){let e=$('icDlg');if(!e){e=document.createElement('div');e.id='icDlg';document.body.appendChild(e)}e.style.display='flex';e.innerHTML='<div class="ic-dlg">'+h+'</div>'}
+function dlg(h,w){let e=$('icDlg');if(!e){e=document.createElement('div');e.id='icDlg';document.body.appendChild(e)}e.style.display='flex';e.innerHTML='<div class="ic-dlg'+(w?' wide':'')+'">'+h+'</div>'}
 window.icDlgX=()=>{const e=$('icDlg');if(e)e.style.display='none'};
 const gopt=sel=>{const m={};ITEMS.forEach(i=>{m[i.g]=(m[i.g]||0)+1});return Object.keys(m).sort((a,b)=>m[b]-m[a]||a.localeCompare(b,'ar')).map(g=>'<option value="'+esc(g)+'"'+(g===sel?' selected':'')+'>'+esc(g)+' ('+m[g]+')</option>').join('')};
-async function saveCfg(){build();SEL=SEL&&IDX.get(SEL.k)||null;render();const c=col();if(!c)return;try{await c.doc('_cfg').set({gm:GM,im:IM,t:Date.now()});say('✅ اتحفظ تعديل المجموعات')}catch(e){say('تعذّر حفظ المجموعات: '+(e.message||''))}}
+async function saveCfg(){NE.setUser(UD);build();SEL=SEL&&IDX.get(SEL.k)||null;render();const c=col();if(!c)return;try{await c.doc('_cfg').set({gm:GM,im:IM,mg:MG.map(p=>p.join('\u0001')),sp:SPL,no:NOP.map(p=>p.join('\u0001')),dict:UD.map(p=>p.join('\u0001')),t:Date.now()});say('✅ اتحفظ تعديل المجموعات')}catch(e){say('تعذّر حفظ المجموعات: '+(e.message||''))}}
 window.icMoveItem=()=>{if(!SEL)return;dlg('<h3>📁 نقل الصنف لمجموعة</h3><p style="font-weight:700">'+esc(SEL.n)+'</p><div class="field"><label>اختار مجموعة موجودة</label><select id="icDg">'+gopt(SEL.g)+'</select></div><div class="field"><label>أو اكتب اسم مجموعة جديدة</label><input id="icDn" placeholder="مثال: كوع"></div><div class="row-actions"><button class="act btn-primary" onclick="icMoveItemGo()">حفظ</button><button class="act btn-ghost" onclick="icMoveItemGo(1)">↩ رجوع للتلقائي</button><button class="act btn-ghost" onclick="icDlgX()">إلغاء</button></div>')};
 window.icMoveItemGo=async r=>{const k=SEL.k;if(r)delete IM[k];else IM[k]=$('icDn').value.trim()||$('icDg').value;icDlgX();await saveCfg()};
 window.icGroups=()=>{const ru=Object.entries(GM).map(([a,b])=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(120,140,170,.2)"><span>'+esc(a)+' ← '+esc(b)+'</span><button class="act btn-ghost btn-small" onclick="icUnmerge(\''+encodeURIComponent(a)+'\')">إلغاء</button></div>').join('');
@@ -9132,20 +9501,67 @@ window.icGroups=()=>{const ru=Object.entries(GM).map(([a,b])=>'<div style="displ
 window.icMergeGo=async()=>{const s=$('icGs').value,t=$('icGn').value.trim()||$('icGt').value;if(!s||!t||s===t)return;GM[s]=t;icDlgX();await saveCfg()};
 window.icUnmerge=async a=>{delete GM[decodeURIComponent(a)];icDlgX();await saveCfg()};
 
+/* ---------- شاشة التوحيد الذكي ---------- */
+let STAB='rv',SPG=0;
+const PGN=8;
+window.icSmart=t=>{STAB=t||'rv';SPG=0;smartRender()};
+window.icPg=d=>{SPG=Math.max(0,SPG+d);smartRender()};
+const nmList=(it,mx)=>{const a=Object.keys(it.nm).sort((x,y)=>it.nm[y]-it.nm[x]);return a.slice(0,mx).map(n=>esc(n)+' <span style="opacity:.6">('+it.nm[n]+')</span>').join('<br>')+(a.length>mx?'<br>…':'')};
+const pitem=it=>'<b style="font-size:13.5px">'+esc(it.n)+'</b><div style="font-size:12px;opacity:.8;margin-top:4px">'+it.rows.length+' حركة'+(it.nv>1?' · '+it.nv+' اسم':'')+'</div><div style="font-size:11.5px;opacity:.65;margin-top:4px">'+nmList(it,3)+'</div>';
+const ruleRow=(a,b,fn)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(120,140,170,.2);font-size:13px"><span>'+a+'</span><button class="act btn-ghost btn-small" onclick="'+fn+'">إلغاء</button></div>';
+function smartRender(){
+  const MER=ITEMS.filter(i=>i.nv>1).sort((a,b)=>b.nv-a.nv||b.rows.length-a.rows.length);
+  const tb=[['rv','🔍 للمراجعة ('+PAIRS.length+')'],['mg','🧩 الأصناف الموحّدة ('+MER.length+')'],['fx','✏️ تصحيحات ('+FIXES.length+')'],['dc','📖 القاموس ('+UD.length+')']];
+  let h='<h3 style="margin-top:0">🧠 التوحيد الذكي للأصناف</h3><div style="font-size:12.5px;opacity:.8;margin-bottom:10px;line-height:1.7">الأصناف بتتقارن بمواصفاتها الفنية (النوع، المقاس، الخامة، السمك، الضغط…) مش بالكلام المكتوب. أي اختلاف فني حقيقي بيفضل صنف مستقل، وأي شك بيتعرض هنا للمراجعة قبل الدمج. الاسم الأصلي لكل حركة محفوظ زي ما هو في الشيت.</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+tb.map(x=>'<button class="act '+(x[0]===STAB?'btn-primary':'btn-ghost')+' btn-small" onclick="icSmart(\''+x[0]+'\')">'+x[1]+'</button>').join('')+'</div>';
+  h+=STAB==='rv'?tabRv():STAB==='mg'?tabMg(MER):STAB==='fx'?tabFx():tabDc();
+  dlg(h+'<div class="row-actions" style="margin-top:14px"><button class="act btn-ghost" onclick="icDlgX()">إغلاق</button></div>',1);
+}
+function tabRv(){
+  if(!PAIRS.length)return '<div style="padding:22px;text-align:center;font-weight:800;color:#12b76a">✔ مفيش أصناف مشكوك في تطابقها حاليًا</div>';
+  const st=SPG*PGN,pg=PAIRS.slice(st,st+PGN);
+  return pg.map((p,i)=>{const n=st+i;return '<div style="border:1px solid rgba(120,140,170,.35);border-radius:14px;padding:12px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div>'+pitem(p.a)+'</div><div>'+pitem(p.b)+'</div></div><div style="margin:8px 0;font-size:13px;font-weight:700;color:#b26a00">⚠ '+esc(p.why)+'</div><div class="row-actions"><button class="act btn-primary btn-small" onclick="icPairYes('+n+')">✅ نفس الصنف — ادمج تحت «'+esc(p.keep.n)+'»</button><button class="act btn-ghost btn-small" onclick="icPairNo('+n+')">❌ مختلفين</button></div></div>'}).join('')+
+   '<div class="row-actions" style="justify-content:center">'+(SPG>0?'<button class="act btn-ghost btn-small" onclick="icPg(-1)">‹ السابق</button>':'')+'<span style="font-size:12.5px;opacity:.7;align-self:center">'+(st+1)+'–'+(st+pg.length)+' من '+PAIRS.length+'</span>'+(st+PGN<PAIRS.length?'<button class="act btn-ghost btn-small" onclick="icPg(1)">التالي ›</button>':'')+'</div>';
+}
+function tabMg(MER){
+  let h=MER.slice(0,40).map(it=>'<div style="border:1px solid rgba(120,140,170,.3);border-radius:12px;padding:10px;margin-bottom:8px"><b>'+esc(it.n)+'</b> <span class="ic-chip">'+it.nv+' اسم · '+it.rows.length+' حركة</span>'+Object.keys(it.nm).sort((a,b)=>it.nm[b]-it.nm[a]).map(n=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px dashed rgba(120,140,170,.25);font-size:13px"><span>'+esc(n)+' <small style="opacity:.6">('+it.nm[n]+')</small></span><button class="act btn-ghost btn-small" onclick="icSplit(\''+encodeURIComponent(n)+'\')">فصل</button></div>').join('')+'</div>').join('')||'<div style="opacity:.7;padding:10px">مفيش أصناف اتوحّدت لسه</div>';
+  if(MER.length>40)h+='<div style="font-size:12px;opacity:.7;margin-bottom:8px">معروض أول 40 من '+MER.length+'</div>';
+  if(MG.length)h+='<h4>دمج يدوي ('+MG.length+')</h4>'+MG.map((p,i)=>ruleRow(esc(p[0])+' ← '+esc(p[1]),'','icMgDel('+i+')')).join('');
+  if(SPL.length)h+='<h4>أسماء مفصولة ('+SPL.length+')</h4>'+SPL.map((n,i)=>ruleRow(esc(n),'','icSplDel('+i+')')).join('');
+  return h;
+}
+function tabFx(){
+  return '<div style="font-size:12.5px;opacity:.75;margin-bottom:8px">كلمات اتصحّحت تلقائيًا (فرق حرف أو ترتيب حروف). لو تصحيح غلط اضغط «تراجع».</div>'+(FIXES.slice(0,80).map(f=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(120,140,170,.2);font-size:13px"><span>'+esc(f.from)+' ← <b>'+esc(f.to)+'</b> <small style="opacity:.6">('+f0(f.n)+' حركة · '+(f.s==='dict'?'من القاموس':'من الداتا')+')</small></span><button class="act btn-ghost btn-small" onclick="icKeepWord(\''+encodeURIComponent(f.from)+'\')">تراجع</button></div>').join('')||'<div style="opacity:.7;padding:10px">مفيش تصحيحات</div>');
+}
+function tabDc(){
+  return '<div style="font-size:12.5px;opacity:.75;margin-bottom:8px;line-height:1.7">علّم التطبيق مرادفات خاصة بيك: اكتب الكلمة زي ما بتظهر في الشيت وبعدها معناها الصح. مثال: «فلنجه» ← «فلانشة».</div><div class="field"><label>الكلمة اللي في الشيت</label><input id="icDw" placeholder="مثال: فلنجه"></div><div class="field"><label>معناها</label><input id="icDm" placeholder="مثال: فلانشة"></div><div class="row-actions"><button class="act btn-primary btn-small" onclick="icDcAdd()">＋ إضافة</button></div><h4>القواعد ('+UD.length+')</h4>'+(UD.map((u,i)=>ruleRow(esc(u[0])+' ← '+esc(u[1]),'','icDcDel('+i+')')).join('')||'<div style="opacity:.7">مفيش قواعد</div>');
+}
+const after=async()=>{await saveCfg();smartRender()};
+window.icPairYes=async n=>{const p=PAIRS[n];if(!p)return;const lose=p.keep===p.a?p.b:p.a;MG.push([lose.rn,p.keep.rn]);await after()};
+window.icPairNo=async n=>{const p=PAIRS[n];if(!p)return;NOP.push([p.a.rn,p.b.rn]);await after()};
+window.icSplit=async e=>{const n=decodeURIComponent(e);if(SPL.indexOf(n)<0)SPL.push(n);await after()};
+window.icMgDel=async i=>{MG.splice(i,1);await after()};
+window.icSplDel=async i=>{SPL.splice(i,1);await after()};
+window.icKeepWord=async e=>{const w=decodeURIComponent(e);UD.push([w,w]);await after()};
+window.icDcAdd=async()=>{const w=$('icDw').value.trim(),m=$('icDm').value.trim();if(!w||!m)return;UD.push([w,m]);await after()};
+window.icDcDel=async i=>{UD.splice(i,1);await after()};
+
 /* ---------- التصدير ---------- */
 const hd=ws=>{const r=ws.getRow(1);r.font={bold:true,color:{argb:'FFFFFFFF'},name:'Arial'};r.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}};r.alignment={horizontal:'center',vertical:'middle',wrapText:true};ws.views=[{rightToLeft:true,state:'frozen',ySplit:1}]};
 window.icExportItem=async function(){
   if(!SEL)return;const it=SEL,wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('كارت الصنف');
-  ws.columns=[{header:'التاريخ',width:12},{header:'نوع المستند',width:12},{header:'رقم المستند',width:14},{header:'الطرف',width:34},{header:'وارد',width:11},{header:'صادر',width:11},{header:'السعر',width:12},{header:'القيمة',width:14},{header:'الرصيد التراكمي',width:15},{header:'متوسط التكلفة',width:14},{header:'قيمة الرصيد',width:15},{header:'تكلفة المنصرف',width:15}];
-  it.rows.forEach((r,i)=>{const s=r.c?-1:1,n=i+2;ws.addRow([new Date(r.t),r.c?'إشعار دائن':'فاتورة',r.no,r.p,r.d==='P'?s*r.q:null,r.d==='S'?s*r.q:null,r.pr,s*r.v,null,r.wa,r.wq*r.wa,r.cc==null?null:r.cc]);ws.getCell('I'+n).value={formula:(it.hasP?'N(I'+(n-1)+')+N(E'+n+')-N(F'+n+')':'N(I'+(n-1)+')+N(F'+n+')')};ws.getCell('A'+n).numFmt='dd/mm/yyyy';['E','F','G','H','I'].forEach(c=>ws.getCell(c+n).numFmt='#,##0.00;(#,##0.00);-');if(r.c)ws.getRow(n).font={color:{argb:'FFC00000'}}});
+  ws.columns=[{header:'التاريخ',width:12},{header:'نوع المستند',width:12},{header:'رقم المستند',width:14},{header:'الطرف',width:34},{header:'وارد',width:11},{header:'صادر',width:11},{header:'السعر',width:12},{header:'القيمة',width:14},{header:'الرصيد التراكمي',width:15},{header:'متوسط التكلفة',width:14},{header:'قيمة الرصيد',width:15},{header:'تكلفة المنصرف',width:15},{header:'الاسم الأصلي (من الشيت)',width:38}];
+  it.rows.forEach((r,i)=>{const s=r.c?-1:1,n=i+2;ws.addRow([new Date(r.t),r.c?'إشعار دائن':'فاتورة',r.no,r.p,r.d==='P'?s*r.q:null,r.d==='S'?s*r.q:null,r.pr,s*r.v,null,r.wa,r.wq*r.wa,r.cc==null?null:r.cc,r.n]);ws.getCell('I'+n).value={formula:(it.hasP?'N(I'+(n-1)+')+N(E'+n+')-N(F'+n+')':'N(I'+(n-1)+')+N(F'+n+')')};ws.getCell('A'+n).numFmt='dd/mm/yyyy';['E','F','G','H','I'].forEach(c=>ws.getCell(c+n).numFmt='#,##0.00;(#,##0.00);-');if(r.c)ws.getRow(n).font={color:{argb:'FFC00000'}}});
   hd(ws);ws.getCell('N1').value=it.n;ws.getCell('N1').font={bold:true};
   await xlDownload(wb,'كارت_صنف_'+it.n.replace(/[\\/:*?"<>|]/g,'-').slice(0,60)+'.xlsx');
 };
 window.icExportAll=async function(){
   const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('ملخص الأصناف'),ys=[...new Set(ITEMS.flatMap(i=>Object.keys(i.yr).map(Number)))].sort();
-  ws.columns=[{header:'الصنف',width:48},{header:'المجموعة',width:24}].concat(ys.map(y=>({header:'منصرف '+y,width:11}))).concat(ys.map(y=>({header:'قيمة '+y,width:14}))).concat([{header:'إجمالي الوارد',width:13},{header:'إجمالي المنصرف',width:13},{header:'إجمالي القيمة',width:15},{header:'عدد الحركات',width:11}]);
-  ITEMS.forEach(i=>ws.addRow([i.n,i.g].concat(ys.map(y=>i.yr[y]?i.yr[y].q:0)).concat(ys.map(y=>i.yr[y]?i.yr[y].v:0)).concat([i.pq,i.sq,i.sv,i.rows.length])));
+  ws.columns=[{header:'الصنف',width:48},{header:'المجموعة',width:24}].concat(ys.map(y=>({header:'منصرف '+y,width:11}))).concat(ys.map(y=>({header:'قيمة '+y,width:14}))).concat([{header:'إجمالي الوارد',width:13},{header:'إجمالي المنصرف',width:13},{header:'إجمالي القيمة',width:15},{header:'عدد الحركات',width:11},{header:'الأسماء الأصلية في الشيت',width:60},{header:'عدد الأسماء',width:11}]);
+  ITEMS.forEach(i=>ws.addRow([i.n,i.g].concat(ys.map(y=>i.yr[y]?i.yr[y].q:0)).concat(ys.map(y=>i.yr[y]?i.yr[y].v:0)).concat([i.pq,i.sq,i.sv,i.rows.length,Object.keys(i.nm).join(' | '),Object.keys(i.nm).length])));
   hd(ws);ws.autoFilter={from:'A1',to:{row:1,column:ws.columns.length}};
+  const w2=wb.addWorksheet('ربط الأسماء');w2.columns=[{header:'الاسم الأصلي (من الشيت)',width:50},{header:'الاسم الموحد',width:44},{header:'المجموعة',width:20},{header:'عدد الحركات',width:12}];
+  ITEMS.forEach(i=>Object.keys(i.nm).sort((a,b)=>i.nm[b]-i.nm[a]).forEach(n=>w2.addRow([n,i.n,i.g,i.nm[n]])));hd(w2);w2.autoFilter={from:'A1',to:{row:1,column:4}};
+  if(PAIRS.length){const w3=wb.addWorksheet('للمراجعة');w3.columns=[{header:'الصنف الأول',width:44},{header:'الصنف الثاني',width:44},{header:'سبب الشك',width:50}];PAIRS.forEach(p=>w3.addRow([p.a.n,p.b.n,p.why]));hd(w3)}
   await xlDownload(wb,'ملخص_الأصناف_'+CNAME+'.xlsx');
 };
 
@@ -9167,7 +9583,7 @@ async function fromFin(f){
     if(LOADED!==CID)await load();
     await window.icLoadFile({files:[f],value:''});
     if(!PRE){toast('الملف ده ماتحوّلش لكارت الصنف: '+esc((($('icUpMsg')||{}).textContent||'').replace('تعذّر قراءة الشيت: ','')),[['تمام','icToastX()']]);return}
-    const {add,rem}=diff('range'),ni=new Set(add.map(r=>ik(r.n))).size;
+    const {add,rem}=diff('range'),ni=new Set(add.map(r=>uk(r.n))).size;
     if(!add.length&&!rem.length)toast('✔ كارت الصنف محدّث بالكامل — كل حركات الملف ده متضافة قبل كده',[['📇 فتح كارت الصنف','icToastX();icKeep=0;icOpen()','btn-primary'],['إغلاق','icToastX()']]);
     else toast('📇 الملف فيه أصناف: ➕ '+f0(add.length)+' حركة جديدة ('+f0(ni)+' صنف)'+(rem.length?' · ➖ '+f0(rem.length)+' هتتشال':''),[['✅ حفظ في كارت الصنف','icToastSave()','btn-primary'],['👁 معاينة','icToastX();icKeep=1;icOpen()'],['تجاهل','icToastX()']]);
   }catch(e){console.error(e);toast('تعذّر التحويل لكارت الصنف: '+esc(e.message||''),[['تمام','icToastX()']])}
