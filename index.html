@@ -8977,7 +8977,7 @@ function dl(a,b,mx){
   }
   return p1[lb];
 }
-const CONF=['سصث','تط','زذظ','دض','حخ','قك','غع'];
+const CONF=['سصث','تط','تث','زذظ','دض','حخ','قك','غع'];
 function isConf(a,b){if(a.length!==b.length)return false;let d=-1;for(let i=0;i<a.length;i++)if(a[i]!==b[i]){if(d>=0)return false;d=i}return d>=0&&CONF.some(g=>g.includes(a[d])&&g.includes(b[d]))}
 function isTrans(a,b){if(a.length!==b.length)return false;let d=[];for(let i=0;i<a.length;i++)if(a[i]!==b[i])d.push(i);return d.length===2&&d[1]===d[0]+1&&a[d[0]]===b[d[1]]&&a[d[1]]===b[d[0]]}
 
@@ -8986,7 +8986,7 @@ const E=(cls,c,v,o)=>({cls,c,v:v.split(/\s+/).filter(Boolean),o:o||{}});
 const T=(c,v,o)=>E('type',c,v,o),K=(c,v,o)=>E('kind',c,v,o),M=(c,v,o)=>E('mat',c,v,o);
 const DICT=[
  T('ماسورة','ماسورة ماسوره مواسير مواسر ماسورات مسورة ماسور pipe pipes tube tubes بايب انبوب انابيب تيوب',{du:1,sd:1}),
- T('كوع','كوع كيعان اكواع كوعات elbow elbows elbo ايلبو',{du:1,sd:1,ang:1}),
+ T('كوع','كوع كيعان اكواع كوعات كوح كوغ كواع كوعه elbow elbows elbo ايلبو',{du:1,sd:1,ang:1}),
  T('تي','تي تيه تيات تيهات tee tees t',{du:1,sd:1}),
  T('نبل','نبل نبلات نيبل نبله nipple nipples',{du:1,sd:1}),
  T('فلانشة','فلانشة فلانشات فلنشة فلنشات فلاشنة فلاشنات فلانجة فلنجة فلنج فلانج flange flanges فلانشا',{du:1,sd:1}),
@@ -9006,7 +9006,7 @@ const DICT=[
  T('صامولة','صامولة صواميل nut nuts عزقة'),
  T('وردة','وردة وردات washer washers'),
  T('جوان','جوان جوانات gasket gaskets'),
- T('صاج','صاج'),T('لوح','لوح الواح plate plates'),
+ T('افيز','افيز افيزه افيزات افيس'),T('صاج','صاج'),T('لوح','لوح الواح plate plates'),
  K('ذكر','ذكر مذكر ذكري male'),K('أنثى','انثي انثى انثا مؤنث مونث female'),
  K('لحام','لحام ملحوم لحامي weld welded bw'),
  K('قلاووظ','قلاووظ قلاوظ قلاووظي قلاوظي سن مسنن threaded thread npt bsp bspt'),
@@ -9014,7 +9014,7 @@ const DICT=[
  K('بوابة','بوابه gate'),K('كروي','كروي كرويه ball'),K('فراشة','فراشه butterfly'),
  K('عدم رجوع','عدم_رجوع nrv'),K('فلتر','فلتر filter strainer مصفاه'),
  K('أعمى','اعمي blind'),K('slip-on','slipon'),K('عنق لحام','عنق_لحام wn weldneck'),
- K('ثقيل','ثقيل heavy'),K('خفيف','خفيف light'),K('ستاندرد','ستاندرد ستاندر standard std'),
+ K('ثقيل','ثقيل ثقيله تقيل تقيله سقيل ثغيل heavy'),K('خفيف','خفيف light'),K('ستاندرد','ستاندرد ستاندر standard std'),
  K('طقم','طقم set'),
  M('حديد','حديد حديدي',{lo:1}),
  M('مجلفن','جلفانيزد جلفانيز جلفنه مجلفن مجلفنه جلفانايزد جالفانيزد galvanized galvanised galv gi'),
@@ -9269,6 +9269,10 @@ const ik=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.in
 const GEN=new Set(['لوازم','لازم','طقم','مجموعة','عدد','قطعة','وحدة','صنف']);
 const gk=w=>{let x=w.replace(/[\u064B-\u0652\u0640]/g,'').toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/^ال(?=.{3})/,'');if(x==='مواسير')return 'ماسور';if(x==='t')return 'تي';const y=x.replace(/(ات|ه|ة)$/,'');return y.length>=2?y:x};
 const tokOf=n=>{const ts=String(n||'').trim().split(/[\s\d*\/.(\-]+/).filter(Boolean);return ts.find(t=>!GEN.has(t.replace(/ه$/,'ة')))||ts[0]||'أخرى'};
+/* كلمة وصف (ثقيل/خفيف/خامة..) مش اسم صنف: ما تتحولش لمجموعة */
+const weakW=w=>{try{const p=NE.parse(w);return !p.type&&!p.res.length&&(p.kinds.length>0||!!p.mat)}catch(e){return false}};
+const tokG=n=>{const ts=String(n||'').trim().split(/[\s\d*\/.(\-]+/).filter(Boolean);return ts.find(t=>t.length>1&&!GEN.has(t.replace(/ه$/,'ة'))&&!/^(?:بوصه|بوصة|بوصات|مم|ملم|سم|متر|م|درجه|درجة|سمك|قطعه|قطعة|inch|in|mm|dn|pn|sch|u)$/i.test(t)&&!weakW(t))||''};
+const codeTok=rows=>{const c={};rows.forEach(r=>{const g=String(r.g||'').trim();if(g&&/[\u0621-\u064A]/.test(g)&&!/^[\d\s\-_.]+$/.test(g)){const t=tokG(g);if(t)c[t]=(c[t]||0)+1}});return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||''};
 const resolve=g=>{let x=g,n=0;while(GM[x]&&n++<10)x=GM[x];return x};
 const GS={'مواسير':'ماسورة','ماسورة':'ماسورة','t':'تي','تيه':'تي','تى':'تي'};
 const gOf=n=>{let w=String(n||'').replace(/[\u064B-\u0652\u0640]/g,'').trim().split(/[\s\d*\/.(\-]/)[0].toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ه$/,'ة').replace(/^ال(?=.{3})/,'');return GS[w]||w||'أخرى'};
@@ -9301,7 +9305,7 @@ function build(){
     it.rn=nms0.find(n=>it.k0[n]===it.k)||nms0[0];it.P=NE.parse(it.rn);it.nv=nms0.length;
     it.n=(it.P.type&&it.k.indexOf('sp:')!==0)?NE.disp(it.P,CORR):it.rn;
     it.sn=nz(it.n+' '+nms0.join(' '));
-    it.tk=tokOf(it.n);it.gk=gk(it.tk);
+    it.tk=it.P.type?tokOf(it.n):(tokG(it.n)||codeTok(it.rows)||'أخرى');it.gk=gk(it.tk);
     const ob=OB[it.k]||null;let wq=ob?ob.q:0,wa=ob?ob.c:0,cogs=0,bal=ob?ob.q:0,cs=0,sq=0,sv=0,pq=0,pv=0,hasP=!!ob,snc=0,skv=0,nnc=0;const docs=new Set(),yr={};
     it.rows.forEach(r=>{
       const s=r.c?-1:1,q=s*r.q,v=s*r.v;docs.add(r.no);
