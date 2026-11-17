@@ -1880,7 +1880,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
         <h3>المشاوير</h3>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th><th></th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>العميل</th><th>النوع</th><th>الجهة</th><th>التكلفة</th><th>ملاحظة</th><th>الإيصالات</th><th></th></tr></thead>
             <tbody id="ownerDetailTripsBody"></tbody>
           </table>
           <div class="empty" id="ownerDetailTripsEmpty" style="display:none;">مفيش مشاوير مسجلة لهذا الموظف</div>
@@ -2924,6 +2924,37 @@ function renounceOwnerRole(){
     .catch(err=> alert('حصل خطأ: ' + (err && err.message ? err.message : 'غير معروف')));
 }
 
+/* ---- إيصالات مشاوير الموظف (تظهر لصاحب المكتب) ---- */
+let ownerTripRcFiles = {};
+async function toggleOwnerTripReceipts(idx){
+  const row = document.getElementById('ownTripRc_' + idx), box = document.getElementById('ownTripRcBox_' + idx);
+  if(!row || !box) return;
+  if(row.style.display !== 'none'){ row.style.display = 'none'; return; }
+  row.style.display = '';
+  box.innerHTML = '<div class="empty" style="padding:10px;">جارٍ تحميل الإيصالات...</div>';
+  const trip = ownerDetailCache.trips[idx];
+  if(!trip){ box.innerHTML = ''; return; }
+  try{
+    const snap = await db.collection('users').doc(ownerDetailCache.uid).collection('trips').doc(trip.id).collection('receipts').get();
+    const files = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    ownerTripRcFiles[idx] = files;
+    box.innerHTML = files.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 0;">' + files.map((f, i) => `
+          <div style="text-align:center;">
+            <img src="${f.dataUrl}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #d5dde6;cursor:pointer;" onclick="openOwnerTripReceipt(${idx},${i})">
+            <div style="font-size:11px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><bdi>${escapeHtml(f.name || '')}</bdi></div>
+          </div>`).join('') + '</div>'
+      : '<div class="empty" style="padding:10px;">مفيش إيصالات مرفوعة للمشوار ده</div>';
+  }catch(err){
+    const denied = err && err.code === 'permission-denied';
+    box.innerHTML = '<div class="empty" style="padding:10px;">' + (denied ? 'مفيش صلاحية لقراءة الإيصالات (محتاج تعديل قواعد Firestore)' : 'محصلش تحميل الإيصالات، جرب تاني') + '</div>';
+  }
+}
+function openOwnerTripReceipt(idx, i){
+  const f = (ownerTripRcFiles[idx] || [])[i];
+  if(f) openImgLightbox(f.dataUrl);
+}
+
 function openEmployeeLedger(uid, email){
   currentOwnerViewUid = uid;
   document.getElementById('ownerEmployeesSection').style.display = 'none';
@@ -2972,8 +3003,10 @@ async function renderOwnerDetail(){
           <td>${escapeHtml(t.place)||'—'}</td>
           <td class="num" style="color:#8a6f00;font-weight:800;">${(Number(t.cost)||0).toFixed(2)}</td>
           <td>${escapeHtml(t.note)||'—'}</td>
+          <td><button class="act btn-ghost btn-small" onclick="toggleOwnerTripReceipts(${idx})">🧾 الإيصالات</button></td>
           <td><button class="act btn-ghost btn-small" onclick="openOwnerClientPickerForTrip(${idx})">➕ لعميل</button></td>
         </tr>
+        <tr id="ownTripRc_${idx}" style="display:none;"><td colspan="8"><div id="ownTripRcBox_${idx}"></div></td></tr>
       `).join('');
     } else { tripsEmpty.style.display='block'; }
     if(cash.length){
@@ -3441,13 +3474,17 @@ async function linkTripToOwnerClient(clientId){
   const employeeLabel = ownerDetailCache.label || '';
   const note = `مشوار ${trip.type||''} — ${trip.place||''} (${employeeLabel}، ${trip.date||''})`.trim();
   try{
-    await col.add({
+    const newEntry = await col.add({
       type: 'expense',
       date: trip.date || todayStr(),
       amount: Number(trip.cost)||0,
       note,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    try{
+      const rs = await db.collection('users').doc(ownerDetailCache.uid).collection('trips').doc(trip.id).collection('receipts').get();
+      await Promise.all(rs.docs.map(d => newEntry.collection('receipts').doc(d.id).set(d.data())));
+    }catch(e){ console.warn('copy trip receipts failed', e); }
     alert('اتضاف المصروف لحساب الشركة ✅');
     if(currentOwnerClientId === clientId){ renderOwnerClientDetail(); }
   }catch(err){
@@ -3843,8 +3880,26 @@ async function syncTripToOwnerLedger(trip){
       tripId: trip.id,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+    await mirrorTripReceiptsToOwnerLedger(trip);
     if(currentOwnerClientId === trip.clientId) renderOwnerClientDetail();
   }catch(err){ console.warn('owner ledger sync failed', err); }
+}
+/* بيعكس إيصالات المشوار على بند المشوار في حساب العميل (لصاحب المكتب) */
+async function mirrorTripReceiptsToOwnerLedger(trip){
+  if(currentUserRole !== 'owner' || !trip || !trip.clientId) return;
+  const entries = ownerClientEntriesCol(trip.clientId);
+  if(!entries) return;
+  try{
+    const entryRef = entries.doc('trip_' + trip.id);
+    if(!(await entryRef.get()).exists) return;
+    const dst = entryRef.collection('receipts');
+    const src = await getFilesForTrip(trip.id);
+    const have = new Set((await dst.get()).docs.map(d => d.id));
+    const srcIds = new Set(src.map(f => f.id));
+    for(const f of src){ if(have.has(f.id)) continue; const { id, ...rest } = f; await dst.doc(id).set(rest); }
+    for(const id of have){ if(!srcIds.has(id)) await dst.doc(id).delete(); }
+    if(currentOwnerClientId === trip.clientId) renderOwnerClientDetail();
+  }catch(err){ console.warn('mirror trip receipts failed', err); }
 }
 async function removeTripFromOwnerLedger(clientId, tripId){
   if(currentUserRole !== 'owner' || !clientId) return;
@@ -5622,6 +5677,7 @@ async function deleteTripFile(id, tripId){
   const col = tripReceiptsCol(tripId);
   if(!col) return;
   await col.doc(id).delete();
+  mirrorTripReceiptsToOwnerLedger(loadTrips().find(t => t.id === tripId));
   renderLogTab();
 }
 
@@ -5647,6 +5703,7 @@ async function handleTripFileUpload(tripId, inputEl){
   }catch(err){
     alert('حصل خطأ في رفع الإيصال: ' + (err && err.message ? err.message : 'غير معروف'));
   }
+  mirrorTripReceiptsToOwnerLedger(loadTrips().find(t => t.id === tripId));
   inputEl.value = '';
   renderLogTab();
 }
