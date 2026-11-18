@@ -1711,7 +1711,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     <section>
       <h2>استيراد عملاء من إكسيل</h2>
       <p style="color:#6b7280; font-size:14px; margin-bottom:10px;">
-        ارفع ملف إكسيل فيه كل العملاء دفعة واحدة بدل ما تضيفهم واحد واحد. لو مش عندك ملف جاهز، حمّل النموذج الأول واملاه بنفس ترتيب الأعمدة.
+        ارفع ملف إكسيل فيه كل العملاء دفعة واحدة بدل ما تضيفهم واحد واحد. لو مش عندك ملف جاهز، حمّل النموذج الأول واملاه (الأعمدة بتتقرا بأسمائها، فالترتيب مش مهم). عمود "نوع المنشأة" مهم عشان العميل يظهر في فردي / شركات / غير مسجل.
       </p>
       <div class="row-actions" style="margin-top:0;">
         <button class="act btn-ghost" onclick="downloadClientTemplate()">تحميل نموذج إكسيل</button>
@@ -4048,17 +4048,25 @@ function excelCellToDateStr(val){
   const s = String(val).trim();
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  if(m){
+    let a = +m[1], b = +m[2];
+    // الافتراضي يوم/شهر/سنة (الشكل المصري)، ولو التاني أكبر من 12 يبقى شهر/يوم
+    let d = a, mo = b;
+    if(b > 12 && a <= 12){ d = b; mo = a; }
+    if(mo < 1 || mo > 12 || d < 1 || d > 31) return '';
+    return `${m[3]}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
   return '';
 }
 
 async function downloadClientTemplate(){
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('عملاء');
-  ws.views = [{ rightToLeft: true }];
+  ws.views = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
   ws.columns = [
     { header: 'اسم الشركة', key: 'name', width: 30 },
+    { header: 'نوع المنشأة (فردي / شركات / غير مسجل)', key: 'category', width: 32 },
     { header: 'السمة التجارية', key: 'tradeName', width: 26 },
     { header: 'نوع الشركة', key: 'companyType', width: 26 },
     { header: 'رقم التسجيل الضريبي', key: 'taxRegNo', width: 22 },
@@ -4070,10 +4078,25 @@ async function downloadClientTemplate(){
     { header: 'انتهاء شهادة القيمة المضافة (YYYY-MM-DD)', key: 'vatExpiry', width: 32 },
     { header: 'انتهاء التوكن (YYYY-MM-DD)', key: 'tokenExpiry', width: 24 },
     { header: 'رقم الهاتف', key: 'phone', width: 16 },
+    { header: 'اسم المستخدم (منظومة جديدة)', key: 'newUser', width: 26 },
+    { header: 'الباسورد (منظومة جديدة)', key: 'newPass', width: 24 },
+    { header: 'اسم المستخدم (منظومة قديمة)', key: 'oldUser', width: 26 },
+    { header: 'الباسورد (منظومة قديمة)', key: 'oldPass', width: 24 },
+    { header: 'إيميل الفاتورة الإلكترونية', key: 'einvEmail', width: 28 },
+    { header: 'باسورد الفاتورة الإلكترونية', key: 'einvPass', width: 26 },
   ];
+  // أرقام لازم تفضل نص عشان الصفر في أول رقم الموبايل ما يضيعش
+  ['taxRegNo', 'crNo', 'phone'].forEach(k => { ws.getColumn(k).numFmt = '@'; });
   ws.getRow(1).font = { bold: true };
-  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.addRow({ name: 'مثال: شركة النور للتجارة', tradeName: 'النور', companyType: 'شركة ذات مسؤولية محدودة', taxRegNo: '987654321', taxOffice: 'مأمورية ضرائب الجيزة', crOffice: 'مكتب سجل تجاري الجيزة', crNo: '123456', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01', phone: '01012345678' });
+  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  ws.getRow(1).height = 32;
+  ws.addRow({ name: 'مثال: شركة النور للتجارة', category: 'شركات', tradeName: 'النور', companyType: 'شركة ذات مسؤولية محدودة', taxRegNo: '987654321', taxOffice: 'مأمورية ضرائب الجيزة', crOffice: 'مكتب سجل تجاري الجيزة', crNo: '123456', crExpiry: '2027-01-15', taxCardExpiry: '2027-03-01', vatExpiry: '2027-02-01', tokenExpiry: '2026-12-01', phone: '01012345678', newUser: '', newPass: '', oldUser: '', oldPass: '', einvEmail: '', einvPass: '' });
+  // قوائم منسدلة للنوعين عشان ما يتكتبوش غلط
+  const catCol = ws.getColumn('category').number, typeCol = ws.getColumn('companyType').number;
+  for(let r = 2; r <= 300; r++){
+    ws.getCell(r, catCol).dataValidation = { type: 'list', allowBlank: true, formulae: ['"فردي,شركات,غير مسجل"'] };
+    ws.getCell(r, typeCol).dataValidation = { type: 'list', allowBlank: true, formulae: ['"منشأة فردية,شركة تضامن,شركة توصية بسيطة,شركة مساهمة,شركة ذات مسؤولية محدودة,شركة شخص واحد,شركة واقع من أصل فردي,شركة واقع من أصل شركة أشخاص"'] };
+  }
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
@@ -4085,6 +4108,40 @@ async function downloadClientTemplate(){
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// قراءة الأعمدة بأسمائها (الترتيب مش مهم) — ولو الأسماء مش موجودة بيرجع للترتيب القديم
+const CLIENT_IMPORT_HEADERS = [
+  ['name', /اسم الشركة/], ['category', /نوع المنشأة/], ['tradeName', /السمة التجارية/], ['companyType', /نوع الشركة/],
+  ['taxRegNo', /رقم التسجيل الضريبي/], ['taxOffice', /المأمورية/], ['crOffice', /مكتب السجل/], ['crNo', /رقم السجل/],
+  ['crExpiry', /انتهاء السجل/], ['taxCardExpiry', /انتهاء البطاقة/], ['vatExpiry', /انتهاء شهادة/], ['tokenExpiry', /انتهاء التوكن/],
+  ['phone', /الهاتف|الموبايل|التليفون/],
+  ['newUser', /اسم المستخدم.*جديد/], ['newPass', /باسورد.*جديد/], ['oldUser', /اسم المستخدم.*قديم/], ['oldPass', /باسورد.*قديم/],
+  ['einvEmail', /(إيميل|ايميل).*(الإلكترونية|الالكترونية)/], ['einvPass', /باسورد.*(الإلكترونية|الالكترونية)/],
+];
+const CLIENT_IMPORT_LEGACY_COLS = { name:1, tradeName:2, companyType:3, taxRegNo:4, taxOffice:5, crOffice:6, crNo:7, crExpiry:8, taxCardExpiry:9, vatExpiry:10, tokenExpiry:11, phone:12 };
+
+function clientCellRaw(v){
+  if(v && typeof v === 'object' && !(v instanceof Date) && v.result !== undefined) return v.result;
+  return v;
+}
+function clientCellText(v){
+  v = clientCellRaw(v);
+  if(v === null || v === undefined || v instanceof Date) return '';
+  if(typeof v === 'object'){
+    if(v.richText) return v.richText.map(t => t.text).join('').trim();
+    if(v.text !== undefined) return String(v.text).trim();
+    return '';
+  }
+  return String(v).trim();
+}
+function normClientCategory(s){
+  s = String(s || '').trim();
+  if(!s) return '';
+  if(s.includes('غير')) return 'غير مسجل';
+  if(s.includes('شرك')) return 'شركات';
+  if(s.includes('فرد')) return 'فردي';
+  return '';
 }
 
 async function importClientsFromExcel(event){
@@ -4099,37 +4156,76 @@ async function importClientsFromExcel(event){
     const ws = wb.worksheets[0];
     if(!ws){ alert('الملف فاضي أو مش صيغة إكسيل صحيحة'); event.target.value = ''; return; }
 
+    // ربط الأعمدة بالأسماء من صف العناوين
+    const colMap = {};
+    ws.getRow(1).eachCell((cell, colNumber) => {
+      const h = clientCellText(cell.value).replace(/\s+/g, ' ');
+      if(!h) return;
+      for(const [key, re] of CLIENT_IMPORT_HEADERS){
+        if(!colMap[key] && re.test(h)){ colMap[key] = colNumber; break; }
+      }
+    });
+    const usedLegacy = !colMap.name;
+    const map = usedLegacy ? CLIENT_IMPORT_LEGACY_COLS : colMap;
+    const get = (row, k) => map[k] ? row.getCell(map[k]).value : null;
+    const txt = (row, k) => clientCellText(get(row, k));
+
     const existingNames = new Set(clientsCache.map(c => c.name.trim().toLowerCase()));
-    let added = 0, skipped = 0, invalid = 0;
-    const batch = db.batch();
+    let added = 0, skipped = 0, invalid = 0, noCat = 0;
+    const docs = [];
 
     ws.eachRow((row, rowNumber) => {
       if(rowNumber === 1) return; // header row
-      const vals = row.values; // 1-indexed
-      const name = vals[1] ? String(vals[1]).trim() : '';
-      if(!name){ invalid++; return; }
+      const name = txt(row, 'name');
+      if(name.startsWith('مثال:')) return; // صف المثال في النموذج
+      if(!name){
+        const anyVal = Object.keys(map).some(k => clientCellText(get(row, k)) !== '');
+        if(anyVal) invalid++;
+        return;
+      }
       if(existingNames.has(name.toLowerCase())){ skipped++; return; }
 
-      batch.set(col.doc(uid()), {
+      let category = normClientCategory(txt(row, 'category'));
+      if(!category){ category = 'غير مسجل'; noCat++; }
+
+      const data = {
         name,
-        tradeName: vals[2] ? String(vals[2]).trim() : '',
-        companyType: vals[3] ? String(vals[3]).trim() : '',
-        taxRegNo: vals[4] ? String(vals[4]).trim() : '',
-        taxOffice: vals[5] ? String(vals[5]).trim() : '',
-        crOffice: vals[6] ? String(vals[6]).trim() : '',
-        crNo: vals[7] ? String(vals[7]).trim() : '',
-        crExpiry: excelCellToDateStr(vals[8]),
-        taxCardExpiry: excelCellToDateStr(vals[9]),
-        vatExpiry: excelCellToDateStr(vals[10]),
-        tokenExpiry: excelCellToDateStr(vals[11]),
-        phone: vals[12] ? String(vals[12]).trim() : '',
-      });
+        category,
+        tradeName: txt(row, 'tradeName'),
+        companyType: txt(row, 'companyType'),
+        taxRegNo: txt(row, 'taxRegNo'),
+        taxOffice: txt(row, 'taxOffice'),
+        crOffice: txt(row, 'crOffice'),
+        crNo: txt(row, 'crNo'),
+        crExpiry: excelCellToDateStr(clientCellRaw(get(row, 'crExpiry'))),
+        taxCardExpiry: excelCellToDateStr(clientCellRaw(get(row, 'taxCardExpiry'))),
+        vatExpiry: excelCellToDateStr(clientCellRaw(get(row, 'vatExpiry'))),
+        tokenExpiry: excelCellToDateStr(clientCellRaw(get(row, 'tokenExpiry'))),
+        phone: txt(row, 'phone'),
+      };
+      const logins = {};
+      const nu = txt(row, 'newUser'), np = txt(row, 'newPass');
+      const ou = txt(row, 'oldUser'), op = txt(row, 'oldPass');
+      const ee = txt(row, 'einvEmail'), ep = txt(row, 'einvPass');
+      if(nu || np) logins.new = { email: nu, password: np };
+      if(ou || op) logins.old = { email: ou, password: op };
+      if(ee || ep) logins.einvoice = { email: ee, password: ep };
+      if(Object.keys(logins).length) data.logins = logins;
+
+      docs.push(data);
       existingNames.add(name.toLowerCase());
       added++;
     });
 
-    await batch.commit();
-    alert(`تم الاستيراد ✅\nتمت إضافة: ${added} عميل\nمتخطى (موجود بالفعل): ${skipped}\nصفوف بدون اسم: ${invalid}`);
+    // Firestore بيقبل 500 عملية في الباتش، فبنقسّم
+    for(let i = 0; i < docs.length; i += 400){
+      const batch = db.batch();
+      docs.slice(i, i + 400).forEach(d => batch.set(col.doc(uid()), d));
+      await batch.commit();
+    }
+    alert(`تم الاستيراد ✅\nتمت إضافة: ${added} عميل\nمتخطى (موجود بالفعل): ${skipped}\nصفوف بدون اسم: ${invalid}`
+      + (noCat ? `\n⚠️ ${noCat} عميل نوع المنشأة عندهم فاضي أو مش مفهوم، اتسجلوا "غير مسجل" — عدّلهم من القائمة` : '')
+      + (usedLegacy ? `\nℹ️ الملف بالترتيب القديم، اتقرا بالأعمدة الأساسية بس` : ''));
   }catch(err){
     console.error(err);
     alert('حصل خطأ أثناء قراءة الملف. اتأكد إنه ملف Excel (.xlsx) سليم.');
