@@ -1321,6 +1321,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
   <div class="np-title"><span>🔔 التنبيهات</span><button type="button" onclick="closeNotif()" aria-label="إغلاق">×</button></div>
   <div id="expiryAlertsBox"></div>
   <div id="vrHomeBox"></div>
+  <div id="poaOutAlertsBox"></div>
   <div id="dueRemindersBox"></div>
   <div class="np-empty" id="notifEmpty" style="display:none;">مفيش تنبيهات دلوقتي 👌</div>
   <button type="button" class="np-go" onclick="activateTab('alerts')">فتح صفحة التنبيهات</button>
@@ -1805,6 +1806,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
 
   <!-- ALERTS / REMINDERS -->
   <div class="panel" id="panel-alerts">
+    <div id="poaOutAlertsTabBox"></div>
     <section>
       <h2>جهات اتصال الواتساب</h2>
       <p style="font-size:12.5px;color:var(--navy-dim);margin:0 0 10px;">ضيف كل الأسماء اللي بتبعتلهم تنبيهات مرة واحدة بس (محمد، أستاذ أيمن، أشرف، باسم...)، وبعدين وقت الإرسال هتختار الاسم بس من غير ما تفتكر أو تكتب رقم.</p>
@@ -4726,6 +4728,31 @@ function poasCol(){
   return db.collection('offices').doc(currentOfficeId).collection('poas');
 }
 
+/* ---------- تنبيه التوكيلات المسحوبة (لحظي لكل الزمايل) ---------- */
+let poaOutLive = [];
+let poaOutUnsub = null;
+let poaOutSeen = null;
+function watchOfficePoas(){
+  if(poaOutUnsub){ poaOutUnsub(); poaOutUnsub = null; }
+  poaOutLive = []; poaOutSeen = null;
+  const col = poasCol();
+  if(!col){ renderPoaOutAlerts(); return; }
+  poaOutUnsub = col.onSnapshot(snap=>{
+    poaOutLive = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(p => p.holder && p.name);
+    poaOutLive.sort((a,b) => (a.holder.since||0) - (b.holder.since||0));
+    renderPoaOutAlerts();
+    if(window.refreshNotifs) window.refreshNotifs(true);
+  }, ()=>{});
+}
+function renderPoaOutAlerts(){
+  const html = !poaOutLive.length ? '' : `<div class="np-rem" style="background:var(--red-soft);">
+    <h3 style="color:var(--red);">📤 توكيلات مسحوبة من المكتب (${poaOutLive.length})</h3>
+    ${poaOutLive.map(p => `<div class="alert-item"><div class="txt"><b>${escapeHtml(p.name)}</b>${poaHolderLine(p)}</div>
+      <div class="btns"><button class="act btn-ghost btn-small" onclick="returnPoa('${p.id}')">✅ تم الرجوع</button></div></div>`).join('')}
+  </div>`;
+  ['poaOutAlertsBox','poaOutAlertsTabBox'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
 function poaFilesCol(poaId){
   const col = poasCol();
   if(!col || !poaId) return null;
@@ -4916,7 +4943,7 @@ async function takePoa(poaId){
 async function returnPoa(poaId){
   const col = poasCol();
   if(!col) return;
-  const p = poasCache.find(x => x.id === poaId);
+  const p = poasCache.find(x => x.id === poaId) || poaOutLive.find(x => x.id === poaId);
   if(!confirm('تأكد إن توكيل "' + (p ? p.name : '') + '" رجع المكتب فعلًا؟')) return;
   try{
     await col.doc(poaId).update({ holder: firebase.firestore.FieldValue.delete() });
@@ -6142,6 +6169,7 @@ function watchOwnRole(){
     renderAccountSection();
     if(officeChanged){
       watchOfficeClients();
+      watchOfficePoas();
     }
   }, ()=>{});
 }
@@ -9996,11 +10024,12 @@ document.addEventListener('keydown',e=>{const v=$('clientsItemCardView');if(e.ke
     try{ n += getExpiringDocs().length; }catch(e){}
     n += document.querySelectorAll('#vrHomeBox .vr-home').length;
     n += dueReminders().length;
+    n += (typeof poaOutLive !== 'undefined' ? poaOutLive.length : 0);
     const empty = $('notifEmpty'); if(empty) empty.style.display = n ? 'none' : 'block';
-    const had = btn.classList.contains('has');
+    const prevN = parseInt(badge.textContent, 10) || 0;
     badge.textContent = n > 99 ? '99+' : n;
     btn.classList.toggle('has', n > 0);
-    if(n > 0 && !had){ btn.classList.add('ring'); setTimeout(()=>btn.classList.remove('ring'), 3500); }
+    if(n > prevN){ btn.classList.add('ring'); setTimeout(()=>btn.classList.remove('ring'), 3500); }
   }
 
   function refresh(force){
@@ -10039,7 +10068,7 @@ document.addEventListener('keydown',e=>{const v=$('clientsItemCardView');if(e.ke
     if(e) e.stopPropagation();
     open ? window.closeNotif() : window.openNotif();
   };
-  window.refreshNotifs = function(){ refresh(false); };
+  window.refreshNotifs = function(f){ refresh(!!f); };
 
   document.addEventListener('click', e => {
     if(!open) return;
