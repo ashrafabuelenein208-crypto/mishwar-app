@@ -82,6 +82,37 @@
     background:rgba(255,255,255,.16);color:#fff;font-size:18px;flex:none;
   }
   .theme-toggle:hover{background:rgba(255,255,255,.28);}
+  /* ===== جرس التنبيهات ===== */
+  .notif-btn{
+    position:relative;display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:12px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.16);color:#fff;flex:none;
+  }
+  .notif-btn:hover,.notif-btn.open{background:rgba(255,255,255,.28);}
+  .notif-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .notif-btn.ring svg{animation:notifRing 1.6s ease-in-out 2;transform-origin:50% 10%;}
+  @keyframes notifRing{0%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-12deg)}30%{transform:rotate(9deg)}40%{transform:rotate(-6deg)}50%{transform:rotate(0)}}
+  .notif-badge{
+    position:absolute;top:-5px;inset-inline-start:-5px;min-width:19px;height:19px;padding:0 5px;
+    border-radius:10px;background:#e5252d;color:#fff;font-size:11px;font-weight:800;line-height:19px;
+    text-align:center;border:2px solid var(--navy);display:none;box-sizing:content-box;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .notif-btn.has .notif-badge{display:block;}
+  #notifPop{
+    position:fixed;z-index:9998;display:none;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,.28);
+    max-height:min(70vh,560px);overflow:auto;padding:12px;
+  }
+  #notifPop.show{display:block;}
+  #notifPop .np-title{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:15px;margin:2px 4px 10px;color:var(--navy);}
+  #notifPop .np-title button{border:none;background:none;color:var(--navy-dim);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;}
+  #notifPop .alert-banner{margin:0 0 10px;padding:12px;}
+  #notifPop .vr-home{margin-bottom:10px;}
+  #notifPop .np-rem{background:var(--bronze-soft);border-radius:16px;padding:12px;margin-bottom:10px;}
+  #notifPop .np-rem h3{margin:0 0 10px;color:var(--bronze);font-size:14.5px;font-weight:800;}
+  #notifPop .np-empty{text-align:center;color:var(--navy-dim);padding:22px 8px;font-size:14px;}
+  #notifPop .np-go{display:block;width:100%;border:none;background:var(--navy);color:#fff;border-radius:12px;padding:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer;}
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -1266,6 +1297,7 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button type="button" class="nav-toggle" id="navToggleBtn" title="إخفاء / إظهار القائمة" aria-label="إخفاء أو إظهار القائمة"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <button type="button" class="notif-btn" id="notifBtn" title="التنبيهات" aria-label="التنبيهات" onclick="toggleNotif(event)"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><span class="notif-badge" id="notifBadge">0</span></button>
       <button type="button" class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
       <div class="today-badge" id="todayBadge"></div>
     </div>
@@ -1285,12 +1317,19 @@ nav.tabs button.active .ic-wrap::after{opacity:1;border-color:var(--c1);animatio
   </nav>
 </header>
 
+<div id="notifPop" role="dialog" aria-label="التنبيهات">
+  <div class="np-title"><span>🔔 التنبيهات</span><button type="button" onclick="closeNotif()" aria-label="إغلاق">×</button></div>
+  <div id="expiryAlertsBox"></div>
+  <div id="vrHomeBox"></div>
+  <div id="dueRemindersBox"></div>
+  <div class="np-empty" id="notifEmpty" style="display:none;">مفيش تنبيهات دلوقتي 👌</div>
+  <button type="button" class="np-go" onclick="activateTab('alerts')">فتح صفحة التنبيهات</button>
+</div>
+
 <main>
 
   <!-- HOME -->
   <div class="panel active" id="panel-home">
-    <div id="expiryAlertsBox"></div>
-    <div id="vrHomeBox"></div>
     <div class="cards" id="summaryCards"></div>
     <section>
       <h2>أكثر العملاء تكلفة (الشهر الحالي)</h2>
@@ -3759,6 +3798,7 @@ function escapeHtml(s){
 
 /* ---------- TABS ---------- */
 function activateTab(tabName){
+  if(window.closeNotif) window.closeNotif();
   const btn = document.querySelector('#tabsNav button[data-tab="'+tabName+'"]');
   if(!btn) return;
   document.querySelectorAll('#tabsNav button').forEach(b=>b.classList.remove('active'));
@@ -9925,6 +9965,92 @@ window.icOpen=function(){
   window[n]=function(){const v=$('clientsItemCardView');if(v)v.style.display='none';return o.apply(this,arguments)};
 });
 document.addEventListener('keydown',e=>{const v=$('clientsItemCardView');if(e.key==='Escape'&&v&&v.style.display==='block'&&!PRE)showClientsCategoryHub()});
+})();
+</script>
+<script>
+/* ===== جرس التنبيهات (فوق جنب الوضع الليلي) ===== */
+(function(){
+  const $ = id => document.getElementById(id);
+  let open = false;
+
+  function dueReminders(){
+    try{
+      const t = todayStr();
+      return (loadReminders()||[]).filter(r => !r.done && r.date && r.date <= t).sort((a,b)=>a.date.localeCompare(b.date));
+    }catch(e){ return []; }
+  }
+
+  function renderDueReminders(){
+    const box = $('dueRemindersBox'); if(!box) return;
+    const list = dueReminders();
+    if(!list.length){ box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="np-rem"><h3>🔔 مهام مطلوب تنفيذها</h3>' + list.map(r =>
+      '<div class="alert-item"><div class="txt"><b>' + escapeHtml(r.text) + '</b> — ' + r.date + '</div>' +
+      '<div class="btns"><button class="act btn-ghost btn-small" onclick="activateTab(\'alerts\')">فتح</button></div></div>'
+    ).join('') + '</div>';
+  }
+
+  function updateBadge(){
+    const btn = $('notifBtn'), badge = $('notifBadge'); if(!btn) return;
+    let n = 0;
+    try{ n += getExpiringDocs().length; }catch(e){}
+    n += document.querySelectorAll('#vrHomeBox .vr-home').length;
+    n += dueReminders().length;
+    const empty = $('notifEmpty'); if(empty) empty.style.display = n ? 'none' : 'block';
+    const had = btn.classList.contains('has');
+    badge.textContent = n > 99 ? '99+' : n;
+    btn.classList.toggle('has', n > 0);
+    if(n > 0 && !had){ btn.classList.add('ring'); setTimeout(()=>btn.classList.remove('ring'), 3500); }
+  }
+
+  function refresh(force){
+    if(open && !force) return;
+    try{ renderExpiryAlerts(); }catch(e){}
+    try{ if(window.vrHomeBanner) window.vrHomeBanner(); }catch(e){}
+    renderDueReminders();
+    updateBadge();
+  }
+
+  function place(){
+    const pop = $('notifPop'), btn = $('notifBtn'); if(!pop||!btn) return;
+    const vw = document.documentElement.clientWidth;
+    const w = Math.min(420, vw - 16);
+    pop.style.width = w + 'px';
+    const r = btn.getBoundingClientRect();
+    let left = r.left + r.width/2 - w/2;
+    left = Math.max(8, Math.min(left, vw - w - 8));
+    pop.style.left = left + 'px'; pop.style.right = 'auto';
+    pop.style.top = (r.bottom + 10) + 'px';
+    pop.style.maxHeight = Math.max(220, window.innerHeight - r.bottom - 24) + 'px';
+  }
+
+  window.openNotif = function(){
+    open = true; refresh(true); place();
+    $('notifPop').classList.add('show'); $('notifBtn').classList.add('open');
+    setTimeout(updateBadge, 800); setTimeout(updateBadge, 2500);
+  };
+  window.closeNotif = function(){
+    open = false;
+    const p = $('notifPop'), b = $('notifBtn');
+    if(p) p.classList.remove('show');
+    if(b) b.classList.remove('open');
+  };
+  window.toggleNotif = function(e){
+    if(e) e.stopPropagation();
+    open ? window.closeNotif() : window.openNotif();
+  };
+  window.refreshNotifs = function(){ refresh(false); };
+
+  document.addEventListener('click', e => {
+    if(!open) return;
+    if(e.target.closest('#notifPop') || e.target.closest('#notifBtn')) return;
+    window.closeNotif();
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') window.closeNotif(); });
+  window.addEventListener('resize', () => { if(open) place(); });
+
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(refresh, 1500); });
+  setInterval(() => { refresh(false); }, 5000);
 })();
 </script>
 </body>
